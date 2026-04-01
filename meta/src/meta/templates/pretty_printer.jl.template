@@ -54,8 +54,8 @@ mutable struct PrettyPrinter
     at_line_start::Bool
     separator::String
     max_width::Int
-    _computing::Set{{UInt}}
-    _memo::Dict{{UInt,String}}
+    _computing::Set{{Tuple{{UInt,UInt}}}}
+    _memo::Dict{{Tuple{{UInt,UInt}},String}}
     _memo_refs::Vector{{Any}}
     print_symbolic_relation_ids::Bool
     debug_info::Dict{{Tuple{{UInt64,UInt64}},String}}
@@ -65,7 +65,7 @@ end
 function PrettyPrinter(; max_width::Int=92, print_symbolic_relation_ids::Bool=true, constant_formatter::ConstantFormatter=DEFAULT_CONSTANT_FORMATTER)
     return PrettyPrinter(
         IOBuffer(), [0], 0, true, "\n", max_width,
-        Set{{UInt}}(), Dict{{UInt,String}}(), Any[],
+        Set{{Tuple{{UInt,UInt}}}}(), Dict{{Tuple{{UInt,UInt}},String}}(), Any[],
         print_symbolic_relation_ids,
         Dict{{Tuple{{UInt64,UInt64}},String}}(),
         constant_formatter,
@@ -124,9 +124,9 @@ function dedent!(pp::PrettyPrinter)
 end
 
 function try_flat(pp::PrettyPrinter, msg, pretty_fn::Function)
-    msg_id = objectid(msg)
-    if !haskey(pp._memo, msg_id) && !(msg_id in pp._computing)
-        push!(pp._computing, msg_id)
+    memo_key = (objectid(msg), objectid(pretty_fn))
+    if !haskey(pp._memo, memo_key) && !(memo_key in pp._computing)
+        push!(pp._computing, memo_key)
         saved_io = pp.io
         saved_sep = pp.separator
         saved_indent = pp.indent_stack
@@ -139,7 +139,7 @@ function try_flat(pp::PrettyPrinter, msg, pretty_fn::Function)
             pp.column = 0
             pp.at_line_start = false
             pretty_fn(pp, msg)
-            pp._memo[msg_id] = String(copy(pp.io.data[1:pp.io.size]))
+            pp._memo[memo_key] = String(copy(pp.io.data[1:pp.io.size]))
             push!(pp._memo_refs, msg)
         finally
             pp.io = saved_io
@@ -147,11 +147,11 @@ function try_flat(pp::PrettyPrinter, msg, pretty_fn::Function)
             pp.indent_stack = saved_indent
             pp.column = saved_col
             pp.at_line_start = saved_at_line_start
-            delete!(pp._computing, msg_id)
+            delete!(pp._computing, memo_key)
         end
     end
-    if haskey(pp._memo, msg_id)
-        flat = pp._memo[msg_id]
+    if haskey(pp._memo, memo_key)
+        flat = pp._memo[memo_key]
         if pp.separator != "\n"
             return flat
         end

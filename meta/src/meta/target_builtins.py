@@ -217,7 +217,13 @@ register_builtin("start_pretty_fragment", [MessageType("fragments", "Fragment")]
 
 # === Dict operations ===
 register_builtin("dict_from_list", [SequenceType(TupleType([K, V]))], DictType(K, V))
+register_builtin(
+    "string_map_from_pairs",
+    [SequenceType(TupleType([STRING, STRING]))],
+    DictType(STRING, STRING),
+)
 register_builtin("dict_get", [DictType(K, V), K], OptionType(V))
+register_builtin("dict_to_pairs", [DictType(K, V)], ListType(TupleType([K, V])))
 
 # === Protobuf operations ===
 register_builtin("has_proto_field", [T, STRING], BOOLEAN)  # msg.HasField(field_name)

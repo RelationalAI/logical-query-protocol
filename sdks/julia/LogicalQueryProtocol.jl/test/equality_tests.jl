@@ -2217,6 +2217,109 @@ end
     @test d1 != d5
 end
 
+@testitem "Equality for IcebergLocator" tags=[:ring1, :unit] begin
+    using LogicalQueryProtocol: IcebergLocator
+
+    a = IcebergLocator(table_name="t1", namespace=["ns1", "ns2"], warehouse="wh1")
+    b = IcebergLocator(table_name="t1", namespace=["ns1", "ns2"], warehouse="wh1")
+    c = IcebergLocator(table_name="t2", namespace=["ns1", "ns2"], warehouse="wh1")
+    d = IcebergLocator(table_name="t1", namespace=["ns3"], warehouse="wh1")
+    e = IcebergLocator(table_name="t1", namespace=["ns1", "ns2"], warehouse="wh2")
+
+    @test a == b
+    @test a != c
+    @test a != d
+    @test a != e
+    @test isequal(a, b)
+    @test hash(a) == hash(b)
+    @test a == a
+    @test isequal(a, a)
+end
+
+@testitem "Equality for IcebergCatalogConfig" tags=[:ring1, :unit] begin
+    using LogicalQueryProtocol: IcebergCatalogConfig
+
+    a = IcebergCatalogConfig(catalog_uri="uri1", scope="s1", properties=Dict("k" => "v"), auth_properties=Dict("secret" => "val"))
+    b = IcebergCatalogConfig(catalog_uri="uri1", scope="s1", properties=Dict("k" => "v"), auth_properties=Dict("secret" => "other"))
+    c = IcebergCatalogConfig(catalog_uri="uri2", scope="s1", properties=Dict("k" => "v"), auth_properties=Dict())
+    d = IcebergCatalogConfig(catalog_uri="uri1", scope="s2", properties=Dict("k" => "v"), auth_properties=Dict())
+    e = IcebergCatalogConfig(catalog_uri="uri1", scope="s1", properties=Dict("k" => "v2"), auth_properties=Dict())
+
+    # auth_properties is excluded from equality
+    @test a == b
+    @test isequal(a, b)
+    @test hash(a) == hash(b)
+
+    @test a != c
+    @test a != d
+    @test a != e
+    @test a == a
+end
+
+@testitem "Equality for ExportColumn" tags=[:ring1, :unit] begin
+    using LogicalQueryProtocol: ExportColumn
+
+    a = ExportColumn(name="col1", nullable=false)
+    b = ExportColumn(name="col1", nullable=false)
+    c = ExportColumn(name="col2", nullable=false)
+    d = ExportColumn(name="col1", nullable=true)
+
+    @test a == b
+    @test a != c
+    @test a != d
+    @test isequal(a, b)
+    @test hash(a) == hash(b)
+    @test a == a
+end
+
+@testitem "Equality for ExportIcebergConfig" tags=[:ring1, :unit] begin
+    using LogicalQueryProtocol: ExportIcebergConfig, ExportColumn, IcebergLocator, IcebergCatalogConfig, RelationId
+
+    loc = IcebergLocator(table_name="t", namespace=["n"], warehouse="w")
+    cfg = IcebergCatalogConfig(catalog_uri="uri", scope="", properties=Dict(), auth_properties=Dict())
+    rid = RelationId(id_low=1, id_high=0)
+    cols = [ExportColumn(name="c1", nullable=false)]
+
+    a = ExportIcebergConfig(locator=loc, config=cfg, table_def=rid, columns=cols, prefix="", target_file_size_bytes=0, compression="", table_properties=Dict())
+    b = ExportIcebergConfig(locator=loc, config=cfg, table_def=rid, columns=cols, prefix="", target_file_size_bytes=0, compression="", table_properties=Dict())
+    c = ExportIcebergConfig(locator=loc, config=cfg, table_def=rid, columns=cols, prefix="pfx", target_file_size_bytes=0, compression="", table_properties=Dict())
+    d = ExportIcebergConfig(locator=loc, config=cfg, table_def=rid, columns=cols, prefix="", target_file_size_bytes=0, compression="SNAPPY", table_properties=Dict())
+    e = ExportIcebergConfig(locator=loc, config=cfg, table_def=rid, columns=cols, prefix="", target_file_size_bytes=0, compression="", table_properties=Dict("k" => "v"))
+
+    @test a == b
+    @test a != c
+    @test a != d
+    @test a != e
+    @test isequal(a, b)
+    @test hash(a) == hash(b)
+    @test a == a
+end
+
+@testitem "Equality for IcebergData" tags=[:ring1, :unit] begin
+    using LogicalQueryProtocol: IcebergData, IcebergLocator, IcebergCatalogConfig, GNFColumn, RelationId, var"#Type", IntType
+    using ProtoBuf: OneOf
+
+    loc = IcebergLocator(table_name="t", namespace=["n"], warehouse="w")
+    cfg = IcebergCatalogConfig(catalog_uri="uri", scope="", properties=Dict(), auth_properties=Dict())
+    t1 = var"#Type"(var"#type"=OneOf(:int_type, IntType()))
+    r1 = RelationId(id_low=1, id_high=0)
+    col = GNFColumn(column_path=["col1"], target_id=r1, types=[t1])
+
+    a = IcebergData(locator=loc, config=cfg, columns=[col], from_snapshot="s1", to_snapshot="s2", returns_delta=false)
+    b = IcebergData(locator=loc, config=cfg, columns=[col], from_snapshot="s1", to_snapshot="s2", returns_delta=false)
+    c = IcebergData(locator=loc, config=cfg, columns=[col], from_snapshot="s3", to_snapshot="s2", returns_delta=false)
+    d = IcebergData(locator=loc, config=cfg, columns=[col], from_snapshot="s1", to_snapshot="s4", returns_delta=false)
+    e = IcebergData(locator=loc, config=cfg, columns=[col], from_snapshot="s1", to_snapshot="s2", returns_delta=true)
+
+    @test a == b
+    @test a != c
+    @test a != d
+    @test a != e
+    @test isequal(a, b)
+    @test hash(a) == hash(b)
+    @test a == a
+end
+
 @testitem "All LQP types have custom equality implementations" tags=[:ring1, :unit] begin
     using LogicalQueryProtocol: LQPSyntax
 

@@ -5,16 +5,16 @@ import ProtoBuf as PB
 using ProtoBuf: OneOf
 using ProtoBuf.EnumX: @enumx
 
-export DateTimeType, RelationId, Var, FloatType, UInt128Type, Int32Type, Float32Type
-export BeTreeConfig, DateTimeValue, DateValue, OrMonoid, CSVLocator, Int128Type
-export DecimalType, UnspecifiedType, DateType, MissingType, MissingValue, CSVConfig
-export IntType, StringType, Int128Value, UInt128Value, BooleanType, UInt32Type
-export DecimalValue, BeTreeLocator, var"#Type", Value, GNFColumn, MinMonoid, SumMonoid
-export MaxMonoid, BeTreeInfo, Binding, EDB, Attribute, Term, CSVData, Monoid
-export BeTreeRelation, Cast, Pragma, Atom, RelTerm, Data, Primitive, RelAtom, Abstraction
-export Algorithm, Assign, Break, Conjunction, Constraint, Def, Disjunction, Exists, FFI
-export FunctionalDependency, MonoidDef, MonusDef, Not, Reduce, Script, Upsert, Construct
-export Loop, Declaration, Instruction, Formula
+export DateTimeType, RelationId, Var, FloatType, IcebergCatalogConfig, UInt128Type
+export Int32Type, Float32Type, BeTreeConfig, DateTimeValue, IcebergLocator, DateValue
+export OrMonoid, CSVLocator, Int128Type, DecimalType, UnspecifiedType, DateType
+export MissingType, MissingValue, CSVConfig, IntType, StringType, Int128Value, UInt128Value
+export BooleanType, UInt32Type, DecimalValue, BeTreeLocator, var"#Type", Value, GNFColumn
+export MinMonoid, SumMonoid, MaxMonoid, BeTreeInfo, Binding, EDB, Attribute, Term, CSVData
+export IcebergData, Monoid, BeTreeRelation, Cast, Pragma, Atom, RelTerm, Data, Primitive
+export RelAtom, Abstraction, Algorithm, Assign, Break, Conjunction, Constraint, Def
+export Disjunction, Exists, FFI, FunctionalDependency, MonoidDef, MonusDef, Not, Reduce
+export Script, Upsert, Construct, Loop, Declaration, Instruction, Formula
 abstract type var"##Abstract#Abstraction" end
 abstract type var"##Abstract#Not" end
 abstract type var"##Abstract#Break" end
@@ -142,6 +142,55 @@ function PB.encode(e::PB.AbstractProtoEncoder, x::FloatType)
 end
 function PB._encoded_size(x::FloatType)
     encoded_size = 0
+    return encoded_size
+end
+
+struct IcebergCatalogConfig
+    catalog_uri::String
+    scope::String
+    properties::Dict{String,String}
+    auth_properties::Dict{String,String}
+end
+IcebergCatalogConfig(;catalog_uri = "", scope = "", properties = Dict{String,String}(), auth_properties = Dict{String,String}()) = IcebergCatalogConfig(catalog_uri, scope, properties, auth_properties)
+PB.default_values(::Type{IcebergCatalogConfig}) = (;catalog_uri = "", scope = "", properties = Dict{String,String}(), auth_properties = Dict{String,String}())
+PB.field_numbers(::Type{IcebergCatalogConfig}) = (;catalog_uri = 1, scope = 2, properties = 3, auth_properties = 4)
+
+function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:IcebergCatalogConfig}, _endpos::Int=0, _group::Bool=false)
+    catalog_uri = ""
+    scope = ""
+    properties = Dict{String,String}()
+    auth_properties = Dict{String,String}()
+    while !PB.message_done(d, _endpos, _group)
+        field_number, wire_type = PB.decode_tag(d)
+        if field_number == 1
+            catalog_uri = PB.decode(d, String)
+        elseif field_number == 2
+            scope = PB.decode(d, String)
+        elseif field_number == 3
+            PB.decode!(d, properties)
+        elseif field_number == 4
+            PB.decode!(d, auth_properties)
+        else
+            Base.skip(d, wire_type)
+        end
+    end
+    return IcebergCatalogConfig(catalog_uri, scope, properties, auth_properties)
+end
+
+function PB.encode(e::PB.AbstractProtoEncoder, x::IcebergCatalogConfig)
+    initpos = position(e.io)
+    !isempty(x.catalog_uri) && PB.encode(e, 1, x.catalog_uri)
+    !isempty(x.scope) && PB.encode(e, 2, x.scope)
+    !isempty(x.properties) && PB.encode(e, 3, x.properties)
+    !isempty(x.auth_properties) && PB.encode(e, 4, x.auth_properties)
+    return position(e.io) - initpos
+end
+function PB._encoded_size(x::IcebergCatalogConfig)
+    encoded_size = 0
+    !isempty(x.catalog_uri) && (encoded_size += PB._encoded_size(x.catalog_uri, 1))
+    !isempty(x.scope) && (encoded_size += PB._encoded_size(x.scope, 2))
+    !isempty(x.properties) && (encoded_size += PB._encoded_size(x.properties, 3))
+    !isempty(x.auth_properties) && (encoded_size += PB._encoded_size(x.auth_properties, 4))
     return encoded_size
 end
 
@@ -315,6 +364,49 @@ function PB._encoded_size(x::DateTimeValue)
     x.minute != zero(Int32) && (encoded_size += PB._encoded_size(x.minute, 5))
     x.second != zero(Int32) && (encoded_size += PB._encoded_size(x.second, 6))
     x.microsecond != zero(Int32) && (encoded_size += PB._encoded_size(x.microsecond, 7))
+    return encoded_size
+end
+
+struct IcebergLocator
+    table_name::String
+    namespace::Vector{String}
+    warehouse::String
+end
+IcebergLocator(;table_name = "", namespace = Vector{String}(), warehouse = "") = IcebergLocator(table_name, namespace, warehouse)
+PB.default_values(::Type{IcebergLocator}) = (;table_name = "", namespace = Vector{String}(), warehouse = "")
+PB.field_numbers(::Type{IcebergLocator}) = (;table_name = 1, namespace = 2, warehouse = 3)
+
+function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:IcebergLocator}, _endpos::Int=0, _group::Bool=false)
+    table_name = ""
+    namespace = PB.BufferedVector{String}()
+    warehouse = ""
+    while !PB.message_done(d, _endpos, _group)
+        field_number, wire_type = PB.decode_tag(d)
+        if field_number == 1
+            table_name = PB.decode(d, String)
+        elseif field_number == 2
+            PB.decode!(d, namespace)
+        elseif field_number == 3
+            warehouse = PB.decode(d, String)
+        else
+            Base.skip(d, wire_type)
+        end
+    end
+    return IcebergLocator(table_name, namespace[], warehouse)
+end
+
+function PB.encode(e::PB.AbstractProtoEncoder, x::IcebergLocator)
+    initpos = position(e.io)
+    !isempty(x.table_name) && PB.encode(e, 1, x.table_name)
+    !isempty(x.namespace) && PB.encode(e, 2, x.namespace)
+    !isempty(x.warehouse) && PB.encode(e, 3, x.warehouse)
+    return position(e.io) - initpos
+end
+function PB._encoded_size(x::IcebergLocator)
+    encoded_size = 0
+    !isempty(x.table_name) && (encoded_size += PB._encoded_size(x.table_name, 1))
+    !isempty(x.namespace) && (encoded_size += PB._encoded_size(x.namespace, 2))
+    !isempty(x.warehouse) && (encoded_size += PB._encoded_size(x.warehouse, 3))
     return encoded_size
 end
 
@@ -1525,6 +1617,67 @@ function PB._encoded_size(x::CSVData)
     return encoded_size
 end
 
+struct IcebergData
+    locator::Union{Nothing,IcebergLocator}
+    config::Union{Nothing,IcebergCatalogConfig}
+    columns::Vector{GNFColumn}
+    from_snapshot::String
+    to_snapshot::String
+    returns_delta::Bool
+end
+IcebergData(;locator = nothing, config = nothing, columns = Vector{GNFColumn}(), from_snapshot = "", to_snapshot = "", returns_delta = false) = IcebergData(locator, config, columns, from_snapshot, to_snapshot, returns_delta)
+PB.default_values(::Type{IcebergData}) = (;locator = nothing, config = nothing, columns = Vector{GNFColumn}(), from_snapshot = "", to_snapshot = "", returns_delta = false)
+PB.field_numbers(::Type{IcebergData}) = (;locator = 1, config = 2, columns = 3, from_snapshot = 4, to_snapshot = 5, returns_delta = 6)
+
+function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:IcebergData}, _endpos::Int=0, _group::Bool=false)
+    locator = Ref{Union{Nothing,IcebergLocator}}(nothing)
+    config = Ref{Union{Nothing,IcebergCatalogConfig}}(nothing)
+    columns = PB.BufferedVector{GNFColumn}()
+    from_snapshot = ""
+    to_snapshot = ""
+    returns_delta = false
+    while !PB.message_done(d, _endpos, _group)
+        field_number, wire_type = PB.decode_tag(d)
+        if field_number == 1
+            PB.decode!(d, locator)
+        elseif field_number == 2
+            PB.decode!(d, config)
+        elseif field_number == 3
+            PB.decode!(d, columns)
+        elseif field_number == 4
+            from_snapshot = PB.decode(d, String)
+        elseif field_number == 5
+            to_snapshot = PB.decode(d, String)
+        elseif field_number == 6
+            returns_delta = PB.decode(d, Bool)
+        else
+            Base.skip(d, wire_type)
+        end
+    end
+    return IcebergData(locator[], config[], columns[], from_snapshot, to_snapshot, returns_delta)
+end
+
+function PB.encode(e::PB.AbstractProtoEncoder, x::IcebergData)
+    initpos = position(e.io)
+    !isnothing(x.locator) && PB.encode(e, 1, x.locator)
+    !isnothing(x.config) && PB.encode(e, 2, x.config)
+    !isempty(x.columns) && PB.encode(e, 3, x.columns)
+    !isempty(x.from_snapshot) && PB.encode(e, 4, x.from_snapshot)
+    !isempty(x.to_snapshot) && PB.encode(e, 5, x.to_snapshot)
+    x.returns_delta != false && PB.encode(e, 6, x.returns_delta)
+    return position(e.io) - initpos
+end
+function PB._encoded_size(x::IcebergData)
+    encoded_size = 0
+    !isnothing(x.locator) && (encoded_size += PB._encoded_size(x.locator, 1))
+    !isnothing(x.config) && (encoded_size += PB._encoded_size(x.config, 2))
+    !isempty(x.columns) && (encoded_size += PB._encoded_size(x.columns, 3))
+    !isempty(x.from_snapshot) && (encoded_size += PB._encoded_size(x.from_snapshot, 4))
+    !isempty(x.to_snapshot) && (encoded_size += PB._encoded_size(x.to_snapshot, 5))
+    x.returns_delta != false && (encoded_size += PB._encoded_size(x.returns_delta, 6))
+    return encoded_size
+end
+
 struct Monoid
     value::Union{Nothing,OneOf{<:Union{OrMonoid,MinMonoid,MaxMonoid,SumMonoid}}}
 end
@@ -1778,14 +1931,14 @@ function PB._encoded_size(x::RelTerm)
 end
 
 struct Data
-    data_type::Union{Nothing,OneOf{<:Union{EDB,BeTreeRelation,CSVData}}}
+    data_type::Union{Nothing,OneOf{<:Union{EDB,BeTreeRelation,CSVData,IcebergData}}}
 end
 Data(;data_type = nothing) = Data(data_type)
 PB.oneof_field_types(::Type{Data}) = (;
-    data_type = (;edb=EDB, betree_relation=BeTreeRelation, csv_data=CSVData),
+    data_type = (;edb=EDB, betree_relation=BeTreeRelation, csv_data=CSVData, iceberg_data=IcebergData),
 )
-PB.default_values(::Type{Data}) = (;edb = nothing, betree_relation = nothing, csv_data = nothing)
-PB.field_numbers(::Type{Data}) = (;edb = 1, betree_relation = 2, csv_data = 3)
+PB.default_values(::Type{Data}) = (;edb = nothing, betree_relation = nothing, csv_data = nothing, iceberg_data = nothing)
+PB.field_numbers(::Type{Data}) = (;edb = 1, betree_relation = 2, csv_data = 3, iceberg_data = 4)
 
 function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:Data}, _endpos::Int=0, _group::Bool=false)
     data_type = nothing
@@ -1797,6 +1950,8 @@ function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:Data}, _endpos::Int=0, _
             data_type = OneOf(:betree_relation, PB.decode(d, Ref{BeTreeRelation}))
         elseif field_number == 3
             data_type = OneOf(:csv_data, PB.decode(d, Ref{CSVData}))
+        elseif field_number == 4
+            data_type = OneOf(:iceberg_data, PB.decode(d, Ref{IcebergData}))
         else
             Base.skip(d, wire_type)
         end
@@ -1813,6 +1968,8 @@ function PB.encode(e::PB.AbstractProtoEncoder, x::Data)
         PB.encode(e, 2, x.data_type[]::BeTreeRelation)
     elseif x.data_type.name === :csv_data
         PB.encode(e, 3, x.data_type[]::CSVData)
+    elseif x.data_type.name === :iceberg_data
+        PB.encode(e, 4, x.data_type[]::IcebergData)
     end
     return position(e.io) - initpos
 end
@@ -1825,6 +1982,8 @@ function PB._encoded_size(x::Data)
         encoded_size += PB._encoded_size(x.data_type[]::BeTreeRelation, 2)
     elseif x.data_type.name === :csv_data
         encoded_size += PB._encoded_size(x.data_type[]::CSVData, 3)
+    elseif x.data_type.name === :iceberg_data
+        encoded_size += PB._encoded_size(x.data_type[]::IcebergData, 4)
     end
     return encoded_size
 end

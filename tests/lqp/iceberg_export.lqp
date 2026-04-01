@@ -1,0 +1,66 @@
+(transaction
+  (epoch
+    (writes
+      (define
+        (fragment :f1
+          (def :sales
+            ([id::INT region::STRING amount::FLOAT]
+              (or
+                (and (= id 1) (= region "us-east") (= amount 100.0))
+                (and (= id 2) (= region "eu-west") (= amount 250.5))))))))
+    (reads
+      ;; Minimal export
+      (export_iceberg
+        (export_iceberg_config
+          (iceberg_locator
+            (table_name "sales")
+            (namespace "db" "schema")
+            (warehouse "s3://bucket/warehouse"))
+          (iceberg_catalog_config
+            (catalog_uri "https://catalog.example.com")
+            (properties)
+            (auth_properties))
+          (table_def :sales)
+          (columns
+            (column "id" false)
+            (column "region" false)
+            (column "amount" false))
+          (table_properties)))
+
+      ;; Full export with scope, property maps, and trailing export options
+      (export_iceberg
+        (export_iceberg_config
+          (iceberg_locator
+            (table_name "sales_archive")
+            (namespace "production")
+            (warehouse "s3://bucket/warehouse"))
+          (iceberg_catalog_config
+            (catalog_uri "https://catalog.example.com")
+            (scope "read-only")
+            (properties (prop "client.region" "us-east-1"))
+            (auth_properties
+              (prop "credential" "***")
+              (prop "token" "***")))
+          (table_def :sales)
+          (columns
+            (column "id" false)
+            (column "region" false)
+            (column "amount" false))
+          (table_properties (prop "write.format.default" "parquet"))
+          {:prefix "part" :target_file_size_bytes 268435456 :compression "SNAPPY"}))
+
+      ;; Empty namespace on the locator
+      (export_iceberg
+        (export_iceberg_config
+          (iceberg_locator
+            (table_name "flat_table")
+            (namespace)
+            (warehouse "s3://bucket/default"))
+          (iceberg_catalog_config
+            (catalog_uri "https://catalog.example.com")
+            (properties)
+            (auth_properties))
+          (table_def :sales)
+          (columns
+            (column "id" false))
+          (table_properties))))))

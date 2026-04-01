@@ -347,6 +347,80 @@ Base.:(==)(a::ExportCSVConfig, b::ExportCSVConfig) = a.path == b.path && a.data_
 Base.hash(a::ExportCSVConfig, h::UInt) = hash(a.syntax_escapechar, hash(a.syntax_quotechar, hash(a.syntax_delim, hash(a.syntax_missing_string, hash(a.syntax_header_row, hash(a.compression, hash(a.partition_size, hash(a.data_columns, hash(a.path, h)))))))))
 Base.isequal(a::ExportCSVConfig, b::ExportCSVConfig) = isequal(a.path, b.path) && isequal(a.data_columns, b.data_columns) && isequal(a.partition_size, b.partition_size) && isequal(a.compression, b.compression) && isequal(a.syntax_header_row, b.syntax_header_row) && isequal(a.syntax_missing_string, b.syntax_missing_string) && isequal(a.syntax_delim, b.syntax_delim) && isequal(a.syntax_quotechar, b.syntax_quotechar) && isequal(a.syntax_escapechar, b.syntax_escapechar)
 
+# IcebergLocator
+Base.:(==)(a::IcebergLocator, b::IcebergLocator) =
+    a.table_name == b.table_name && a.namespace == b.namespace && a.warehouse == b.warehouse
+Base.hash(a::IcebergLocator, h::UInt) = hash(a.warehouse, hash(a.namespace, hash(a.table_name, h)))
+Base.isequal(a::IcebergLocator, b::IcebergLocator) =
+    isequal(a.table_name, b.table_name) && isequal(a.namespace, b.namespace) && isequal(a.warehouse, b.warehouse)
+
+# IcebergCatalogConfig
+# auth_properties is omitted from == / hash / isequal: secrets must not define value identity
+# or appear in hashed structures (e.g. Dict keys, caches).
+Base.:(==)(a::IcebergCatalogConfig, b::IcebergCatalogConfig) =
+    a.catalog_uri == b.catalog_uri && a.scope == b.scope && a.properties == b.properties
+Base.hash(a::IcebergCatalogConfig, h::UInt) = hash(a.properties, hash(a.scope, hash(a.catalog_uri, h)))
+Base.isequal(a::IcebergCatalogConfig, b::IcebergCatalogConfig) =
+    isequal(a.catalog_uri, b.catalog_uri) &&
+    isequal(a.scope, b.scope) &&
+    isequal(a.properties, b.properties)
+
+# ExportColumn
+Base.:(==)(a::ExportColumn, b::ExportColumn) =
+    a.name == b.name && a.nullable == b.nullable
+Base.hash(a::ExportColumn, h::UInt) =
+    hash(a.nullable, hash(a.name, h))
+Base.isequal(a::ExportColumn, b::ExportColumn) =
+    isequal(a.name, b.name) && isequal(a.nullable, b.nullable)
+
+# ExportIcebergConfig
+Base.:(==)(a::ExportIcebergConfig, b::ExportIcebergConfig) =
+    a.locator == b.locator &&
+    a.config == b.config &&
+    a.table_def == b.table_def &&
+    a.columns == b.columns &&
+    a.prefix == b.prefix &&
+    a.target_file_size_bytes == b.target_file_size_bytes &&
+    a.compression == b.compression &&
+    a.table_properties == b.table_properties
+Base.hash(a::ExportIcebergConfig, h::UInt) = hash(
+    a.table_properties,
+    hash(
+        a.compression,
+        hash(
+            a.target_file_size_bytes,
+            hash(a.prefix, hash(a.columns, hash(a.table_def, hash(a.config, hash(a.locator, h))))),
+        ),
+    ),
+)
+Base.isequal(a::ExportIcebergConfig, b::ExportIcebergConfig) =
+    isequal(a.locator, b.locator) &&
+    isequal(a.config, b.config) &&
+    isequal(a.table_def, b.table_def) &&
+    isequal(a.columns, b.columns) &&
+    isequal(a.prefix, b.prefix) &&
+    isequal(a.target_file_size_bytes, b.target_file_size_bytes) &&
+    isequal(a.compression, b.compression) &&
+    isequal(a.table_properties, b.table_properties)
+
+# IcebergData
+Base.:(==)(a::IcebergData, b::IcebergData) =
+    a.locator == b.locator &&
+    a.config == b.config &&
+    a.columns == b.columns &&
+    a.from_snapshot == b.from_snapshot &&
+    a.to_snapshot == b.to_snapshot &&
+    a.returns_delta == b.returns_delta
+Base.hash(a::IcebergData, h::UInt) =
+    hash(a.returns_delta, hash(a.to_snapshot, hash(a.from_snapshot, hash(a.columns, hash(a.config, hash(a.locator, h))))))
+Base.isequal(a::IcebergData, b::IcebergData) =
+    isequal(a.locator, b.locator) &&
+    isequal(a.config, b.config) &&
+    isequal(a.columns, b.columns) &&
+    isequal(a.from_snapshot, b.from_snapshot) &&
+    isequal(a.to_snapshot, b.to_snapshot) &&
+    isequal(a.returns_delta, b.returns_delta)
+
 # Demand
 Base.:(==)(a::Demand, b::Demand) = a.relation_id == b.relation_id
 Base.hash(a::Demand, h::UInt) = hash(a.relation_id, h)

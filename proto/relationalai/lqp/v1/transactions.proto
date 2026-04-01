@@ -10,13 +10,13 @@ import "relationalai/lqp/v1/logic.proto";
 message Transaction {
   repeated Epoch epochs = 1;
   Configure configure = 2;
-  optional Sync sync = 3;  
+  optional Sync sync = 3;
 }
 
 message Configure {
   int64 semantics_version = 1;
   IVMConfig ivm_config = 2;
-} 
+}
 
 message IVMConfig {
   MaintenanceLevel level = 1;
@@ -116,6 +116,24 @@ message ExportCSVSource {
   }
 }
 
+// Iceberg Export config
+
+message ExportColumn {
+  string name = 1;
+  bool nullable = 2;
+}
+
+message ExportIcebergConfig {
+  IcebergLocator locator = 1;
+  IcebergCatalogConfig config = 2;
+  RelationId table_def = 3;              // Which definition to export as a table.
+  repeated ExportColumn columns = 4;
+  optional string prefix = 5;            // File name prefix for parquet files that are produced.
+  optional int64 target_file_size_bytes = 6;
+  string compression = 7;
+  map<string, string> table_properties = 8;
+}
+
 //
 // Read operations
 //
@@ -142,6 +160,7 @@ message Output {
 message Export {
   oneof export_config {
     ExportCSVConfig csv_config = 1;
+    ExportIcebergConfig iceberg_config = 2;
 
     // TODO: support JSON export
   }

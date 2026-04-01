@@ -4,6 +4,7 @@ from .proto_ast import ProtoField, ProtoMessage
 from .proto_parser import ProtoParser
 from .target import (
     BaseType,
+    DictType,
     FunctionType,
     MessageType,
     OptionType,
@@ -25,6 +26,13 @@ _PRIMITIVE_TO_BASE_TYPE = {
     "float": "Float32",
     "bytes": "Bytes",
 }
+
+
+def _scalar_to_target(type_name: str) -> TargetType:
+    """Convert a scalar proto type name to a TargetType."""
+    if type_name in _PRIMITIVE_TO_BASE_TYPE:
+        return BaseType(_PRIMITIVE_TO_BASE_TYPE[type_name])
+    raise ValueError(f"Unknown scalar proto type for map: {type_name}")
 
 
 class TypeEnv:
@@ -87,6 +95,12 @@ class TypeEnv:
 
     def _proto_type_to_target(self, proto_field: ProtoField) -> TargetType:
         """Convert a protobuf field to its target type."""
+        # Handle map fields
+        if proto_field.is_map:
+            key_type = _scalar_to_target(proto_field.map_key_type)
+            value_type = _scalar_to_target(proto_field.map_value_type)
+            return DictType(key_type, value_type)
+
         # Get base type
         base_type: TargetType
         if proto_field.type in _PRIMITIVE_TO_BASE_TYPE:

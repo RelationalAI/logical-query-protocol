@@ -116,6 +116,25 @@
 %nonterm export_csv_config transactions.ExportCSVConfig
 %nonterm export_csv_path String
 %nonterm export_csv_source transactions.ExportCSVSource
+%nonterm export_iceberg_column transactions.ExportColumn
+%nonterm export_iceberg_columns Sequence[transactions.ExportColumn]
+%nonterm export_iceberg_config transactions.ExportIcebergConfig
+%nonterm export_iceberg_table_def logic.RelationId
+%nonterm iceberg_auth_properties Sequence[Tuple[String, String]]
+%nonterm iceberg_catalog_config logic.IcebergCatalogConfig
+%nonterm iceberg_catalog_config_scope String
+%nonterm iceberg_catalog_uri String
+%nonterm iceberg_data logic.IcebergData
+%nonterm iceberg_from_snapshot String
+%nonterm iceberg_locator logic.IcebergLocator
+%nonterm iceberg_locator_namespace Sequence[String]
+%nonterm iceberg_locator_table_name String
+%nonterm iceberg_locator_warehouse String
+%nonterm iceberg_masked_property_entry Tuple[String, String]
+%nonterm iceberg_properties Sequence[Tuple[String, String]]
+%nonterm iceberg_property_entry Tuple[String, String]
+%nonterm iceberg_table_properties Sequence[Tuple[String, String]]
+%nonterm iceberg_to_snapshot String
 %nonterm false logic.Disjunction
 %nonterm ffi logic.FFI
 %nonterm ffi_args Sequence[logic.Abstraction]
@@ -1039,6 +1058,10 @@ data
       construct: $$ = logic.Data(csv_data=$1)
       deconstruct if builtin.has_proto_field($$, 'csv_data'):
         $1: logic.CSVData = $$.csv_data
+    | iceberg_data
+      construct: $$ = logic.Data(iceberg_data=$1)
+      deconstruct if builtin.has_proto_field($$, 'iceberg_data'):
+        $1: logic.IcebergData = $$.iceberg_data
 
 edb_path
     : "[" STRING* "]"
@@ -1126,6 +1149,100 @@ gnf_column
         $4: Optional[logic.RelationId] = $$.target_id if builtin.has_proto_field($$, "target_id") else None
         $6: Sequence[logic.Type] = $$.types
 
+iceberg_property_entry
+    : "(" "prop" STRING STRING ")"
+      construct: $$ = builtin.tuple($3, $4)
+      deconstruct:
+        $3: String = $$[0]
+        $4: String = $$[1]
+
+iceberg_masked_property_entry
+    : "(" "prop" STRING STRING ")"
+      construct: $$ = builtin.tuple($3, $4)
+      deconstruct:
+        $3: String = $$[0]
+        $4: String = mask_secret_value($$)
+
+iceberg_from_snapshot
+    : "(" "from_snapshot" STRING ")"
+      construct: $$ = $3
+      deconstruct: $3: String = $$
+
+iceberg_locator_table_name
+    : "(" "table_name" STRING ")"
+      construct: $$ = $3
+      deconstruct: $3: String = $$
+
+iceberg_locator_namespace
+    : "(" "namespace" STRING* ")"
+      construct: $$ = $3
+      deconstruct: $3: Sequence[String] = $$
+
+iceberg_locator_warehouse
+    : "(" "warehouse" STRING ")"
+      construct: $$ = $3
+      deconstruct: $3: String = $$
+
+iceberg_locator
+    : "(" "iceberg_locator" iceberg_locator_table_name iceberg_locator_namespace iceberg_locator_warehouse ")"
+      construct: $$ = logic.IcebergLocator(table_name=$3, namespace=$4, warehouse=$5)
+      deconstruct:
+        $3: String = $$.table_name
+        $4: Sequence[String] = $$.namespace
+        $5: String = $$.warehouse
+
+iceberg_catalog_config_scope
+    : "(" "scope" STRING ")"
+      construct: $$ = $3
+      deconstruct: $3: String = $$
+
+iceberg_catalog_uri
+    : "(" "catalog_uri" STRING ")"
+      construct: $$ = $3
+      deconstruct: $3: String = $$
+
+iceberg_properties
+    : "(" "properties" iceberg_property_entry* ")"
+      construct: $$ = $3
+      deconstruct: $3: Sequence[Tuple[String, String]] = $$
+
+iceberg_auth_properties
+    : "(" "auth_properties" iceberg_masked_property_entry* ")"
+      construct: $$ = $3
+      deconstruct: $3: Sequence[Tuple[String, String]] = $$
+
+iceberg_catalog_config
+    : "(" "iceberg_catalog_config" iceberg_catalog_uri iceberg_catalog_config_scope? iceberg_properties iceberg_auth_properties ")"
+      construct: $$ = construct_iceberg_catalog_config($3, $4, $5, $6)
+      deconstruct:
+        $3: String = $$.catalog_uri
+        $4: Optional[String] = deconstruct_iceberg_catalog_config_scope_optional($$)
+        $5: Sequence[Tuple[String, String]] = builtin.dict_to_pairs($$.properties)
+        $6: Sequence[Tuple[String, String]] = builtin.dict_to_pairs($$.auth_properties)
+
+export_iceberg_column
+    : "(" "column" STRING boolean_value ")"
+      construct: $$ = transactions.ExportColumn(name=$3, nullable=$4)
+      deconstruct:
+        $3: String = $$.name
+        $4: Boolean = $$.nullable
+
+iceberg_to_snapshot
+    : "(" "to_snapshot" STRING ")"
+      construct: $$ = $3
+      deconstruct: $3: String = $$
+
+iceberg_data
+    : "(" "iceberg_data" iceberg_locator iceberg_catalog_config gnf_columns iceberg_from_snapshot? iceberg_to_snapshot? boolean_value ")"
+      construct: $$ = construct_iceberg_data($3, $4, $5, $6, $7, $8)
+      deconstruct:
+        $3: logic.IcebergLocator = $$.locator
+        $4: logic.IcebergCatalogConfig = $$.config
+        $5: Sequence[logic.GNFColumn] = $$.columns
+        $6: Optional[String] = deconstruct_iceberg_data_from_snapshot_optional($$)
+        $7: Optional[String] = deconstruct_iceberg_data_to_snapshot_optional($$)
+        $8: Boolean = $$.returns_delta
+
 undefine
     : "(" "undefine" fragment_id ")"
       construct: $$ = transactions.Undefine(fragment_id=$3)
@@ -1202,7 +1319,12 @@ abort
 export
     : "(" "export" export_csv_config ")"
       construct: $$ = transactions.Export(csv_config=$3)
-      deconstruct: $3: transactions.ExportCSVConfig = $$.csv_config
+      deconstruct if builtin.has_proto_field($$, 'csv_config'):
+        $3: transactions.ExportCSVConfig = $$.csv_config
+    | "(" "export_iceberg" export_iceberg_config ")"
+      construct: $$ = transactions.Export(iceberg_config=$3)
+      deconstruct if builtin.has_proto_field($$, 'iceberg_config'):
+        $3: transactions.ExportIcebergConfig = $$.iceberg_config
 
 export_csv_config
     : "(" "export_csv_config_v2" export_csv_path export_csv_source csv_config ")"
@@ -1240,6 +1362,32 @@ export_csv_source
       construct: $$ = transactions.ExportCSVSource(table_def=$3)
       deconstruct if builtin.has_proto_field($$, 'table_def'):
         $3: logic.RelationId = $$.table_def
+
+export_iceberg_table_def
+    : "(" "table_def" relation_id ")"
+      construct: $$ = $3
+      deconstruct: $3: logic.RelationId = $$
+
+export_iceberg_columns
+    : "(" "columns" export_iceberg_column* ")"
+      construct: $$ = $3
+      deconstruct: $3: Sequence[transactions.ExportColumn] = $$
+
+iceberg_table_properties
+    : "(" "table_properties" iceberg_property_entry* ")"
+      construct: $$ = $3
+      deconstruct: $3: Sequence[Tuple[String, String]] = $$
+
+export_iceberg_config
+    : "(" "export_iceberg_config" iceberg_locator iceberg_catalog_config export_iceberg_table_def export_iceberg_columns iceberg_table_properties config_dict? ")"
+      construct: $$ = construct_export_iceberg_config_full($3, $4, $5, $6, $7, $8)
+      deconstruct:
+        $3: logic.IcebergLocator = $$.locator
+        $4: logic.IcebergCatalogConfig = $$.config
+        $5: logic.RelationId = $$.table_def
+        $6: Sequence[transactions.ExportColumn] = $$.columns
+        $7: Sequence[Tuple[String, String]] = builtin.dict_to_pairs($$.table_properties)
+        $8: Optional[Sequence[Tuple[String, logic.Value]]] = deconstruct_export_iceberg_config_optional($$)
 
 
 %%
@@ -1556,6 +1704,102 @@ def deconstruct_export_csv_config(msg: transactions.ExportCSVConfig) -> List[Tup
     if msg.syntax_escapechar is not None:
         builtin.list_push(result, builtin.tuple("syntax_escapechar", _make_value_string(builtin.unwrap_option(msg.syntax_escapechar))))
     return builtin.list_sort(result)
+
+
+def construct_iceberg_catalog_config(
+    catalog_uri: String,
+    scope_opt: Optional[String],
+    property_pairs: Sequence[Tuple[String, String]],
+    auth_property_pairs: Sequence[Tuple[String, String]],
+) -> logic.IcebergCatalogConfig:
+    props: Dict[String, String] = builtin.string_map_from_pairs(property_pairs)
+    auth_props: Dict[String, String] = builtin.string_map_from_pairs(auth_property_pairs)
+    return logic.IcebergCatalogConfig(
+        catalog_uri=catalog_uri,
+        scope=builtin.some(builtin.unwrap_option_or(scope_opt, "")),
+        properties=props,
+        auth_properties=auth_props,
+    )
+
+
+def mask_secret_value(pair: Tuple[String, String]) -> String:
+    return "***"
+
+
+def deconstruct_iceberg_catalog_config_scope_optional(msg: logic.IcebergCatalogConfig) -> Optional[String]:
+    if builtin.unwrap_option(msg.scope) != "":
+        return builtin.some(builtin.unwrap_option(msg.scope))
+    return builtin.none()
+
+
+def construct_iceberg_data(
+    locator: logic.IcebergLocator,
+    config: logic.IcebergCatalogConfig,
+    columns: Sequence[logic.GNFColumn],
+    from_snapshot_opt: Optional[String],
+    to_snapshot_opt: Optional[String],
+    returns_delta: Boolean,
+) -> logic.IcebergData:
+    return logic.IcebergData(
+        locator=locator,
+        config=config,
+        columns=columns,
+        from_snapshot=builtin.some(builtin.unwrap_option_or(from_snapshot_opt, "")),
+        to_snapshot=builtin.some(builtin.unwrap_option_or(to_snapshot_opt, "")),
+        returns_delta=returns_delta,
+    )
+
+
+def deconstruct_iceberg_data_from_snapshot_optional(msg: logic.IcebergData) -> Optional[String]:
+    if builtin.unwrap_option(msg.from_snapshot) != "":
+        return builtin.some(builtin.unwrap_option(msg.from_snapshot))
+    return builtin.none()
+
+
+def deconstruct_iceberg_data_to_snapshot_optional(msg: logic.IcebergData) -> Optional[String]:
+    if builtin.unwrap_option(msg.to_snapshot) != "":
+        return builtin.some(builtin.unwrap_option(msg.to_snapshot))
+    return builtin.none()
+
+
+def construct_export_iceberg_config_full(
+    locator: logic.IcebergLocator,
+    config: logic.IcebergCatalogConfig,
+    table_def: logic.RelationId,
+    columns: Sequence[transactions.ExportColumn],
+    table_property_pairs: Sequence[Tuple[String, String]],
+    config_dict: Optional[Sequence[Tuple[String, logic.Value]]],
+) -> transactions.ExportIcebergConfig:
+    cfg: Dict[String, logic.Value] = builtin.dict_from_list(builtin.unwrap_option_or(config_dict, list[Tuple[String, logic.Value]]()))
+    prefix: String = _extract_value_string(builtin.dict_get(cfg, "prefix"), "")
+    target_file_size_bytes: int = _extract_value_int64(builtin.dict_get(cfg, "target_file_size_bytes"), 0)
+    compression: String = _extract_value_string(builtin.dict_get(cfg, "compression"), "")
+    table_props: Dict[String, String] = builtin.string_map_from_pairs(table_property_pairs)
+    return transactions.ExportIcebergConfig(
+        locator=locator,
+        config=config,
+        table_def=table_def,
+        columns=columns,
+        prefix=builtin.some(prefix),
+        target_file_size_bytes=builtin.some(target_file_size_bytes),
+        compression=compression,
+        table_properties=table_props,
+    )
+
+
+def deconstruct_export_iceberg_config_optional(
+    msg: transactions.ExportIcebergConfig,
+) -> Optional[Sequence[Tuple[String, logic.Value]]]:
+    result: List[Tuple[String, logic.Value]] = list[Tuple[String, logic.Value]]()
+    if builtin.unwrap_option(msg.prefix) != "":
+        builtin.list_push(result, builtin.tuple("prefix", _make_value_string(builtin.unwrap_option(msg.prefix))))
+    if builtin.unwrap_option(msg.target_file_size_bytes) != 0:
+        builtin.list_push(result, builtin.tuple("target_file_size_bytes", _make_value_int64(builtin.unwrap_option(msg.target_file_size_bytes))))
+    if msg.compression != "":
+        builtin.list_push(result, builtin.tuple("compression", _make_value_string(msg.compression)))
+    if builtin.length(result) == 0:
+        return None
+    return builtin.some(builtin.list_sort(result))
 
 
 def deconstruct_relation_id_string(msg: logic.RelationId) -> String:

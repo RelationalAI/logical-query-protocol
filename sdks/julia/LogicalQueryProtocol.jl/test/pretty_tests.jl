@@ -88,14 +88,15 @@ end
 
     pp = PrettyPrinter()
     txn = Proto.Transaction(Proto.Epoch[], nothing, nothing)
-    msg_id = objectid(txn)
+    pretty_fn = (pp, msg) -> Base.write(pp, "(transaction)")
+    memo_key = (objectid(txn), objectid(pretty_fn))
 
-    @test !haskey(pp._memo, msg_id)
+    @test !haskey(pp._memo, memo_key)
 
     # After try_flat, the memo dict should be populated
-    result = try_flat(pp, txn, (pp, msg) -> Base.write(pp, "(transaction)"))
-    @test haskey(pp._memo, msg_id)
-    @test pp._memo[msg_id] == "(transaction)"
+    result = try_flat(pp, txn, pretty_fn)
+    @test haskey(pp._memo, memo_key)
+    @test pp._memo[memo_key] == "(transaction)"
 end
 
 @testitem "Pretty printer - narrow width roundtrip" setup=[ParserSetup, PrettySetup] begin
