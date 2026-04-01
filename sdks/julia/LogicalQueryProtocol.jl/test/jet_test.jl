@@ -17,7 +17,8 @@
     # At runtime, the preceding `_has_proto_field` guard ensures correctness.
     function is_oneof_field_false_positive(report)
         msg = sprint(show, report)
-        return occursin("has no field args", msg) || occursin("has no field scale", msg)
+        return occursin("has no field args", msg) || occursin("has no field scale", msg) ||
+               occursin("has no field data_columns", msg)
     end
 
     # Filter BoundsError false positives from array internals in generated code.
