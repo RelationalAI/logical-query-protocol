@@ -149,6 +149,15 @@ function global_ids(data::Data)
             end
         end
         return ids
+    elseif dt.name == :iceberg_data
+        iceberg_data = dt[]::IcebergData
+        ids = LQPRelationId[]
+        for column in iceberg_data.columns
+            if !isnothing(column.target_id)
+                push!(ids, persistent_id(column.target_id))
+            end
+        end
+        return ids
     else
         @assert _is_valid_data(data)
     end
@@ -156,5 +165,5 @@ end
 
 function _is_valid_data(data::Data)
     dt = data.data_type
-    return !isnothing(dt) && dt.name in [:edb, :betree_relation, :csv_data]
+    return !isnothing(dt) && dt.name in [:edb, :betree_relation, :csv_data, :iceberg_data]
 end
