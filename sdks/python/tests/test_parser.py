@@ -68,6 +68,25 @@ def test_parse_transaction_rejects_fragment():
         parse_transaction(_SIMPLE_FRAGMENT)
 
 
+class TestSymbolLexing:
+    """Tests for SYMBOL token regex — hyphen must be literal, not a range."""
+
+    def test_hyphenated_symbol(self):
+        tokens = Lexer("my-relation").tokens
+        assert tokens[0].type == "SYMBOL"
+        assert tokens[0].value == "my-relation"
+
+    def test_symbol_with_hash_and_slash(self):
+        tokens = Lexer("base/#output").tokens
+        assert tokens[0].type == "SYMBOL"
+        assert tokens[0].value == "base/#output"
+
+    def test_dollar_is_not_part_of_symbol(self):
+        # '$' is not a valid SYMBOL character — the lexer should fail on it
+        with pytest.raises(ParseError):
+            Lexer("foo$bar")
+
+
 class TestScanFloat32:
     """Tests for parsing float32 literals including inf32 and nan32."""
 
