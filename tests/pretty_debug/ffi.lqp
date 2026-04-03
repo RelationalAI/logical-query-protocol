@@ -5,31 +5,31 @@
       (define
         (fragment
           :primitives
-          (def 0x4e932d1b80f49b00ba7350477d80c7f3 ([v::INT] (or (= v 5) (= v 12) (= v 3))))
+          (def 0x9f0126cb96dd19a27dbffcae23a7f5a3 ([v::INT] (or (= v 5) (= v 12) (= v 3))))
           (def
-            0xa93d84f745c1ae7ea329ef8141b99c24
+            0x32fcad607184eaa3c53d10d20098b06
             ([ord::INT v::INT]
              (ffi
                :rel_primitive_sort
-               (args ([x::INT] (atom 0x4e932d1b80f49b00ba7350477d80c7f3 x)))
+               (args ([x::INT] (atom 0x9f0126cb96dd19a27dbffcae23a7f5a3 x)))
                (terms ord v))))
           (def
-            0x5cae881d15540dcdfad95d983cf22267
+            0xe79c53c5f561124bd52f4777c19a1aa5
             ([ord::INT v::INT]
              (ffi
                :rel_primitive_top
                (args
-                 ([x::INT] (atom 0x4e932d1b80f49b00ba7350477d80c7f3 x))
+                 ([x::INT] (atom 0x9f0126cb96dd19a27dbffcae23a7f5a3 x))
                  ([limit::INT] (= limit 2)))
                (terms ord v)))))))
     (reads
-      (output :numbers 0x4e932d1b80f49b00ba7350477d80c7f3)
-      (output :limit_sorted_numbers 0x5cae881d15540dcdfad95d983cf22267)
-      (output :sorted_numbers 0xa93d84f745c1ae7ea329ef8141b99c24))))
+      (output :numbers 0x9f0126cb96dd19a27dbffcae23a7f5a3)
+      (output :limit_sorted_numbers 0xe79c53c5f561124bd52f4777c19a1aa5)
+      (output :sorted_numbers 0x32fcad607184eaa3c53d10d20098b06))))
 
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `0x5cae881d15540dcdfad95d983cf22267` -> `limit_sorted_numbers`
-;; 	 ID `0x4e932d1b80f49b00ba7350477d80c7f3` -> `numbers`
-;; 	 ID `0xa93d84f745c1ae7ea329ef8141b99c24` -> `sorted_numbers`
+;; 	 ID `0xe79c53c5f561124bd52f4777c19a1aa5` -> `limit_sorted_numbers`
+;; 	 ID `0x9f0126cb96dd19a27dbffcae23a7f5a3` -> `numbers`
+;; 	 ID `0x32fcad607184eaa3c53d10d20098b06` -> `sorted_numbers`

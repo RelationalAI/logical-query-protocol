@@ -6,7 +6,7 @@
         (fragment
           :f1
           (def
-            0x27eb4a5296e44e3d56d7c4b34e26e2bc
+            0xdb082e79a9a791f63da5247a16359ee8
             ([plus::(DECIMAL 18 6)
               minus::(DECIMAL 18 6)
               mult::(DECIMAL 18 6)
@@ -21,7 +21,7 @@
                  (* a b mult)
                  (/ a b div)))))
           (def
-            0xb4eb0700018793991956c583f10eda04
+            0x5dd6740906b064e971dd75acb0d251ec
             ([plus::(DECIMAL 38 10)
               minus::(DECIMAL 38 10)
               mult::(DECIMAL 38 10)
@@ -36,11 +36,11 @@
                  (* a b mult)
                  (/ a b div))))))))
     (reads
-      (output :dec_64 0x27eb4a5296e44e3d56d7c4b34e26e2bc)
-      (output :dec_128 0xb4eb0700018793991956c583f10eda04))))
+      (output :dec_64 0xdb082e79a9a791f63da5247a16359ee8)
+      (output :dec_128 0x5dd6740906b064e971dd75acb0d251ec))))
 
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `0xb4eb0700018793991956c583f10eda04` -> `decimal_128`
-;; 	 ID `0x27eb4a5296e44e3d56d7c4b34e26e2bc` -> `decimal_64`
+;; 	 ID `0x5dd6740906b064e971dd75acb0d251ec` -> `decimal_128`
+;; 	 ID `0xdb082e79a9a791f63da5247a16359ee8` -> `decimal_64`

@@ -5,17 +5,17 @@
       (define
         (fragment
           :f1
-          (def 0xbd89d4d43e0df6c476d0ab471b825a73 ([x::INT y::INT] (and (= x 1) (< x y))))
-          (def 0x1f694c7749798d9027729468973ad096 ([x::INT y::INT] (and (= x 2) (<= x y))))
-          (def 0xacc3f18e3b5341404cee7f0430b7fd84 ([x::INT y::INT] (and (= x 3) (> x y)))))))
+          (def 0x1863bbb7b8c224180bd60f8c4ccf5e13 ([x::INT y::INT] (and (= x 1) (< x y))))
+          (def 0x7c55cce2c2d59099aade8dde91ecb960 ([x::INT y::INT] (and (= x 2) (<= x y))))
+          (def 0x87aa06b051990a7f208f60a7e58d10de ([x::INT y::INT] (and (= x 3) (> x y)))))))
     (reads
-      (output :lt_result 0xbd89d4d43e0df6c476d0ab471b825a73)
-      (output :le_result 0x1f694c7749798d9027729468973ad096)
-      (output :gt_result 0xacc3f18e3b5341404cee7f0430b7fd84))))
+      (output :lt_result 0x1863bbb7b8c224180bd60f8c4ccf5e13)
+      (output :le_result 0x7c55cce2c2d59099aade8dde91ecb960)
+      (output :gt_result 0x87aa06b051990a7f208f60a7e58d10de))))
 
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `0xacc3f18e3b5341404cee7f0430b7fd84` -> `gt_result`
-;; 	 ID `0x1f694c7749798d9027729468973ad096` -> `le_result`
-;; 	 ID `0xbd89d4d43e0df6c476d0ab471b825a73` -> `lt_result`
+;; 	 ID `0x87aa06b051990a7f208f60a7e58d10de` -> `gt_result`
+;; 	 ID `0x7c55cce2c2d59099aade8dde91ecb960` -> `le_result`
+;; 	 ID `0x1863bbb7b8c224180bd60f8c4ccf5e13` -> `lt_result`

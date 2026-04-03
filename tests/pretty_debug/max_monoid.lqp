@@ -6,37 +6,37 @@
         (fragment
           :f1
           (algorithm
-            0xb11720c79eacdc4e2501626f6f3691a7
+            0x2d8a69513b5e1e29a29a4048ffb16e27
             (script
               (loop
                 (init
                   (assign
-                    0xb11720c79eacdc4e2501626f6f3691a7
+                    0x2d8a69513b5e1e29a29a4048ffb16e27
                     ([x::INT y::INT] (or (and (= x 1) (= y 10)) (and (= x 2) (= y 20)))))
                   (assign
-                    0x9e1b0818ee37330aa8eaf6e0c71355a2
+                    0x2ed09e00af8531c8f7bb2542764027e7
                     ([x::INT y::INT] (and (= x 1) (= y 15)))
                     (attrs (attribute :function)))
-                  (assign 0x8e118fa8576cabfde73a19aa476cdc9c ([] (false))))
+                  (assign 0xadbe254c82095d39531f5e5c1314bdd ([] (false))))
                 (script
                   (monoid
                     (max INT)
-                    0xb11720c79eacdc4e2501626f6f3691a7
-                    ([x::INT | y::INT] (atom 0x9e1b0818ee37330aa8eaf6e0c71355a2 x y))
+                    0x2d8a69513b5e1e29a29a4048ffb16e27
+                    ([x::INT | y::INT] (atom 0x2ed09e00af8531c8f7bb2542764027e7 x y))
                     (attrs (attribute :function)))
                   (upsert
-                    0xb11720c79eacdc4e2501626f6f3691a7
-                    ([x::INT y::INT] (atom 0x9e1b0818ee37330aa8eaf6e0c71355a2 x y))
+                    0x2d8a69513b5e1e29a29a4048ffb16e27
+                    ([x::INT y::INT] (atom 0x2ed09e00af8531c8f7bb2542764027e7 x y))
                     (attrs (attribute :function)))
                   (break
-                    0x8e118fa8576cabfde73a19aa476cdc9c
+                    0xadbe254c82095d39531f5e5c1314bdd
                     ([] (true))
                     (attrs (attribute :function))))))))))
-    (reads (output :R1 0xb11720c79eacdc4e2501626f6f3691a7))))
+    (reads (output :R1 0x2d8a69513b5e1e29a29a4048ffb16e27))))
 
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `0xb11720c79eacdc4e2501626f6f3691a7` -> `R1`
-;; 	 ID `0x9e1b0818ee37330aa8eaf6e0c71355a2` -> `U`
-;; 	 ID `0x8e118fa8576cabfde73a19aa476cdc9c` -> `always`
+;; 	 ID `0x2d8a69513b5e1e29a29a4048ffb16e27` -> `R1`
+;; 	 ID `0x2ed09e00af8531c8f7bb2542764027e7` -> `U`
+;; 	 ID `0xadbe254c82095d39531f5e5c1314bdd` -> `always`

@@ -4,7 +4,7 @@
     (writes (define (fragment :f1 (def :output ([v::INT] (atom :hello v))))))
     (reads
       (output :epoch0 :output)
-      (output :nonexistent 0xf4be5705461652bea0d04f6e2dbc4579)))
+      (output :nonexistent 0x83a80b6af0acbcdf06866f5c473b9367)))
   (epoch
     (writes (define (fragment :f2 (def :hello ([v::INT] (= v 101))))))
     (reads (output :epoch1 :output))))

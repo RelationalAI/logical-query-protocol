@@ -6,13 +6,13 @@
         (fragment
           :f1
           (def
-            0x3441301d3c459bf98fc6ff686bb4262c
+            0x13422d706483bfa0f98a5e886266e7ae
             ([a::INT b::INT]
              (or (and (= a 1) (= b 2)) (and (= a 1) (= b 3)) (and (= a 1) (= b 4))))
             (attrs (attribute :function) (attribute :inspect "normalizer" 2))))))
-    (reads (output :foo 0x3441301d3c459bf98fc6ff686bb4262c))))
+    (reads (output :foo 0x13422d706483bfa0f98a5e886266e7ae))))
 
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `0x3441301d3c459bf98fc6ff686bb4262c` -> `foo`
+;; 	 ID `0x13422d706483bfa0f98a5e886266e7ae` -> `foo`

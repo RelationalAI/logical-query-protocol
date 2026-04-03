@@ -5,22 +5,22 @@
       (define
         (fragment
           :f1
-          (def 0x1b64ac5dd84bdc375873b0d1108a29d9 ([v::INT] (+ 1 1 v)))
-          (def 0x95ae0342d07ef4a05fe08506b58beee0 ([v::INT] (= v 101))))))
+          (def 0xf3cef27a47e5d53a54f2f3f5b2fcffa ([v::INT] (+ 1 1 v)))
+          (def 0x3fdfd055f5bd2892ea186504254f8c3a ([v::INT] (= v 101))))))
     (reads
-      (output :output_0 0x95ae0342d07ef4a05fe08506b58beee0)
-      (output :other_0 0x1b64ac5dd84bdc375873b0d1108a29d9)))
+      (output :output_0 0x3fdfd055f5bd2892ea186504254f8c3a)
+      (output :other_0 0xf3cef27a47e5d53a54f2f3f5b2fcffa)))
   (epoch
     (writes
       (undefine :f1)
       (define
-        (fragment :f1 (def 0x95ae0342d07ef4a05fe08506b58beee0 ([v::STRING] (= v "hello"))))))
+        (fragment :f1 (def 0x3fdfd055f5bd2892ea186504254f8c3a ([v::STRING] (= v "hello"))))))
     (reads
-      (output :output_1 0x95ae0342d07ef4a05fe08506b58beee0)
-      (output :other_1 0x1b64ac5dd84bdc375873b0d1108a29d9))))
+      (output :output_1 0x3fdfd055f5bd2892ea186504254f8c3a)
+      (output :other_1 0xf3cef27a47e5d53a54f2f3f5b2fcffa))))
 
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `0x1b64ac5dd84bdc375873b0d1108a29d9` -> `other`
-;; 	 ID `0x95ae0342d07ef4a05fe08506b58beee0` -> `output`
+;; 	 ID `0xf3cef27a47e5d53a54f2f3f5b2fcffa` -> `other`
+;; 	 ID `0x3fdfd055f5bd2892ea186504254f8c3a` -> `output`

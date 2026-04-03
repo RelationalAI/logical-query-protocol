@@ -6,7 +6,7 @@
         (fragment
           :model
           (def
-            0xeadf4a31847de7a64fed1cd04e674068
+            0xf44a09a31b0d1e0fcae630e6f3e6a228
             ([person::UINT128]
              (primitive
                :rel_primitive_hash_tuple_uint128
@@ -17,18 +17,18 @@
                10
                person)))
           (def
-            0x9b72183282d5f4e605b8818e532cbcfb
-            ([person::UINT128] (atom 0xeadf4a31847de7a64fed1cd04e674068 person)))
+            0x57dfa3e1141b4ee492e75b7e64aa1f3b
+            ([person::UINT128] (atom 0xf44a09a31b0d1e0fcae630e6f3e6a228 person)))
           (def
-            0x48f5c2d8dbfda693891507a618d482b0
+            0x825623221e4c22cd147d52315891dc23
             ([person::UINT128 cvar::STRING]
-             (and (= cvar "Alice") (atom 0xeadf4a31847de7a64fed1cd04e674068 person))))
+             (and (= cvar "Alice") (atom 0xf44a09a31b0d1e0fcae630e6f3e6a228 person))))
           (def
-            0x5a3ef9fc8181625a898e69e1ff72bb83
+            0x43df9f7082696d69cf49ae1b41409e8e
             ([person::UINT128 cvar_2::INT]
-             (and (= cvar_2 10) (atom 0xeadf4a31847de7a64fed1cd04e674068 person))))
+             (and (= cvar_2 10) (atom 0xf44a09a31b0d1e0fcae630e6f3e6a228 person))))
           (def
-            0x93ed689b184ede70bff81f48199c9074
+            0x76302b7b0b1fa9d769fdb0ea4612cb5e
             ([person_2::UINT128]
              (primitive
                :rel_primitive_hash_tuple_uint128
@@ -39,18 +39,18 @@
                30
                person_2)))
           (def
-            0xb827cac053d55da3d2f67fb6e3dd81fe
-            ([person_2::UINT128] (atom 0x93ed689b184ede70bff81f48199c9074 person_2)))
+            0x1698a84e2a406c3c0c037ebb9d880168
+            ([person_2::UINT128] (atom 0x76302b7b0b1fa9d769fdb0ea4612cb5e person_2)))
           (def
-            0x71c0d767fe8f089a31b2c5757b470213
+            0xf2b78b782105f3e98a38073ae33a2c7e
             ([person_2::UINT128 cvar_3::STRING]
-             (and (= cvar_3 "Bob") (atom 0x93ed689b184ede70bff81f48199c9074 person_2))))
+             (and (= cvar_3 "Bob") (atom 0x76302b7b0b1fa9d769fdb0ea4612cb5e person_2))))
           (def
-            0x8beed42ac62ba3897005c7e2ccbec30e
+            0xeb9a82a593a749b3b7736745a8bb7f2b
             ([person_2::UINT128 cvar_4::INT]
-             (and (= cvar_4 30) (atom 0x93ed689b184ede70bff81f48199c9074 person_2))))
+             (and (= cvar_4 30) (atom 0x76302b7b0b1fa9d769fdb0ea4612cb5e person_2))))
           (def
-            0x15a30f6f40eecc34abf74ebe51e52871
+            0x8feb2cc9fa621a563206d81290081dad
             ([person_3::UINT128]
              (primitive
                :rel_primitive_hash_tuple_uint128
@@ -61,33 +61,33 @@
                50
                person_3)))
           (def
-            0x51d3f71545ec84cdebf33b4f917e61c1
-            ([person_3::UINT128] (atom 0x15a30f6f40eecc34abf74ebe51e52871 person_3)))
+            0x6bd98ff82afbc630a69bfc812a69321b
+            ([person_3::UINT128] (atom 0x8feb2cc9fa621a563206d81290081dad person_3)))
           (def
-            0x1e6947e23b3551da02d62928587a7c2c
+            0x67ecca39f64a67b8f29414e1da5e740f
             ([person_3::UINT128 cvar_5::STRING]
-             (and (= cvar_5 "Charlie") (atom 0x15a30f6f40eecc34abf74ebe51e52871 person_3))))
+             (and (= cvar_5 "Charlie") (atom 0x8feb2cc9fa621a563206d81290081dad person_3))))
           (def
-            0x3109221597cc014bb7a9db07bd2f6bf7
+            0xcd08936a7b0cb8ff9d39a79c6c396d96
             ([person_3::UINT128 cvar_6::INT]
-             (and (= cvar_6 50) (atom 0x15a30f6f40eecc34abf74ebe51e52871 person_3))))
+             (and (= cvar_6 50) (atom 0x8feb2cc9fa621a563206d81290081dad person_3))))
           (def
-            0xeccd60f13155914e0dfc5ebee15f3f9c
+            0xd28c8eae3c0986a7b386bd6f6e38cc8b
             ([pet::UINT128]
              (primitive :rel_primitive_hash_tuple_uint128 "Pet" "name" "boots" "age" 1 pet)))
           (def
-            0x901378de3e4803aa3a668ca427bd74d2
-            ([pet::UINT128] (atom 0xeccd60f13155914e0dfc5ebee15f3f9c pet)))
+            0xfa1f378d0cf394c64a02055a0adc3379
+            ([pet::UINT128] (atom 0xd28c8eae3c0986a7b386bd6f6e38cc8b pet)))
           (def
-            0x1eb5be9f70c443146fbc9fb8334fd4d4
+            0x43ba7666140138577b0fc47417b576f1
             ([pet::UINT128 cvar_7::STRING]
-             (and (= cvar_7 "boots") (atom 0xeccd60f13155914e0dfc5ebee15f3f9c pet))))
+             (and (= cvar_7 "boots") (atom 0xd28c8eae3c0986a7b386bd6f6e38cc8b pet))))
           (def
-            0xde42e9d4c6fa16ca772e4e2fa08ebf9b
+            0x9884f00efa126cb8dea8d75ba66284b6
             ([pet::UINT128 cvar_8::INT]
-             (and (= cvar_8 1) (atom 0xeccd60f13155914e0dfc5ebee15f3f9c pet))))
+             (and (= cvar_8 1) (atom 0xd28c8eae3c0986a7b386bd6f6e38cc8b pet))))
           (def
-            0x25a814cc5189ebd5e573f42d9807d2dc
+            0xd334a20c752e948abf6b9f7084c82a57
             ([pet_2::UINT128]
              (primitive
                :rel_primitive_hash_tuple_uint128
@@ -98,18 +98,18 @@
                3
                pet_2)))
           (def
-            0xa12c25d800c8bfcfbf5971e2c6fc1bc
-            ([pet_2::UINT128] (atom 0x25a814cc5189ebd5e573f42d9807d2dc pet_2)))
+            0x5f0f6e7d3b2e1a5fef2e815f5b86ae5f
+            ([pet_2::UINT128] (atom 0xd334a20c752e948abf6b9f7084c82a57 pet_2)))
           (def
-            0x8fabb6b08dd0ef485ffe850dec6df83c
+            0x357ac13c249a84c04069c2b47592f23d
             ([pet_2::UINT128 cvar_9::STRING]
-             (and (= cvar_9 "fluffy") (atom 0x25a814cc5189ebd5e573f42d9807d2dc pet_2))))
+             (and (= cvar_9 "fluffy") (atom 0xd334a20c752e948abf6b9f7084c82a57 pet_2))))
           (def
-            0xc9b2b713744ebbe6ea9a618fe93ddca3
+            0xbe67f61f5eb717c10bdc9bcce7b0ae41
             ([pet_2::UINT128 cvar_10::INT]
-             (and (= cvar_10 3) (atom 0x25a814cc5189ebd5e573f42d9807d2dc pet_2))))
+             (and (= cvar_10 3) (atom 0xd334a20c752e948abf6b9f7084c82a57 pet_2))))
           (def
-            0xc7e19394d56e1a88a28d161dfdcd0c55
+            0x8536b91477180ea5f7143e1632fe7be2
             ([person_3::UINT128 pet::UINT128]
              (and
                (primitive
@@ -129,7 +129,7 @@
                  1
                  pet))))
           (def
-            0xecc274e9b4efc73aa6a1291a77731ae9
+            0x7cd463bb5d46ebe51792db60f46a84eb
             ([person_3::UINT128 pet_2::UINT128]
              (and
                (primitive
@@ -149,99 +149,99 @@
                  3
                  pet_2))))
           (def
-            0x392e7dd75e9799732c538ee163db0760
+            0x810aa75cad165b8d2e5d8b08085c3d
             ([person_4::UINT128]
              (or
-               (atom 0x9b72183282d5f4e605b8818e532cbcfb person_4)
-               (atom 0xb827cac053d55da3d2f67fb6e3dd81fe person_4)
-               (atom 0x51d3f71545ec84cdebf33b4f917e61c1 person_4))))
+               (atom 0x57dfa3e1141b4ee492e75b7e64aa1f3b person_4)
+               (atom 0x1698a84e2a406c3c0c037ebb9d880168 person_4)
+               (atom 0x6bd98ff82afbc630a69bfc812a69321b person_4))))
           (def
-            0x45b0a205837fa5862674a5eb301b0d8f
+            0x5e7148c428fc4b36743a23b97982e6e0
             ([pet_3::UINT128]
              (or
-               (atom 0x901378de3e4803aa3a668ca427bd74d2 pet_3)
-               (atom 0xa12c25d800c8bfcfbf5971e2c6fc1bc pet_3))))
+               (atom 0xfa1f378d0cf394c64a02055a0adc3379 pet_3)
+               (atom 0x5f0f6e7d3b2e1a5fef2e815f5b86ae5f pet_3))))
           (def
-            0x867c70edd3194a7fe18560a422d4e13b
+            0x6927a6d354a562c45a78f1f03d7c4118
             ([person_5::UINT128 pet_4::UINT128]
              (or
-               (atom 0xc7e19394d56e1a88a28d161dfdcd0c55 person_5 pet_4)
-               (atom 0xecc274e9b4efc73aa6a1291a77731ae9 person_5 pet_4))))
+               (atom 0x8536b91477180ea5f7143e1632fe7be2 person_5 pet_4)
+               (atom 0x7cd463bb5d46ebe51792db60f46a84eb person_5 pet_4))))
           (def
-            0x9e183adc9ed635ec7ecedbf07f53a382
+            0xe6f17d82f353a553f9aa96cb0be3ce89
             ([person_6::UINT128 name::STRING]
              (or
-               (atom 0x48f5c2d8dbfda693891507a618d482b0 person_6 name)
-               (atom 0x71c0d767fe8f089a31b2c5757b470213 person_6 name)
-               (atom 0x1e6947e23b3551da02d62928587a7c2c person_6 name))))
+               (atom 0x825623221e4c22cd147d52315891dc23 person_6 name)
+               (atom 0xf2b78b782105f3e98a38073ae33a2c7e person_6 name)
+               (atom 0x67ecca39f64a67b8f29414e1da5e740f person_6 name))))
           (def
-            0x5b28ebbac0492e8be05113e9da5b9776
+            0xfdd06d5ec8908143505e93194873fc43
             ([pet_5::UINT128 name_2::STRING]
              (or
-               (atom 0x1eb5be9f70c443146fbc9fb8334fd4d4 pet_5 name_2)
-               (atom 0x8fabb6b08dd0ef485ffe850dec6df83c pet_5 name_2))))
+               (atom 0x43ba7666140138577b0fc47417b576f1 pet_5 name_2)
+               (atom 0x357ac13c249a84c04069c2b47592f23d pet_5 name_2))))
           (def
-            0xb8a807a9ad59770308da820c40543f01
+            0x64e97de81c088a182062c4b5622fd2ab
             ([person_7::UINT128 age::INT]
              (or
-               (atom 0x5a3ef9fc8181625a898e69e1ff72bb83 person_7 age)
-               (atom 0x8beed42ac62ba3897005c7e2ccbec30e person_7 age)
-               (atom 0x3109221597cc014bb7a9db07bd2f6bf7 person_7 age))))
+               (atom 0x43df9f7082696d69cf49ae1b41409e8e person_7 age)
+               (atom 0xeb9a82a593a749b3b7736745a8bb7f2b person_7 age)
+               (atom 0xcd08936a7b0cb8ff9d39a79c6c396d96 person_7 age))))
           (def
-            0x37f6d9b87743404b7da747ee9b0c5fe5
+            0x6ef1a8f343d17a10450158c6c3245906
             ([pet_6::UINT128 age_2::INT]
              (or
-               (atom 0xde42e9d4c6fa16ca772e4e2fa08ebf9b pet_6 age_2)
-               (atom 0xc9b2b713744ebbe6ea9a618fe93ddca3 pet_6 age_2))))))))
+               (atom 0x9884f00efa126cb8dea8d75ba66284b6 pet_6 age_2)
+               (atom 0xbe67f61f5eb717c10bdc9bcce7b0ae41 pet_6 age_2))))))))
   (epoch
     (writes
       (define
         (fragment
           :query
           (def
-            0x95ae0342d07ef4a05fe08506b58beee0
+            0x3fdfd055f5bd2892ea186504254f8c3a
             ([cvar::STRING cvar_2::STRING person::UINT128 name::STRING]
              (and
                (= cvar "cols")
                (= cvar_2 "col000")
-               (atom 0x9e183adc9ed635ec7ecedbf07f53a382 person name)
+               (atom 0xe6f17d82f353a553f9aa96cb0be3ce89 person name)
                (not
                  (exists
                    [pet::UINT128]
-                   (atom 0x867c70edd3194a7fe18560a422d4e13b person pet)))
-               (atom 0x392e7dd75e9799732c538ee163db0760 person)))))))
-    (reads (output :output_0 0x95ae0342d07ef4a05fe08506b58beee0))))
+                   (atom 0x6927a6d354a562c45a78f1f03d7c4118 person pet)))
+               (atom 0x810aa75cad165b8d2e5d8b08085c3d person)))))))
+    (reads (output :output_0 0x3fdfd055f5bd2892ea186504254f8c3a))))
 
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `0x392e7dd75e9799732c538ee163db0760` -> `Person`
-;; 	 ID `0x9b72183282d5f4e605b8818e532cbcfb` -> `Person_1`
-;; 	 ID `0xb827cac053d55da3d2f67fb6e3dd81fe` -> `Person_2`
-;; 	 ID `0x51d3f71545ec84cdebf33b4f917e61c1` -> `Person_3`
-;; 	 ID `0x45b0a205837fa5862674a5eb301b0d8f` -> `Pet`
-;; 	 ID `0x901378de3e4803aa3a668ca427bd74d2` -> `Pet_1`
-;; 	 ID `0xa12c25d800c8bfcfbf5971e2c6fc1bc` -> `Pet_2`
-;; 	 ID `0xeadf4a31847de7a64fed1cd04e674068` -> `_intermediate_1`
-;; 	 ID `0x93ed689b184ede70bff81f48199c9074` -> `_intermediate_2`
-;; 	 ID `0x15a30f6f40eecc34abf74ebe51e52871` -> `_intermediate_3`
-;; 	 ID `0xeccd60f13155914e0dfc5ebee15f3f9c` -> `_intermediate_4`
-;; 	 ID `0x25a814cc5189ebd5e573f42d9807d2dc` -> `_intermediate_5`
-;; 	 ID `0xb8a807a9ad59770308da820c40543f01` -> `age`
-;; 	 ID `0x5a3ef9fc8181625a898e69e1ff72bb83` -> `age_1`
-;; 	 ID `0xde42e9d4c6fa16ca772e4e2fa08ebf9b` -> `age_1_2`
-;; 	 ID `0x8beed42ac62ba3897005c7e2ccbec30e` -> `age_2`
-;; 	 ID `0xc9b2b713744ebbe6ea9a618fe93ddca3` -> `age_2_2`
-;; 	 ID `0x3109221597cc014bb7a9db07bd2f6bf7` -> `age_3`
-;; 	 ID `0x37f6d9b87743404b7da747ee9b0c5fe5` -> `age_4`
-;; 	 ID `0x9e183adc9ed635ec7ecedbf07f53a382` -> `name`
-;; 	 ID `0x48f5c2d8dbfda693891507a618d482b0` -> `name_1`
-;; 	 ID `0x1eb5be9f70c443146fbc9fb8334fd4d4` -> `name_1_2`
-;; 	 ID `0x71c0d767fe8f089a31b2c5757b470213` -> `name_2`
-;; 	 ID `0x8fabb6b08dd0ef485ffe850dec6df83c` -> `name_2_2`
-;; 	 ID `0x1e6947e23b3551da02d62928587a7c2c` -> `name_3`
-;; 	 ID `0x5b28ebbac0492e8be05113e9da5b9776` -> `name_4`
-;; 	 ID `0x95ae0342d07ef4a05fe08506b58beee0` -> `output`
-;; 	 ID `0x867c70edd3194a7fe18560a422d4e13b` -> `pets`
-;; 	 ID `0xc7e19394d56e1a88a28d161dfdcd0c55` -> `pets_1`
-;; 	 ID `0xecc274e9b4efc73aa6a1291a77731ae9` -> `pets_2`
+;; 	 ID `0x810aa75cad165b8d2e5d8b08085c3d` -> `Person`
+;; 	 ID `0x57dfa3e1141b4ee492e75b7e64aa1f3b` -> `Person_1`
+;; 	 ID `0x1698a84e2a406c3c0c037ebb9d880168` -> `Person_2`
+;; 	 ID `0x6bd98ff82afbc630a69bfc812a69321b` -> `Person_3`
+;; 	 ID `0x5e7148c428fc4b36743a23b97982e6e0` -> `Pet`
+;; 	 ID `0xfa1f378d0cf394c64a02055a0adc3379` -> `Pet_1`
+;; 	 ID `0x5f0f6e7d3b2e1a5fef2e815f5b86ae5f` -> `Pet_2`
+;; 	 ID `0xf44a09a31b0d1e0fcae630e6f3e6a228` -> `_intermediate_1`
+;; 	 ID `0x76302b7b0b1fa9d769fdb0ea4612cb5e` -> `_intermediate_2`
+;; 	 ID `0x8feb2cc9fa621a563206d81290081dad` -> `_intermediate_3`
+;; 	 ID `0xd28c8eae3c0986a7b386bd6f6e38cc8b` -> `_intermediate_4`
+;; 	 ID `0xd334a20c752e948abf6b9f7084c82a57` -> `_intermediate_5`
+;; 	 ID `0x64e97de81c088a182062c4b5622fd2ab` -> `age`
+;; 	 ID `0x43df9f7082696d69cf49ae1b41409e8e` -> `age_1`
+;; 	 ID `0x9884f00efa126cb8dea8d75ba66284b6` -> `age_1_2`
+;; 	 ID `0xeb9a82a593a749b3b7736745a8bb7f2b` -> `age_2`
+;; 	 ID `0xbe67f61f5eb717c10bdc9bcce7b0ae41` -> `age_2_2`
+;; 	 ID `0xcd08936a7b0cb8ff9d39a79c6c396d96` -> `age_3`
+;; 	 ID `0x6ef1a8f343d17a10450158c6c3245906` -> `age_4`
+;; 	 ID `0xe6f17d82f353a553f9aa96cb0be3ce89` -> `name`
+;; 	 ID `0x825623221e4c22cd147d52315891dc23` -> `name_1`
+;; 	 ID `0x43ba7666140138577b0fc47417b576f1` -> `name_1_2`
+;; 	 ID `0xf2b78b782105f3e98a38073ae33a2c7e` -> `name_2`
+;; 	 ID `0x357ac13c249a84c04069c2b47592f23d` -> `name_2_2`
+;; 	 ID `0x67ecca39f64a67b8f29414e1da5e740f` -> `name_3`
+;; 	 ID `0xfdd06d5ec8908143505e93194873fc43` -> `name_4`
+;; 	 ID `0x3fdfd055f5bd2892ea186504254f8c3a` -> `output`
+;; 	 ID `0x6927a6d354a562c45a78f1f03d7c4118` -> `pets`
+;; 	 ID `0x8536b91477180ea5f7143e1632fe7be2` -> `pets_1`
+;; 	 ID `0x7cd463bb5d46ebe51792db60f46a84eb` -> `pets_2`

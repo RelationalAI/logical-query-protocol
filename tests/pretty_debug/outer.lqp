@@ -6,33 +6,33 @@
         (fragment
           :f1
           (algorithm
-            0xc1467fe0bc56f7fd95f963208974258c
+            0xa5193e54cd52837ed91e32008ccf41ac
             (script
               (loop
                 (init
                   (assign
-                    0xc1467fe0bc56f7fd95f963208974258c
+                    0xa5193e54cd52837ed91e32008ccf41ac
                     ([a::INT b::INT] (or (and (= a 1) (= b 2)) (and (= a 2) (= b 3)))))
                   (assign
-                    0x9e1b0818ee37330aa8eaf6e0c71355a2
+                    0x2ed09e00af8531c8f7bb2542764027e7
                     ([a::INT b::INT] (and (= a 1) (= b 3))))
-                  (assign 0x8e118fa8576cabfde73a19aa476cdc9c ([] (false))))
+                  (assign 0xadbe254c82095d39531f5e5c1314bdd ([] (false))))
                 (script
-                  (assign 0x8b5d6362e02f7af4095b37a5b0a5d77f ([] (false)))
+                  (assign 0x8c53b1c4fc3e7870d5da24230e8729c3 ([] (false)))
                   (loop
                     (init)
                     (script
                       (upsert
-                        0xc1467fe0bc56f7fd95f963208974258c
-                        ([a::INT b::INT] (atom 0x9e1b0818ee37330aa8eaf6e0c71355a2 a b)))
-                      (break 0x8b5d6362e02f7af4095b37a5b0a5d77f ([] (true)))))
-                  (break 0x8e118fa8576cabfde73a19aa476cdc9c ([] (true))))))))))
-    (reads (output :R 0xc1467fe0bc56f7fd95f963208974258c))))
+                        0xa5193e54cd52837ed91e32008ccf41ac
+                        ([a::INT b::INT] (atom 0x2ed09e00af8531c8f7bb2542764027e7 a b)))
+                      (break 0x8c53b1c4fc3e7870d5da24230e8729c3 ([] (true)))))
+                  (break 0xadbe254c82095d39531f5e5c1314bdd ([] (true))))))))))
+    (reads (output :R 0xa5193e54cd52837ed91e32008ccf41ac))))
 
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `0xc1467fe0bc56f7fd95f963208974258c` -> `R`
-;; 	 ID `0x9e1b0818ee37330aa8eaf6e0c71355a2` -> `U`
-;; 	 ID `0x8e118fa8576cabfde73a19aa476cdc9c` -> `always`
-;; 	 ID `0x8b5d6362e02f7af4095b37a5b0a5d77f` -> `always2`
+;; 	 ID `0xa5193e54cd52837ed91e32008ccf41ac` -> `R`
+;; 	 ID `0x2ed09e00af8531c8f7bb2542764027e7` -> `U`
+;; 	 ID `0xadbe254c82095d39531f5e5c1314bdd` -> `always`
+;; 	 ID `0x8c53b1c4fc3e7870d5da24230e8729c3` -> `always2`

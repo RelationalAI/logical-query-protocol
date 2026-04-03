@@ -5,22 +5,22 @@
       (define
         (fragment
           :f1
-          (def 0x5d2cddb256384fc987ac390f79b06e3a ([] (= 1 1)))
-          (def 0x1 ([] (atom 0x5d2cddb256384fc987ac390f79b06e3a))))))
-    (reads (demand 0x5d2cddb256384fc987ac390f79b06e3a) (abort 0x1)))
+          (def 0x110e6811602261a9a923d3bb23adc8b7 ([] (= 1 1)))
+          (def 0x1 ([] (atom 0x110e6811602261a9a923d3bb23adc8b7))))))
+    (reads (demand 0x110e6811602261a9a923d3bb23adc8b7) (abort 0x1)))
   (epoch
-    (writes (define (fragment :f2 (def 0xee16ac934d25090160596c1a0209b419 ([] (= 2 2))))))
+    (writes (define (fragment :f2 (def 0xca888a94bb158ae546c285c4d2b08786 ([] (= 2 2))))))
     (reads
       (what_if
         :my_branch
         (epoch
           (writes
-            (define (fragment :f3 (def 0xf8098e3d231ea2859737d87cbd6fbf33 ([] (= 3 3))))))
-          (reads (output :inner_out 0xf8098e3d231ea2859737d87cbd6fbf33)))))))
+            (define (fragment :f3 (def 0x24e7bab459168a96312c1c882c1d7e1f ([] (= 3 3))))))
+          (reads (output :inner_out 0x24e7bab459168a96312c1c882c1d7e1f)))))))
 
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `0xee16ac934d25090160596c1a0209b419` -> `branch_data`
-;; 	 ID `0x5d2cddb256384fc987ac390f79b06e3a` -> `data`
-;; 	 ID `0xf8098e3d231ea2859737d87cbd6fbf33` -> `inner`
+;; 	 ID `0xca888a94bb158ae546c285c4d2b08786` -> `branch_data`
+;; 	 ID `0x110e6811602261a9a923d3bb23adc8b7` -> `data`
+;; 	 ID `0x24e7bab459168a96312c1c882c1d7e1f` -> `inner`

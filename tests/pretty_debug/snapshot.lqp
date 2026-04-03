@@ -5,14 +5,14 @@
       (define
         (fragment
           :snapshots
-          (edb 0x570a6b2c5652a23a889007deb29a3bcd ["my_edb"] [])
-          (edb 0x7a6962a0dc04eea8c827be06376d1e0d ["database" "table"] [])
-          (edb 0x1ba1a075d798280ef11e488c9a5ce6c6 ["schema" "namespace" "relation"] [])))
+          (edb 0x3624e471390d4119e743ba2750262197 ["my_edb"] [])
+          (edb 0xceba74ef3d3b0152a90894dc7ae1c114 ["database" "table"] [])
+          (edb 0xc772efb99999f4e6a9aefdc272b64ec8 ["schema" "namespace" "relation"] [])))
       (define
         (fragment
           :frag1
           (def
-            0x41614649240f9718dbcdc1582466cbaa
+            0x6a1bb464a40d07263ff95ce83517a614
             ([x::INT y::STRING] (and (= x 1) (= y "hello"))))
           (csv_data
             (csv_locator
@@ -29,41 +29,41 @@
                :csv_quotechar "\""
                :csv_skip 0})
             (columns
-              (column "id" 0x674839b712d01dbdbeb3e60c274561a5 [INT INT])
-              (column "big_signed" 0xf5faefdf48a8c90a795182d16b6c18ca [INT INT128])
-              (column "big_unsigned" 0xfc99e21b2b3daa7747ceb2ece6f1a843 [INT UINT128]))
+              (column "id" 0x7dd618d496488bc608a3cb43ce3547dd [INT INT])
+              (column "big_signed" 0xc00744ac4c3b7e574fb72f89046b65c [INT INT128])
+              (column "big_unsigned" 0xca1213b25dd3745c22023b4e849c54eb [INT UINT128]))
             (asof "2025-01-01T00:00:00Z"))
           (algorithm
-            0xc11ab116e39edbb2b3b3669c4062a55a
-            0x6bfa07b2c1cdb5e7128ad0e85b6d6cc9
+            0x80ad6fa1421c555c156fcefb75cfa12f
+            0x2430974c86803d8891675e76fd992c20
             (script
               (assign
-                0xc11ab116e39edbb2b3b3669c4062a55a
-                ([a::INT b::INT] (and (atom 0x6bfa07b2c1cdb5e7128ad0e85b6d6cc9 a) (= b a)))))))))
+                0x80ad6fa1421c555c156fcefb75cfa12f
+                ([a::INT b::INT] (and (atom 0x2430974c86803d8891675e76fd992c20 a) (= b a)))))))))
     (reads
-      (output :snapshot1 0x570a6b2c5652a23a889007deb29a3bcd)
-      (output :snapshot2 0x7a6962a0dc04eea8c827be06376d1e0d)
-      (output :snapshot3 0x1ba1a075d798280ef11e488c9a5ce6c6)))
+      (output :snapshot1 0x3624e471390d4119e743ba2750262197)
+      (output :snapshot2 0xceba74ef3d3b0152a90894dc7ae1c114)
+      (output :snapshot3 0xc772efb99999f4e6a9aefdc272b64ec8)))
   (epoch
     (writes
       (snapshot
-        ["my_edb"] 0x41614649240f9718dbcdc1582466cbaa
-        ["database" "table"] 0xc11ab116e39edbb2b3b3669c4062a55a
-        ["schema" "namespace" "relation"] 0xf5faefdf48a8c90a795182d16b6c18ca))
+        ["my_edb"] 0x6a1bb464a40d07263ff95ce83517a614
+        ["database" "table"] 0x80ad6fa1421c555c156fcefb75cfa12f
+        ["schema" "namespace" "relation"] 0xc00744ac4c3b7e574fb72f89046b65c))
     (reads
-      (output :snapshot1 0x570a6b2c5652a23a889007deb29a3bcd)
-      (output :snapshot2 0x7a6962a0dc04eea8c827be06376d1e0d)
-      (output :snapshot3 0x1ba1a075d798280ef11e488c9a5ce6c6))))
+      (output :snapshot1 0x3624e471390d4119e743ba2750262197)
+      (output :snapshot2 0xceba74ef3d3b0152a90894dc7ae1c114)
+      (output :snapshot3 0xc772efb99999f4e6a9aefdc272b64ec8))))
 
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `0xf5faefdf48a8c90a795182d16b6c18ca` -> `big_signed`
-;; 	 ID `0xfc99e21b2b3daa7747ceb2ece6f1a843` -> `big_unsigned`
-;; 	 ID `0xc11ab116e39edbb2b3b3669c4062a55a` -> `computed`
-;; 	 ID `0x674839b712d01dbdbeb3e60c274561a5` -> `id`
-;; 	 ID `0x6bfa07b2c1cdb5e7128ad0e85b6d6cc9` -> `input`
-;; 	 ID `0x41614649240f9718dbcdc1582466cbaa` -> `my_rel`
-;; 	 ID `0x570a6b2c5652a23a889007deb29a3bcd` -> `snapshot1`
-;; 	 ID `0x7a6962a0dc04eea8c827be06376d1e0d` -> `snapshot2`
-;; 	 ID `0x1ba1a075d798280ef11e488c9a5ce6c6` -> `snapshot3`
+;; 	 ID `0xc00744ac4c3b7e574fb72f89046b65c` -> `big_signed`
+;; 	 ID `0xca1213b25dd3745c22023b4e849c54eb` -> `big_unsigned`
+;; 	 ID `0x80ad6fa1421c555c156fcefb75cfa12f` -> `computed`
+;; 	 ID `0x7dd618d496488bc608a3cb43ce3547dd` -> `id`
+;; 	 ID `0x2430974c86803d8891675e76fd992c20` -> `input`
+;; 	 ID `0x6a1bb464a40d07263ff95ce83517a614` -> `my_rel`
+;; 	 ID `0x3624e471390d4119e743ba2750262197` -> `snapshot1`
+;; 	 ID `0xceba74ef3d3b0152a90894dc7ae1c114` -> `snapshot2`
+;; 	 ID `0xc772efb99999f4e6a9aefdc272b64ec8` -> `snapshot3`
