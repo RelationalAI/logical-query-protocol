@@ -6,7 +6,7 @@
         (fragment
           :f1
           (def
-            0x585c5a1121bd88784c1378aa8837195c
+            0xe99f5e6362319de961a9ea2090b24ee0
             ([id::INT region::STRING amount::FLOAT]
              (or
                (and (= id 1) (= region "us-east") (= amount 100.0))
@@ -22,7 +22,7 @@
             (catalog_uri "https://catalog.example.com")
             (properties)
             (auth_properties))
-          (table_def 0x585c5a1121bd88784c1378aa8837195c)
+          (table_def 0xe99f5e6362319de961a9ea2090b24ee0)
           (columns (column "id" false) (column "region" false) (column "amount" false))
           (table_properties)))
       (export_iceberg
@@ -36,7 +36,7 @@
             (scope "read-only")
             (properties (prop "client.region" "us-east-1"))
             (auth_properties (prop "credential" "***") (prop "token" "***")))
-          (table_def 0x585c5a1121bd88784c1378aa8837195c)
+          (table_def 0xe99f5e6362319de961a9ea2090b24ee0)
           (columns (column "id" false) (column "region" false) (column "amount" false))
           (table_properties (prop "write.format.default" "parquet"))
           { :compression "SNAPPY" :prefix "part" :target_file_size_bytes 268435456}))
@@ -50,11 +50,11 @@
             (catalog_uri "https://catalog.example.com")
             (properties)
             (auth_properties))
-          (table_def 0x585c5a1121bd88784c1378aa8837195c)
+          (table_def 0xe99f5e6362319de961a9ea2090b24ee0)
           (columns (column "id" false))
           (table_properties))))))
 
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `0x585c5a1121bd88784c1378aa8837195c` -> `sales`
+;; 	 ID `0xe99f5e6362319de961a9ea2090b24ee0` -> `sales`

@@ -513,9 +513,9 @@ func (p *Parser) startFragment(fragmentID *pb.FragmentId) *pb.FragmentId {
 
 func (p *Parser) relationIdFromString(name string) *pb.RelationId {
 	hash := sha256.Sum256([]byte(name))
-	// Use big-endian and the lower 128 bits of the hash, consistent with pyrel.
-	high := binary.BigEndian.Uint64(hash[16:24])
-	low := binary.BigEndian.Uint64(hash[24:32])
+	// Use the upper 128 bits of the hash in native byte order.
+	low := binary.LittleEndian.Uint64(hash[0:8])
+	high := binary.LittleEndian.Uint64(hash[8:16])
 	relationId := &pb.RelationId{IdLow: low, IdHigh: high}
 
 	// Store the mapping for the current fragment if we're inside one

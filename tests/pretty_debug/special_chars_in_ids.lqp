@@ -6,18 +6,23 @@
         (fragment
           :f1
           (def
-            0x15c3d261e9b87ddca0f3e13e054457bd
-            ([x::INT] (and (= x 1) (atom 0x91b51012f825fc7c589f890a3b18cfd4 x x))))
+            0xacd0cb6f3c9b7102417d5dab03f51d5c
+            ([x::INT] (and (= x 1) (atom 0x704e129c16b033ca9fe6a241f8563374 x x))))
           (def
-            0x1e9de369d8c3c11ff417a9c0c86e7ebe
-            ([x::INT y::INT] (and (atom 0x15c3d261e9b87ddca0f3e13e054457bd x) (= y x)))))))
+            0x1165dafc271b53255088cf2d45242d39
+            ([x::INT y::INT] (and (atom 0xacd0cb6f3c9b7102417d5dab03f51d5c x) (= y x))))
+          (def
+            0xd96ecde07cf2b1cc06c34d98a8128cbc
+            ([x::INT y::INT] (and (atom 0xacd0cb6f3c9b7102417d5dab03f51d5c x) (= y x)))))))
     (reads
-      (output :my/relation 0x15c3d261e9b87ddca0f3e13e054457bd)
-      (output :my#relation 0x1e9de369d8c3c11ff417a9c0c86e7ebe))))
+      (output :my/relation 0xacd0cb6f3c9b7102417d5dab03f51d5c)
+      (output :my#relation 0x1165dafc271b53255088cf2d45242d39)
+      (output :my-relation 0xd96ecde07cf2b1cc06c34d98a8128cbc))))
 
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `0x1e9de369d8c3c11ff417a9c0c86e7ebe` -> `my#relation`
-;; 	 ID `0x15c3d261e9b87ddca0f3e13e054457bd` -> `my/relation`
-;; 	 ID `0x91b51012f825fc7c589f890a3b18cfd4` -> `other/rel`
+;; 	 ID `0x1165dafc271b53255088cf2d45242d39` -> `my#relation`
+;; 	 ID `0xd96ecde07cf2b1cc06c34d98a8128cbc` -> `my-relation`
+;; 	 ID `0xacd0cb6f3c9b7102417d5dab03f51d5c` -> `my/relation`
+;; 	 ID `0x704e129c16b033ca9fe6a241f8563374` -> `other/rel`
