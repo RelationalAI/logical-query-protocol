@@ -45,7 +45,7 @@
   ;; Snapshot the defined relations as EDBs
   (epoch
     (writes
-      (snapshot
+      (snapshot []
         ["my_edb"] :my_rel
         ["database" "table"] :computed
         ["schema" "namespace" "relation"] :big_signed))
@@ -53,4 +53,10 @@
     (reads
       (output :snapshot1 :snapshot1)
       (output :snapshot2 :snapshot2)
-      (output :snapshot3 :snapshot3))))
+      (output :snapshot3 :snapshot3)))
+
+  ;; Snapshot with a prefix: express that all EDBs under "database" are captured.
+  (epoch
+    (writes
+      (snapshot ["database"]
+        ["table"] :computed))))

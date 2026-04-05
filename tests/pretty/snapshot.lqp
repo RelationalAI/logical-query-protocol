@@ -42,10 +42,12 @@
   (epoch
     (writes
       (snapshot
+        []
         ["my_edb"] :my_rel
         ["database" "table"] :computed
         ["schema" "namespace" "relation"] :big_signed))
     (reads
       (output :snapshot1 :snapshot1)
       (output :snapshot2 :snapshot2)
-      (output :snapshot3 :snapshot3))))
+      (output :snapshot3 :snapshot3)))
+  (epoch (writes (snapshot ["database"] ["table"] :computed))))

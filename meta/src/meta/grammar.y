@@ -1261,9 +1261,11 @@ snapshot_mapping
         $2: logic.RelationId = $$.source_relation
 
 snapshot
-    : "(" "snapshot" snapshot_mapping* ")"
-      construct: $$ = transactions.Snapshot(mappings=$3)
-      deconstruct: $3: Sequence[transactions.SnapshotMapping] = $$.mappings
+    : "(" "snapshot" edb_path snapshot_mapping* ")"
+      construct: $$ = transactions.Snapshot(prefix=$3, mappings=$4)
+      deconstruct:
+        $3: Sequence[String] = $$.prefix
+        $4: Sequence[transactions.SnapshotMapping] = $$.mappings
 
 epoch_reads
     : "(" "reads" read* ")"

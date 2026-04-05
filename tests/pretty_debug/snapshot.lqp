@@ -47,13 +47,15 @@
   (epoch
     (writes
       (snapshot
+        []
         ["my_edb"] 0x6a1bb464a40d07263ff95ce83517a614
         ["database" "table"] 0x80ad6fa1421c555c156fcefb75cfa12f
         ["schema" "namespace" "relation"] 0xc00744ac4c3b7e574fb72f89046b65c))
     (reads
       (output :snapshot1 0x3624e471390d4119e743ba2750262197)
       (output :snapshot2 0xceba74ef3d3b0152a90894dc7ae1c114)
-      (output :snapshot3 0xc772efb99999f4e6a9aefdc272b64ec8))))
+      (output :snapshot3 0xc772efb99999f4e6a9aefdc272b64ec8)))
+  (epoch (writes (snapshot ["database"] ["table"] 0x80ad6fa1421c555c156fcefb75cfa12f))))
 
 ;; Debug information
 ;; -----------------------
