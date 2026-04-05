@@ -50,4 +50,17 @@
       (output :snapshot1 :snapshot1)
       (output :snapshot2 :snapshot2)
       (output :snapshot3 :snapshot3)))
-  (epoch (writes (snapshot ["database"] ["table"] :computed))))
+  (epoch
+    (writes
+      (snapshot
+        ["lineitem"]
+        ["l_orderkey"] :my_rel
+        ["l_partkey"] :computed
+        ["l_quantity"] :big_signed)))
+  (epoch
+    (writes
+      (snapshot
+        ["lineitem"]
+        ["lineitem" "l_orderkey"] :my_rel
+        ["lineitem" "l_partkey"] :computed
+        ["lineitem" "l_quantity"] :big_signed))))

@@ -55,8 +55,20 @@
       (output :snapshot2 :snapshot2)
       (output :snapshot3 :snapshot3)))
 
-  ;; Snapshot with a prefix: express that all EDBs under "database" are captured.
+  ;; Snapshot with a prefix: express that all EDBs under "lineitem" are captured.
   (epoch
     (writes
-      (snapshot ["database"]
-        ["table"] :computed))))
+      (snapshot ["lineitem"]
+        ["l_orderkey"] :my_rel
+        ["l_partkey"] :computed
+        ["l_quantity"] :big_signed)))
+
+  ;; Same snapshot with prefix redundantly included in mappings for backwards
+  ;; compatibility: an older engine that ignores the prefix field can still
+  ;; interpret the full paths.
+  (epoch
+    (writes
+      (snapshot ["lineitem"]
+        ["lineitem" "l_orderkey"] :my_rel
+        ["lineitem" "l_partkey"] :computed
+        ["lineitem" "l_quantity"] :big_signed))))
