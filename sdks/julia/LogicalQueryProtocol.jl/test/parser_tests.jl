@@ -161,6 +161,20 @@ end
     )
 end
 
+@testitem "Parser - SYMBOL lexer regex" setup=[ParserSetup] begin
+    # Hyphen must be a literal character, not part of a range
+    lexer = Lexer("my-relation")
+    @test lexer.tokens[1].type == "SYMBOL"
+    @test lexer.tokens[1].value == "my-relation"
+
+    lexer = Lexer("base/#output")
+    @test lexer.tokens[1].type == "SYMBOL"
+    @test lexer.tokens[1].value == "base/#output"
+
+    # '$' is not a valid SYMBOL character — the lexer should fail on it
+    @test_throws ParseError Lexer("foo\$bar")
+end
+
 @testitem "Parser - Lexer tokenization" setup=[ParserSetup] begin
     lexer = Lexer("(transaction (epoch (writes) (reads)))")
     # Tokens: ( transaction ( epoch ( writes ) ( reads ) ) ) $

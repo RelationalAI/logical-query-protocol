@@ -1,4 +1,4 @@
-;; Test that identifiers can contain / # characters
+;; Test that identifiers can contain / # - characters
 (transaction
   (epoch
     (writes
@@ -13,7 +13,13 @@
             ([x::INT y::INT]
               (and
                 (atom :my/relation x)
+                (= y x))))
+          (def :my-relation
+            ([x::INT y::INT]
+              (and
+                (atom :my/relation x)
                 (= y x)))))))
     (reads
       (output :my/relation :my/relation)
-      (output :my#relation :my#relation))))
+      (output :my#relation :my#relation)
+      (output :my-relation :my-relation))))
