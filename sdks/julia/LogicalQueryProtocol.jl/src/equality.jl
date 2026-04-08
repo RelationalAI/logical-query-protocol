@@ -442,9 +442,9 @@ Base.hash(a::SnapshotMapping, h::UInt) = hash(a.source_relation, hash(a.destinat
 Base.isequal(a::SnapshotMapping, b::SnapshotMapping) = isequal(a.destination_path, b.destination_path) && isequal(a.source_relation, b.source_relation)
 
 # Snapshot
-Base.:(==)(a::Snapshot, b::Snapshot) = a.mappings == b.mappings
-Base.hash(a::Snapshot, h::UInt) = hash(a.mappings, h)
-Base.isequal(a::Snapshot, b::Snapshot) = isequal(a.mappings, b.mappings)
+Base.:(==)(a::Snapshot, b::Snapshot) = a.prefix == b.prefix && a.mappings == b.mappings
+Base.hash(a::Snapshot, h::UInt) = hash(a.mappings, hash(a.prefix, h))
+Base.isequal(a::Snapshot, b::Snapshot) = isequal(a.prefix, b.prefix) && isequal(a.mappings, b.mappings)
 
 # Context
 Base.:(==)(a::Context, b::Context) = a.relations == b.relations

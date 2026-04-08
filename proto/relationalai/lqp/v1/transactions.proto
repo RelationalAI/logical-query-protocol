@@ -64,16 +64,20 @@ message Context {
   repeated RelationId relations = 1;
 }
 
-// A single (destination, source) pair within a Snapshot action.
+// A single (destination, source) pair within a Snapshot action. The destination_path is
+// relative to the Snapshot's prefix.
 message SnapshotMapping {
   repeated string destination_path = 1;
   RelationId source_relation = 2;
 }
 
 // Demand the source IDBs, take immutable snapshots, and turn them into EDBs under the
-// given paths (specified as sequences of strings, see EDB).
+// given paths (specified as sequences of strings, see EDB). If a prefix is specified,
+// the engine should treat this as a complete snapshot of all EDBs under that prefix,
+// removing any pre-existing EDBs for the same prefix that are not in the mappings.
 message Snapshot {
   repeated SnapshotMapping mappings = 1;
+  repeated string prefix = 2;
 }
 
 //

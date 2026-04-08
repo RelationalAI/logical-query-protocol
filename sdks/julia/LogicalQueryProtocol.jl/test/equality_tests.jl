@@ -1413,13 +1413,13 @@ end
     m1 = SnapshotMapping(destination_path=["my_edb"], source_relation=r1)
     m2 = SnapshotMapping(destination_path=["other_edb"], source_relation=r3)
 
-    s1 = Snapshot(mappings=[m1, m2])
-    s2 = Snapshot(mappings=[
+    s1 = Snapshot(prefix=["db"], mappings=[m1, m2])
+    s2 = Snapshot(prefix=["db"], mappings=[
         SnapshotMapping(destination_path=["my_edb"], source_relation=r2),
         SnapshotMapping(destination_path=["other_edb"], source_relation=r3),
     ])
-    s3 = Snapshot(mappings=[m1])
-    s4 = Snapshot(mappings=[m1, m2])
+    s3 = Snapshot(prefix=["db"], mappings=[m1])
+    s4 = Snapshot(prefix=["db"], mappings=[m1, m2])
 
     # Equality and inequality
     @test s1 == s2
@@ -1438,6 +1438,12 @@ end
 
     # Transitivity
     @test s1 == s2 && s2 == s4 && s1 == s4
+
+    # Different prefix
+    s5 = Snapshot(prefix=["other"], mappings=[m1, m2])
+    @test s1 != s5
+    s6 = Snapshot(prefix=[], mappings=[m1, m2])
+    @test s1 != s6
 end
 
 @testitem "Equality for Configure" tags=[:ring1, :unit] begin

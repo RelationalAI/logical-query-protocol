@@ -4,7 +4,8 @@ from google.protobuf.internal import containers as _containers
 from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
-from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Mapping, Optional as _Optional, Union as _Union
+from collections.abc import Iterable as _Iterable, Mapping as _Mapping
+from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
@@ -96,10 +97,12 @@ class SnapshotMapping(_message.Message):
     def __init__(self, destination_path: _Optional[_Iterable[str]] = ..., source_relation: _Optional[_Union[_logic_pb2.RelationId, _Mapping]] = ...) -> None: ...
 
 class Snapshot(_message.Message):
-    __slots__ = ("mappings",)
+    __slots__ = ("mappings", "prefix")
     MAPPINGS_FIELD_NUMBER: _ClassVar[int]
+    PREFIX_FIELD_NUMBER: _ClassVar[int]
     mappings: _containers.RepeatedCompositeFieldContainer[SnapshotMapping]
-    def __init__(self, mappings: _Optional[_Iterable[_Union[SnapshotMapping, _Mapping]]] = ...) -> None: ...
+    prefix: _containers.RepeatedScalarFieldContainer[str]
+    def __init__(self, mappings: _Optional[_Iterable[_Union[SnapshotMapping, _Mapping]]] = ..., prefix: _Optional[_Iterable[str]] = ...) -> None: ...
 
 class ExportCSVConfig(_message.Message):
     __slots__ = ("path", "csv_source", "csv_config", "data_columns", "partition_size", "compression", "syntax_header_row", "syntax_missing_string", "syntax_delim", "syntax_quotechar", "syntax_escapechar")
@@ -125,7 +128,7 @@ class ExportCSVConfig(_message.Message):
     syntax_delim: str
     syntax_quotechar: str
     syntax_escapechar: str
-    def __init__(self, path: _Optional[str] = ..., csv_source: _Optional[_Union[ExportCSVSource, _Mapping]] = ..., csv_config: _Optional[_Union[_logic_pb2.CSVConfig, _Mapping]] = ..., data_columns: _Optional[_Iterable[_Union[ExportCSVColumn, _Mapping]]] = ..., partition_size: _Optional[int] = ..., compression: _Optional[str] = ..., syntax_header_row: bool = ..., syntax_missing_string: _Optional[str] = ..., syntax_delim: _Optional[str] = ..., syntax_quotechar: _Optional[str] = ..., syntax_escapechar: _Optional[str] = ...) -> None: ...
+    def __init__(self, path: _Optional[str] = ..., csv_source: _Optional[_Union[ExportCSVSource, _Mapping]] = ..., csv_config: _Optional[_Union[_logic_pb2.CSVConfig, _Mapping]] = ..., data_columns: _Optional[_Iterable[_Union[ExportCSVColumn, _Mapping]]] = ..., partition_size: _Optional[int] = ..., compression: _Optional[str] = ..., syntax_header_row: _Optional[bool] = ..., syntax_missing_string: _Optional[str] = ..., syntax_delim: _Optional[str] = ..., syntax_quotechar: _Optional[str] = ..., syntax_escapechar: _Optional[str] = ...) -> None: ...
 
 class ExportCSVColumn(_message.Message):
     __slots__ = ("column_name", "column_data")
@@ -155,7 +158,7 @@ class ExportColumn(_message.Message):
     NULLABLE_FIELD_NUMBER: _ClassVar[int]
     name: str
     nullable: bool
-    def __init__(self, name: _Optional[str] = ..., nullable: bool = ...) -> None: ...
+    def __init__(self, name: _Optional[str] = ..., nullable: _Optional[bool] = ...) -> None: ...
 
 class ExportIcebergConfig(_message.Message):
     __slots__ = ("locator", "config", "table_def", "columns", "prefix", "target_file_size_bytes", "compression", "table_properties")

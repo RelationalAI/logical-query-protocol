@@ -494,32 +494,38 @@ end
 
 struct Snapshot
     mappings::Vector{SnapshotMapping}
+    prefix::Vector{String}
 end
-Snapshot(;mappings = Vector{SnapshotMapping}()) = Snapshot(mappings)
-PB.default_values(::Type{Snapshot}) = (;mappings = Vector{SnapshotMapping}())
-PB.field_numbers(::Type{Snapshot}) = (;mappings = 1)
+Snapshot(;mappings = Vector{SnapshotMapping}(), prefix = Vector{String}()) = Snapshot(mappings, prefix)
+PB.default_values(::Type{Snapshot}) = (;mappings = Vector{SnapshotMapping}(), prefix = Vector{String}())
+PB.field_numbers(::Type{Snapshot}) = (;mappings = 1, prefix = 2)
 
 function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:Snapshot}, _endpos::Int=0, _group::Bool=false)
     mappings = PB.BufferedVector{SnapshotMapping}()
+    prefix = PB.BufferedVector{String}()
     while !PB.message_done(d, _endpos, _group)
         field_number, wire_type = PB.decode_tag(d)
         if field_number == 1
             PB.decode!(d, mappings)
+        elseif field_number == 2
+            PB.decode!(d, prefix)
         else
             Base.skip(d, wire_type)
         end
     end
-    return Snapshot(mappings[])
+    return Snapshot(mappings[], prefix[])
 end
 
 function PB.encode(e::PB.AbstractProtoEncoder, x::Snapshot)
     initpos = position(e.io)
     !isempty(x.mappings) && PB.encode(e, 1, x.mappings)
+    !isempty(x.prefix) && PB.encode(e, 2, x.prefix)
     return position(e.io) - initpos
 end
 function PB._encoded_size(x::Snapshot)
     encoded_size = 0
     !isempty(x.mappings) && (encoded_size += PB._encoded_size(x.mappings, 1))
+    !isempty(x.prefix) && (encoded_size += PB._encoded_size(x.prefix, 2))
     return encoded_size
 end
 
