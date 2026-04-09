@@ -98,6 +98,61 @@ function is_supported_decimal_bits(bits::Integer)
     return bits in [8, 16, 32, 64, 128]
 end
 
+"""
+    collect_demanded_relations(epoch::Epoch)::Set{LQPRelationId}
+
+Collect the set of relation IDs that are demanded by the reads of an epoch.
+"""
+function collect_demanded_relations(epoch::Epoch)
+    ids = Set{LQPRelationId}()
+    for read in epoch.reads
+        _collect_read_ids!(ids, read)
+    end
+    return ids
+end
+
+function _collect_read_ids!(ids::Set{LQPRelationId}, read::Read)
+    isnothing(read.read_type) && return nothing
+    if read.read_type.name == :demand
+        _collect_read_ids!(ids, read.read_type[]::Demand)
+    elseif read.read_type.name == :output
+        _collect_read_ids!(ids, read.read_type[]::Output)
+    elseif read.read_type.name == :abort
+        _collect_read_ids!(ids, read.read_type[]::Abort)
+    elseif read.read_type.name == :var"#export"
+        _collect_read_ids!(ids, read.read_type[]::Export)
+    else
+        @assert false
+    end
+    return nothing
+end
+function _collect_read_ids!(ids::Set{LQPRelationId}, demand::Demand)
+    !isnothing(demand.relation_id) && push!(ids, persistent_id(demand.relation_id))
+    return nothing
+end
+function _collect_read_ids!(ids::Set{LQPRelationId}, output::Output)
+    !isnothing(output.relation_id) && push!(ids, persistent_id(output.relation_id))
+    return nothing
+end
+function _collect_read_ids!(ids::Set{LQPRelationId}, abort::Abort)
+    !isnothing(abort.relation_id) && push!(ids, persistent_id(abort.relation_id))
+    return nothing
+end
+function _collect_read_ids!(ids::Set{LQPRelationId}, _export::Export)
+    isnothing(_export.export_config) && return nothing
+    config = _export.export_config
+    if config.name == :csv_config
+        csv_config = config[]::ExportCSVConfig
+        for column in csv_config.data_columns
+            !isnothing(column.column_data) && push!(ids, persistent_id(column.column_data))
+        end
+    elseif config.name == :iceberg_config
+        iceberg_config = config[]::ExportIcebergConfig
+        !isnothing(iceberg_config.table_def) && push!(ids, persistent_id(iceberg_config.table_def))
+    end
+    return nothing
+end
+
 persistent_id(fragment::Fragment) = persistent_id(fragment.id::FragmentId)
 persistent_id(id::FragmentId) = LQPFragmentId(id.id)
 persistent_id(id::RelationId) = UInt128(id.id_low) + (UInt128(id.id_high) << 64)
