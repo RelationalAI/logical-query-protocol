@@ -154,8 +154,23 @@ function _collect_read_ids!(ids::Set{LQPRelationId}, _export::Export)
     config = _export.export_config
     if config.name == :csv_config
         csv_config = config[]::ExportCSVConfig
-        for column in csv_config.data_columns
-            !isnothing(column.column_data) && push!(ids, persistent_id(column.column_data))
+        if isempty(csv_config.data_columns)
+            # v2: data source is specified via csv_source
+            src = isnothing(csv_config.csv_source) ? nothing : csv_config.csv_source.csv_source
+            if !isnothing(src)
+                if src.name == :gnf_columns
+                    for column in (src[]::ExportCSVColumns).columns
+                        !isnothing(column.column_data) && push!(ids, persistent_id(column.column_data))
+                    end
+                elseif src.name == :table_def
+                    push!(ids, persistent_id(src[]::RelationId))
+                end
+            end
+        else
+            # v1: data source is specified via data_columns
+            for column in csv_config.data_columns
+                !isnothing(column.column_data) && push!(ids, persistent_id(column.column_data))
+            end
         end
     elseif config.name == :iceberg_config
         iceberg_config = config[]::ExportIcebergConfig
