@@ -1,0 +1,13 @@
+(transaction
+  (configure { :ivm.maintenance_level "off" :semantics_version 0})
+  (epoch
+    (writes
+      (define
+        (fragment
+          :f1
+          (algorithm
+            :R1
+            :R2
+            (script
+              (loop (init) (script (break :always ([] (true)))) (attrs (attribute :foo))))
+            (attrs (attribute :bar))))))))

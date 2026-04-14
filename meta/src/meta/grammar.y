@@ -891,11 +891,12 @@ attribute
         $4: Sequence[logic.Value] = $$.args
 
 algorithm
-    : "(" "algorithm" relation_id* script ")"
-      construct: $$ = logic.Algorithm(global=$3, body=$4)
+    : "(" "algorithm" relation_id* script attrs? ")"
+      construct: $$ = logic.Algorithm(global=$3, body=$4, attrs=builtin.unwrap_option_or($5, list[logic.Attribute]()))
       deconstruct:
         $3: Sequence[logic.RelationId] = $$.global
         $4: logic.Script = $$.body
+        $5: Optional[Sequence[logic.Attribute]] = $$.attrs if not builtin.is_empty($$.attrs) else None
 
 script
     : "(" "script" construct* ")"
@@ -913,11 +914,12 @@ construct
         $1: logic.Instruction = $$.instruction
 
 loop
-    : "(" "loop" init script ")"
-      construct: $$ = logic.Loop(init=$3, body=$4)
+    : "(" "loop" init script attrs? ")"
+      construct: $$ = logic.Loop(init=$3, body=$4, attrs=builtin.unwrap_option_or($5, list[logic.Attribute]()))
       deconstruct:
         $3: Sequence[logic.Instruction] = $$.init
         $4: logic.Script = $$.body
+        $5: Optional[Sequence[logic.Attribute]] = $$.attrs if not builtin.is_empty($$.attrs) else None
 
 init
     : "(" "init" instruction* ")"
