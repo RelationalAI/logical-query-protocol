@@ -21,7 +21,7 @@ MAINTENANCE_LEVEL_AUTO: MaintenanceLevel
 MAINTENANCE_LEVEL_ALL: MaintenanceLevel
 
 class Transaction(_message.Message):
-    __slots__ = ()
+    __slots__ = ("epochs", "configure", "sync")
     EPOCHS_FIELD_NUMBER: _ClassVar[int]
     CONFIGURE_FIELD_NUMBER: _ClassVar[int]
     SYNC_FIELD_NUMBER: _ClassVar[int]
@@ -31,7 +31,7 @@ class Transaction(_message.Message):
     def __init__(self, epochs: _Optional[_Iterable[_Union[Epoch, _Mapping]]] = ..., configure: _Optional[_Union[Configure, _Mapping]] = ..., sync: _Optional[_Union[Sync, _Mapping]] = ...) -> None: ...
 
 class Configure(_message.Message):
-    __slots__ = ()
+    __slots__ = ("semantics_version", "ivm_config")
     SEMANTICS_VERSION_FIELD_NUMBER: _ClassVar[int]
     IVM_CONFIG_FIELD_NUMBER: _ClassVar[int]
     semantics_version: int
@@ -39,19 +39,19 @@ class Configure(_message.Message):
     def __init__(self, semantics_version: _Optional[int] = ..., ivm_config: _Optional[_Union[IVMConfig, _Mapping]] = ...) -> None: ...
 
 class IVMConfig(_message.Message):
-    __slots__ = ()
+    __slots__ = ("level",)
     LEVEL_FIELD_NUMBER: _ClassVar[int]
     level: MaintenanceLevel
     def __init__(self, level: _Optional[_Union[MaintenanceLevel, str]] = ...) -> None: ...
 
 class Sync(_message.Message):
-    __slots__ = ()
+    __slots__ = ("fragments",)
     FRAGMENTS_FIELD_NUMBER: _ClassVar[int]
     fragments: _containers.RepeatedCompositeFieldContainer[_fragments_pb2.FragmentId]
     def __init__(self, fragments: _Optional[_Iterable[_Union[_fragments_pb2.FragmentId, _Mapping]]] = ...) -> None: ...
 
 class Epoch(_message.Message):
-    __slots__ = ()
+    __slots__ = ("writes", "reads")
     WRITES_FIELD_NUMBER: _ClassVar[int]
     READS_FIELD_NUMBER: _ClassVar[int]
     writes: _containers.RepeatedCompositeFieldContainer[Write]
@@ -59,7 +59,7 @@ class Epoch(_message.Message):
     def __init__(self, writes: _Optional[_Iterable[_Union[Write, _Mapping]]] = ..., reads: _Optional[_Iterable[_Union[Read, _Mapping]]] = ...) -> None: ...
 
 class Write(_message.Message):
-    __slots__ = ()
+    __slots__ = ("define", "undefine", "context", "snapshot")
     DEFINE_FIELD_NUMBER: _ClassVar[int]
     UNDEFINE_FIELD_NUMBER: _ClassVar[int]
     CONTEXT_FIELD_NUMBER: _ClassVar[int]
@@ -71,25 +71,25 @@ class Write(_message.Message):
     def __init__(self, define: _Optional[_Union[Define, _Mapping]] = ..., undefine: _Optional[_Union[Undefine, _Mapping]] = ..., context: _Optional[_Union[Context, _Mapping]] = ..., snapshot: _Optional[_Union[Snapshot, _Mapping]] = ...) -> None: ...
 
 class Define(_message.Message):
-    __slots__ = ()
+    __slots__ = ("fragment",)
     FRAGMENT_FIELD_NUMBER: _ClassVar[int]
     fragment: _fragments_pb2.Fragment
     def __init__(self, fragment: _Optional[_Union[_fragments_pb2.Fragment, _Mapping]] = ...) -> None: ...
 
 class Undefine(_message.Message):
-    __slots__ = ()
+    __slots__ = ("fragment_id",)
     FRAGMENT_ID_FIELD_NUMBER: _ClassVar[int]
     fragment_id: _fragments_pb2.FragmentId
     def __init__(self, fragment_id: _Optional[_Union[_fragments_pb2.FragmentId, _Mapping]] = ...) -> None: ...
 
 class Context(_message.Message):
-    __slots__ = ()
+    __slots__ = ("relations",)
     RELATIONS_FIELD_NUMBER: _ClassVar[int]
     relations: _containers.RepeatedCompositeFieldContainer[_logic_pb2.RelationId]
     def __init__(self, relations: _Optional[_Iterable[_Union[_logic_pb2.RelationId, _Mapping]]] = ...) -> None: ...
 
 class SnapshotMapping(_message.Message):
-    __slots__ = ()
+    __slots__ = ("destination_path", "source_relation")
     DESTINATION_PATH_FIELD_NUMBER: _ClassVar[int]
     SOURCE_RELATION_FIELD_NUMBER: _ClassVar[int]
     destination_path: _containers.RepeatedScalarFieldContainer[str]
@@ -97,7 +97,7 @@ class SnapshotMapping(_message.Message):
     def __init__(self, destination_path: _Optional[_Iterable[str]] = ..., source_relation: _Optional[_Union[_logic_pb2.RelationId, _Mapping]] = ...) -> None: ...
 
 class Snapshot(_message.Message):
-    __slots__ = ()
+    __slots__ = ("mappings", "prefix")
     MAPPINGS_FIELD_NUMBER: _ClassVar[int]
     PREFIX_FIELD_NUMBER: _ClassVar[int]
     mappings: _containers.RepeatedCompositeFieldContainer[SnapshotMapping]
@@ -105,7 +105,7 @@ class Snapshot(_message.Message):
     def __init__(self, mappings: _Optional[_Iterable[_Union[SnapshotMapping, _Mapping]]] = ..., prefix: _Optional[_Iterable[str]] = ...) -> None: ...
 
 class ExportCSVConfig(_message.Message):
-    __slots__ = ()
+    __slots__ = ("path", "csv_source", "csv_config", "data_columns", "partition_size", "compression", "syntax_header_row", "syntax_missing_string", "syntax_delim", "syntax_quotechar", "syntax_escapechar")
     PATH_FIELD_NUMBER: _ClassVar[int]
     CSV_SOURCE_FIELD_NUMBER: _ClassVar[int]
     CSV_CONFIG_FIELD_NUMBER: _ClassVar[int]
@@ -131,7 +131,7 @@ class ExportCSVConfig(_message.Message):
     def __init__(self, path: _Optional[str] = ..., csv_source: _Optional[_Union[ExportCSVSource, _Mapping]] = ..., csv_config: _Optional[_Union[_logic_pb2.CSVConfig, _Mapping]] = ..., data_columns: _Optional[_Iterable[_Union[ExportCSVColumn, _Mapping]]] = ..., partition_size: _Optional[int] = ..., compression: _Optional[str] = ..., syntax_header_row: _Optional[bool] = ..., syntax_missing_string: _Optional[str] = ..., syntax_delim: _Optional[str] = ..., syntax_quotechar: _Optional[str] = ..., syntax_escapechar: _Optional[str] = ...) -> None: ...
 
 class ExportCSVColumn(_message.Message):
-    __slots__ = ()
+    __slots__ = ("column_name", "column_data")
     COLUMN_NAME_FIELD_NUMBER: _ClassVar[int]
     COLUMN_DATA_FIELD_NUMBER: _ClassVar[int]
     column_name: str
@@ -139,13 +139,13 @@ class ExportCSVColumn(_message.Message):
     def __init__(self, column_name: _Optional[str] = ..., column_data: _Optional[_Union[_logic_pb2.RelationId, _Mapping]] = ...) -> None: ...
 
 class ExportCSVColumns(_message.Message):
-    __slots__ = ()
+    __slots__ = ("columns",)
     COLUMNS_FIELD_NUMBER: _ClassVar[int]
     columns: _containers.RepeatedCompositeFieldContainer[ExportCSVColumn]
     def __init__(self, columns: _Optional[_Iterable[_Union[ExportCSVColumn, _Mapping]]] = ...) -> None: ...
 
 class ExportCSVSource(_message.Message):
-    __slots__ = ()
+    __slots__ = ("gnf_columns", "table_def")
     GNF_COLUMNS_FIELD_NUMBER: _ClassVar[int]
     TABLE_DEF_FIELD_NUMBER: _ClassVar[int]
     gnf_columns: ExportCSVColumns
@@ -153,7 +153,7 @@ class ExportCSVSource(_message.Message):
     def __init__(self, gnf_columns: _Optional[_Union[ExportCSVColumns, _Mapping]] = ..., table_def: _Optional[_Union[_logic_pb2.RelationId, _Mapping]] = ...) -> None: ...
 
 class ExportColumn(_message.Message):
-    __slots__ = ()
+    __slots__ = ("name", "nullable")
     NAME_FIELD_NUMBER: _ClassVar[int]
     NULLABLE_FIELD_NUMBER: _ClassVar[int]
     name: str
@@ -161,9 +161,9 @@ class ExportColumn(_message.Message):
     def __init__(self, name: _Optional[str] = ..., nullable: _Optional[bool] = ...) -> None: ...
 
 class ExportIcebergConfig(_message.Message):
-    __slots__ = ()
+    __slots__ = ("locator", "config", "table_def", "columns", "prefix", "target_file_size_bytes", "compression", "table_properties")
     class TablePropertiesEntry(_message.Message):
-        __slots__ = ()
+        __slots__ = ("key", "value")
         KEY_FIELD_NUMBER: _ClassVar[int]
         VALUE_FIELD_NUMBER: _ClassVar[int]
         key: str
@@ -188,7 +188,7 @@ class ExportIcebergConfig(_message.Message):
     def __init__(self, locator: _Optional[_Union[_logic_pb2.IcebergLocator, _Mapping]] = ..., config: _Optional[_Union[_logic_pb2.IcebergCatalogConfig, _Mapping]] = ..., table_def: _Optional[_Union[_logic_pb2.RelationId, _Mapping]] = ..., columns: _Optional[_Iterable[_Union[ExportColumn, _Mapping]]] = ..., prefix: _Optional[str] = ..., target_file_size_bytes: _Optional[int] = ..., compression: _Optional[str] = ..., table_properties: _Optional[_Mapping[str, str]] = ...) -> None: ...
 
 class Read(_message.Message):
-    __slots__ = ()
+    __slots__ = ("demand", "output", "what_if", "abort", "export")
     DEMAND_FIELD_NUMBER: _ClassVar[int]
     OUTPUT_FIELD_NUMBER: _ClassVar[int]
     WHAT_IF_FIELD_NUMBER: _ClassVar[int]
@@ -202,13 +202,13 @@ class Read(_message.Message):
     def __init__(self, demand: _Optional[_Union[Demand, _Mapping]] = ..., output: _Optional[_Union[Output, _Mapping]] = ..., what_if: _Optional[_Union[WhatIf, _Mapping]] = ..., abort: _Optional[_Union[Abort, _Mapping]] = ..., export: _Optional[_Union[Export, _Mapping]] = ...) -> None: ...
 
 class Demand(_message.Message):
-    __slots__ = ()
+    __slots__ = ("relation_id",)
     RELATION_ID_FIELD_NUMBER: _ClassVar[int]
     relation_id: _logic_pb2.RelationId
     def __init__(self, relation_id: _Optional[_Union[_logic_pb2.RelationId, _Mapping]] = ...) -> None: ...
 
 class Output(_message.Message):
-    __slots__ = ()
+    __slots__ = ("name", "relation_id")
     NAME_FIELD_NUMBER: _ClassVar[int]
     RELATION_ID_FIELD_NUMBER: _ClassVar[int]
     name: str
@@ -216,7 +216,7 @@ class Output(_message.Message):
     def __init__(self, name: _Optional[str] = ..., relation_id: _Optional[_Union[_logic_pb2.RelationId, _Mapping]] = ...) -> None: ...
 
 class Export(_message.Message):
-    __slots__ = ()
+    __slots__ = ("csv_config", "iceberg_config")
     CSV_CONFIG_FIELD_NUMBER: _ClassVar[int]
     ICEBERG_CONFIG_FIELD_NUMBER: _ClassVar[int]
     csv_config: ExportCSVConfig
@@ -224,7 +224,7 @@ class Export(_message.Message):
     def __init__(self, csv_config: _Optional[_Union[ExportCSVConfig, _Mapping]] = ..., iceberg_config: _Optional[_Union[ExportIcebergConfig, _Mapping]] = ...) -> None: ...
 
 class WhatIf(_message.Message):
-    __slots__ = ()
+    __slots__ = ("branch", "epoch")
     BRANCH_FIELD_NUMBER: _ClassVar[int]
     EPOCH_FIELD_NUMBER: _ClassVar[int]
     branch: str
@@ -232,7 +232,7 @@ class WhatIf(_message.Message):
     def __init__(self, branch: _Optional[str] = ..., epoch: _Optional[_Union[Epoch, _Mapping]] = ...) -> None: ...
 
 class Abort(_message.Message):
-    __slots__ = ()
+    __slots__ = ("name", "relation_id")
     NAME_FIELD_NUMBER: _ClassVar[int]
     RELATION_ID_FIELD_NUMBER: _ClassVar[int]
     name: str
