@@ -1,0 +1,14 @@
+(transaction
+  (epoch
+    (writes
+      (define
+        (fragment :f1
+          (algorithm :R1 :R2
+            (script
+              (loop
+                (init)
+                (script
+                  (break :always ([] (and))))
+                (attrs (attribute :foo))))
+            (attrs (attribute :bar))))))
+    (reads)))

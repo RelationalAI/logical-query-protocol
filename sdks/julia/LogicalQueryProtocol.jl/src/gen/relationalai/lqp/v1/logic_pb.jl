@@ -2071,6 +2071,7 @@ end
 struct var"##Stub#Algorithm"{T1<:var"##Abstract#Script"} <: var"##Abstract#Algorithm"
     var"#global"::Vector{RelationId}
     body::Union{Nothing,T1}
+    attrs::Vector{Attribute}
 end
 
 struct var"##Stub#Assign"{T1<:var"##Abstract#Formula"} <: var"##Abstract#Assign"
@@ -2164,6 +2165,7 @@ end
 struct var"##Stub#Loop"{T1<:var"##Abstract#Instruction"} <: var"##Abstract#Loop"
     init::Vector{T1}
     body::Union{Nothing,var"##Stub#Script"{var"##Stub#Construct"{var"##Stub#Loop"{T1},T1}}}
+    attrs::Vector{Attribute}
 end
 
 struct var"##Stub#Declaration"{T1<:var"##Abstract#Formula",T2<:var"##Abstract#Instruction"} <: var"##Abstract#Declaration"
@@ -2213,36 +2215,41 @@ function PB._encoded_size(x::Abstraction)
 end
 
 const Algorithm = var"##Stub#Algorithm"{var"##Stub#Script"{var"##Stub#Construct"{var"##Stub#Loop"{var"##Stub#Instruction"{var"##Stub#Formula"}},var"##Stub#Instruction"{var"##Stub#Formula"}}}}
-Algorithm(;var"#global" = Vector{RelationId}(), body = nothing) = Algorithm(var"#global", body)
-PB.default_values(::Type{Algorithm}) = (;var"#global" = Vector{RelationId}(), body = nothing)
-PB.field_numbers(::Type{Algorithm}) = (;var"#global" = 1, body = 2)
+Algorithm(;var"#global" = Vector{RelationId}(), body = nothing, attrs = Vector{Attribute}()) = Algorithm(var"#global", body, attrs)
+PB.default_values(::Type{Algorithm}) = (;var"#global" = Vector{RelationId}(), body = nothing, attrs = Vector{Attribute}())
+PB.field_numbers(::Type{Algorithm}) = (;var"#global" = 1, body = 2, attrs = 3)
 
 function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:Algorithm}, _endpos::Int=0, _group::Bool=false)
     var"#global" = PB.BufferedVector{RelationId}()
     body = Ref{Union{Nothing,Script}}(nothing)
+    attrs = PB.BufferedVector{Attribute}()
     while !PB.message_done(d, _endpos, _group)
         field_number, wire_type = PB.decode_tag(d)
         if field_number == 1
             PB.decode!(d, var"#global")
         elseif field_number == 2
             PB.decode!(d, body)
+        elseif field_number == 3
+            PB.decode!(d, attrs)
         else
             Base.skip(d, wire_type)
         end
     end
-    return Algorithm(var"#global"[], body[])
+    return Algorithm(var"#global"[], body[], attrs[])
 end
 
 function PB.encode(e::PB.AbstractProtoEncoder, x::Algorithm)
     initpos = position(e.io)
     !isempty(x.var"#global") && PB.encode(e, 1, x.var"#global")
     !isnothing(x.body) && PB.encode(e, 2, x.body)
+    !isempty(x.attrs) && PB.encode(e, 3, x.attrs)
     return position(e.io) - initpos
 end
 function PB._encoded_size(x::Algorithm)
     encoded_size = 0
     !isempty(x.var"#global") && (encoded_size += PB._encoded_size(x.var"#global", 1))
     !isnothing(x.body) && (encoded_size += PB._encoded_size(x.body, 2))
+    !isempty(x.attrs) && (encoded_size += PB._encoded_size(x.attrs, 3))
     return encoded_size
 end
 
@@ -2855,36 +2862,41 @@ function PB._encoded_size(x::Construct)
 end
 
 const Loop = var"##Stub#Loop"{var"##Stub#Instruction"{var"##Stub#Formula"}}
-Loop(;init = Vector{Instruction}(), body = nothing) = Loop(init, body)
-PB.default_values(::Type{Loop}) = (;init = Vector{Instruction}(), body = nothing)
-PB.field_numbers(::Type{Loop}) = (;init = 1, body = 2)
+Loop(;init = Vector{Instruction}(), body = nothing, attrs = Vector{Attribute}()) = Loop(init, body, attrs)
+PB.default_values(::Type{Loop}) = (;init = Vector{Instruction}(), body = nothing, attrs = Vector{Attribute}())
+PB.field_numbers(::Type{Loop}) = (;init = 1, body = 2, attrs = 3)
 
 function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:Loop}, _endpos::Int=0, _group::Bool=false)
     init = PB.BufferedVector{Instruction}()
     body = Ref{Union{Nothing,Script}}(nothing)
+    attrs = PB.BufferedVector{Attribute}()
     while !PB.message_done(d, _endpos, _group)
         field_number, wire_type = PB.decode_tag(d)
         if field_number == 1
             PB.decode!(d, init)
         elseif field_number == 2
             PB.decode!(d, body)
+        elseif field_number == 3
+            PB.decode!(d, attrs)
         else
             Base.skip(d, wire_type)
         end
     end
-    return Loop(init[], body[])
+    return Loop(init[], body[], attrs[])
 end
 
 function PB.encode(e::PB.AbstractProtoEncoder, x::Loop)
     initpos = position(e.io)
     !isempty(x.init) && PB.encode(e, 1, x.init)
     !isnothing(x.body) && PB.encode(e, 2, x.body)
+    !isempty(x.attrs) && PB.encode(e, 3, x.attrs)
     return position(e.io) - initpos
 end
 function PB._encoded_size(x::Loop)
     encoded_size = 0
     !isempty(x.init) && (encoded_size += PB._encoded_size(x.init, 1))
     !isnothing(x.body) && (encoded_size += PB._encoded_size(x.body, 2))
+    !isempty(x.attrs) && (encoded_size += PB._encoded_size(x.attrs, 3))
     return encoded_size
 end
 

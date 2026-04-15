@@ -46,11 +46,13 @@ class FunctionalDependency(_message.Message):
     def __init__(self, guard: _Optional[_Union[Abstraction, _Mapping]] = ..., keys: _Optional[_Iterable[_Union[Var, _Mapping]]] = ..., values: _Optional[_Iterable[_Union[Var, _Mapping]]] = ...) -> None: ...
 
 class Algorithm(_message.Message):
-    __slots__ = ("body",)
+    __slots__ = ("body", "attrs")
     GLOBAL_FIELD_NUMBER: _ClassVar[int]
     BODY_FIELD_NUMBER: _ClassVar[int]
+    ATTRS_FIELD_NUMBER: _ClassVar[int]
     body: Script
-    def __init__(self, body: _Optional[_Union[Script, _Mapping]] = ..., **kwargs) -> None: ...
+    attrs: _containers.RepeatedCompositeFieldContainer[Attribute]
+    def __init__(self, body: _Optional[_Union[Script, _Mapping]] = ..., attrs: _Optional[_Iterable[_Union[Attribute, _Mapping]]] = ..., **kwargs) -> None: ...
 
 class Script(_message.Message):
     __slots__ = ("constructs",)
@@ -67,12 +69,14 @@ class Construct(_message.Message):
     def __init__(self, loop: _Optional[_Union[Loop, _Mapping]] = ..., instruction: _Optional[_Union[Instruction, _Mapping]] = ...) -> None: ...
 
 class Loop(_message.Message):
-    __slots__ = ("init", "body")
+    __slots__ = ("init", "body", "attrs")
     INIT_FIELD_NUMBER: _ClassVar[int]
     BODY_FIELD_NUMBER: _ClassVar[int]
+    ATTRS_FIELD_NUMBER: _ClassVar[int]
     init: _containers.RepeatedCompositeFieldContainer[Instruction]
     body: Script
-    def __init__(self, init: _Optional[_Iterable[_Union[Instruction, _Mapping]]] = ..., body: _Optional[_Union[Script, _Mapping]] = ...) -> None: ...
+    attrs: _containers.RepeatedCompositeFieldContainer[Attribute]
+    def __init__(self, init: _Optional[_Iterable[_Union[Instruction, _Mapping]]] = ..., body: _Optional[_Union[Script, _Mapping]] = ..., attrs: _Optional[_Iterable[_Union[Attribute, _Mapping]]] = ...) -> None: ...
 
 class Instruction(_message.Message):
     __slots__ = ("assign", "upsert", "monoid_def", "monus_def")

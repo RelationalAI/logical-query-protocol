@@ -35,6 +35,7 @@ message FunctionalDependency {
 message Algorithm {
   repeated RelationId global = 1;
   Script body = 2;
+  repeated Attribute attrs = 3;
 }
 
 message Script {
@@ -51,6 +52,7 @@ message Construct {
 message Loop {
   repeated Instruction init = 1;
   Script body = 2;
+  repeated Attribute attrs = 3;
 }
 
 message Instruction {
