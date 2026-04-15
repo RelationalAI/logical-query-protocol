@@ -365,20 +365,11 @@ Base.isequal(a::IcebergCatalogConfig, b::IcebergCatalogConfig) =
     isequal(a.scope, b.scope) &&
     isequal(a.properties, b.properties)
 
-# ExportColumn
-Base.:(==)(a::ExportColumn, b::ExportColumn) =
-    a.name == b.name && a.nullable == b.nullable
-Base.hash(a::ExportColumn, h::UInt) =
-    hash(a.nullable, hash(a.name, h))
-Base.isequal(a::ExportColumn, b::ExportColumn) =
-    isequal(a.name, b.name) && isequal(a.nullable, b.nullable)
-
 # ExportIcebergConfig
 Base.:(==)(a::ExportIcebergConfig, b::ExportIcebergConfig) =
     a.locator == b.locator &&
     a.config == b.config &&
     a.table_def == b.table_def &&
-    a.columns == b.columns &&
     a.prefix == b.prefix &&
     a.target_file_size_bytes == b.target_file_size_bytes &&
     a.compression == b.compression &&
@@ -389,7 +380,7 @@ Base.hash(a::ExportIcebergConfig, h::UInt) = hash(
         a.compression,
         hash(
             a.target_file_size_bytes,
-            hash(a.prefix, hash(a.columns, hash(a.table_def, hash(a.config, hash(a.locator, h))))),
+            hash(a.prefix, hash(a.table_def, hash(a.config, hash(a.locator, h)))),
         ),
     ),
 )
@@ -397,7 +388,6 @@ Base.isequal(a::ExportIcebergConfig, b::ExportIcebergConfig) =
     isequal(a.locator, b.locator) &&
     isequal(a.config, b.config) &&
     isequal(a.table_def, b.table_def) &&
-    isequal(a.columns, b.columns) &&
     isequal(a.prefix, b.prefix) &&
     isequal(a.target_file_size_bytes, b.target_file_size_bytes) &&
     isequal(a.compression, b.compression) &&

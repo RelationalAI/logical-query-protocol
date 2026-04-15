@@ -2262,35 +2262,18 @@ end
     @test a == a
 end
 
-@testitem "Equality for ExportColumn" tags=[:ring1, :unit] begin
-    using LogicalQueryProtocol: ExportColumn
-
-    a = ExportColumn(name="col1", nullable=false)
-    b = ExportColumn(name="col1", nullable=false)
-    c = ExportColumn(name="col2", nullable=false)
-    d = ExportColumn(name="col1", nullable=true)
-
-    @test a == b
-    @test a != c
-    @test a != d
-    @test isequal(a, b)
-    @test hash(a) == hash(b)
-    @test a == a
-end
-
 @testitem "Equality for ExportIcebergConfig" tags=[:ring1, :unit] begin
-    using LogicalQueryProtocol: ExportIcebergConfig, ExportColumn, IcebergLocator, IcebergCatalogConfig, RelationId
+    using LogicalQueryProtocol: ExportIcebergConfig, IcebergLocator, IcebergCatalogConfig, RelationId
 
     loc = IcebergLocator(table_name="t", namespace=["n"], warehouse="w")
     cfg = IcebergCatalogConfig(catalog_uri="uri", scope="", properties=Dict(), auth_properties=Dict())
     rid = RelationId(id_low=1, id_high=0)
-    cols = [ExportColumn(name="c1", nullable=false)]
 
-    a = ExportIcebergConfig(locator=loc, config=cfg, table_def=rid, columns=cols, prefix="", target_file_size_bytes=0, compression="", table_properties=Dict())
-    b = ExportIcebergConfig(locator=loc, config=cfg, table_def=rid, columns=cols, prefix="", target_file_size_bytes=0, compression="", table_properties=Dict())
-    c = ExportIcebergConfig(locator=loc, config=cfg, table_def=rid, columns=cols, prefix="pfx", target_file_size_bytes=0, compression="", table_properties=Dict())
-    d = ExportIcebergConfig(locator=loc, config=cfg, table_def=rid, columns=cols, prefix="", target_file_size_bytes=0, compression="SNAPPY", table_properties=Dict())
-    e = ExportIcebergConfig(locator=loc, config=cfg, table_def=rid, columns=cols, prefix="", target_file_size_bytes=0, compression="", table_properties=Dict("k" => "v"))
+    a = ExportIcebergConfig(locator=loc, config=cfg, table_def=rid, prefix="", target_file_size_bytes=0, compression="", table_properties=Dict())
+    b = ExportIcebergConfig(locator=loc, config=cfg, table_def=rid, prefix="", target_file_size_bytes=0, compression="", table_properties=Dict())
+    c = ExportIcebergConfig(locator=loc, config=cfg, table_def=rid, prefix="pfx", target_file_size_bytes=0, compression="", table_properties=Dict())
+    d = ExportIcebergConfig(locator=loc, config=cfg, table_def=rid, prefix="", target_file_size_bytes=0, compression="SNAPPY", table_properties=Dict())
+    e = ExportIcebergConfig(locator=loc, config=cfg, table_def=rid, prefix="", target_file_size_bytes=0, compression="", table_properties=Dict("k" => "v"))
 
     @test a == b
     @test a != c
