@@ -4,5 +4,8 @@ modules:
     breaking:
       use:
         - FILE
-      except:
-        - FIELD_NO_DELETE
+      ignore_only:
+        FIELD_NO_DELETE:
+          - proto/relationalai/lqp/v1/transactions.proto
+        MESSAGE_NO_DELETE:
+          - proto/relationalai/lqp/v1/transactions.proto
