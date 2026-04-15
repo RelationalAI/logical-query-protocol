@@ -1755,7 +1755,6 @@ def construct_export_iceberg_config_full(
     locator: logic.IcebergLocator,
     config: logic.IcebergCatalogConfig,
     table_def: logic.RelationId,
-    columns: Sequence[transactions.ExportColumn],
     table_property_pairs: Sequence[Tuple[String, String]],
     config_dict: Optional[Sequence[Tuple[String, logic.Value]]],
 ) -> transactions.ExportIcebergConfig:
@@ -1768,7 +1767,6 @@ def construct_export_iceberg_config_full(
         locator=locator,
         config=config,
         table_def=table_def,
-        columns=columns,
         prefix=builtin.some(prefix),
         target_file_size_bytes=builtin.some(target_file_size_bytes),
         compression=compression,

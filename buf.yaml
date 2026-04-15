@@ -6,3 +6,4 @@ modules:
         - FILE
       except:
         - FIELD_NO_DELETE
+        - MESSAGE_NO_DELETE
