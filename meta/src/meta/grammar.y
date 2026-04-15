@@ -116,8 +116,6 @@
 %nonterm export_csv_config transactions.ExportCSVConfig
 %nonterm export_csv_path String
 %nonterm export_csv_source transactions.ExportCSVSource
-%nonterm export_iceberg_column transactions.ExportColumn
-%nonterm export_iceberg_columns Sequence[transactions.ExportColumn]
 %nonterm export_iceberg_config transactions.ExportIcebergConfig
 %nonterm export_iceberg_table_def logic.RelationId
 %nonterm iceberg_auth_properties Sequence[Tuple[String, String]]
@@ -1222,13 +1220,6 @@ iceberg_catalog_config
         $5: Sequence[Tuple[String, String]] = builtin.dict_to_pairs($$.properties)
         $6: Sequence[Tuple[String, String]] = builtin.dict_to_pairs($$.auth_properties)
 
-export_iceberg_column
-    : "(" "column" STRING boolean_value ")"
-      construct: $$ = transactions.ExportColumn(name=$3, nullable=$4)
-      deconstruct:
-        $3: String = $$.name
-        $4: Boolean = $$.nullable
-
 iceberg_to_snapshot
     : "(" "to_snapshot" STRING ")"
       construct: $$ = $3
@@ -1372,26 +1363,20 @@ export_iceberg_table_def
       construct: $$ = $3
       deconstruct: $3: logic.RelationId = $$
 
-export_iceberg_columns
-    : "(" "columns" export_iceberg_column* ")"
-      construct: $$ = $3
-      deconstruct: $3: Sequence[transactions.ExportColumn] = $$
-
 iceberg_table_properties
     : "(" "table_properties" iceberg_property_entry* ")"
       construct: $$ = $3
       deconstruct: $3: Sequence[Tuple[String, String]] = $$
 
 export_iceberg_config
-    : "(" "export_iceberg_config" iceberg_locator iceberg_catalog_config export_iceberg_table_def export_iceberg_columns iceberg_table_properties config_dict? ")"
-      construct: $$ = construct_export_iceberg_config_full($3, $4, $5, $6, $7, $8)
+    : "(" "export_iceberg_config" iceberg_locator iceberg_catalog_config export_iceberg_table_def iceberg_table_properties config_dict? ")"
+      construct: $$ = construct_export_iceberg_config_full($3, $4, $5, $6, $7)
       deconstruct:
         $3: logic.IcebergLocator = $$.locator
         $4: logic.IcebergCatalogConfig = $$.config
         $5: logic.RelationId = $$.table_def
-        $6: Sequence[transactions.ExportColumn] = $$.columns
-        $7: Sequence[Tuple[String, String]] = builtin.dict_to_pairs($$.table_properties)
-        $8: Optional[Sequence[Tuple[String, logic.Value]]] = deconstruct_export_iceberg_config_optional($$)
+        $6: Sequence[Tuple[String, String]] = builtin.dict_to_pairs($$.table_properties)
+        $7: Optional[Sequence[Tuple[String, logic.Value]]] = deconstruct_export_iceberg_config_optional($$)
 
 
 %%
