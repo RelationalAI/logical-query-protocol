@@ -1,3 +1,17 @@
+// Logical Query Protocol — Fragments
+//
+// Fragments are the unit of incremental compilation and installation. The full
+// execution graph is partitioned into content-addressable fragments that can be
+// defined, redefined, and undefined independently.
+//
+// Instead of resending the entire program on every transaction, a client can
+// use the Sync mechanism (see transactions.proto) to reconcile its expected
+// set of fragments with the engine's installed state. The engine identifies
+// fragments by their content hash, so unchanged fragments are never resent.
+//
+// The granularity of fragments is chosen by the compiler: one per source file,
+// per module, per definition, or even a single fragment for the entire program.
+
 syntax = "proto3";
 
 option go_package = "github.com/RelationalAI/logical-query-protocol/sdks/go/src/lqp/v1";
@@ -6,17 +20,27 @@ package relationalai.lqp.v1;
 
 import "relationalai/lqp/v1/logic.proto";
 
+// A content-addressable unit of the execution graph containing one or more
+// declarations. Each declaration can only belong to a single fragment.
+// Fragments are installed/removed via Define/Undefine write operations.
 message Fragment {
   FragmentId id = 1;
   repeated Declaration declarations = 2;
+  // Optional human-readable name mappings for debugging and logging.
   DebugInfo debug_info = 3;
 }
 
+// Maps opaque RelationIds to human-readable names for use in logs,
+// error messages, and debugging tools. The ids and orig_names arrays
+// are parallel (same length, matched by index).
 message DebugInfo {
   repeated RelationId ids = 1;
   repeated string orig_names = 2;
 }
 
+// Content-based identifier for a fragment. Typically a hash of the
+// fragment's declarations, enabling deduplication and cache-friendly
+// synchronization.
 message FragmentId {
-  bytes id = 1; // Variable-length identifier, up to 256 bits (32 bytes) or less
+  bytes id = 1; // Variable-length identifier, up to 256 bits (32 bytes)
 }
