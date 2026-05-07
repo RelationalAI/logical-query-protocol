@@ -122,6 +122,8 @@ function value_to_type(value::Value)
         return var"#Type"(OneOf(:int128_type, Int128Type()))
     elseif value_type_tag == :uint128_value
         return var"#Type"(OneOf(:uint128_type, UInt128Type()))
+    elseif value_type_tag == :uint32_value
+        return var"#Type"(OneOf(:uint32_type, UInt32Type()))
     elseif value_type_tag == :date_value
         return var"#Type"(OneOf(:date_type, DateType()))
     elseif value_type_tag == :datetime_value
