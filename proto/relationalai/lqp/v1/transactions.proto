@@ -1,3 +1,17 @@
+// Logical Query Protocol — Transactions
+//
+// A Transaction is the top-level unit of work sent by a client to the engine.
+// It contains configuration, an optional sync directive, and one or more epochs
+// that execute sequentially. Each epoch groups writes (which modify the execution
+// graph) and reads (which query it).
+//
+// Execution model:
+//   - Epochs execute in order. Within an epoch, all writes execute before reads.
+//   - Multiple writes within an epoch are unordered and may execute concurrently.
+//   - Multiple reads within an epoch are unordered and may execute concurrently.
+//   - The engine first runs a "simulator" pass to validate and minimize the
+//     transaction, then a "driver" pass to execute against the real runtime state.
+
 syntax = "proto3";
 
 option go_package = "github.com/RelationalAI/logical-query-protocol/sdks/go/src/lqp/v1";
@@ -7,41 +21,62 @@ package relationalai.lqp.v1;
 import "relationalai/lqp/v1/fragments.proto";
 import "relationalai/lqp/v1/logic.proto";
 
+// The top-level unit of work. A client sends a Transaction to the engine,
+// which executes its epochs sequentially and returns results for all reads.
 message Transaction {
   repeated Epoch epochs = 1;
   Configure configure = 2;
+  // Optional fragment synchronization. When present, the engine verifies that
+  // exactly these fragments are installed, uninstalling extras and reporting
+  // missing ones as errors.
   optional Sync sync = 3;
 }
 
+// Transaction-wide configuration. All parameters must be set explicitly by
+// the client to ensure deterministic behavior across engine versions.
+// Changing a default in the engine has no effect until the client updates.
 message Configure {
+  // Protocol semantics version. Bumped when user-visible semantics change
+  // (e.g. how empty relations aggregate).
   int64 semantics_version = 1;
   IVMConfig ivm_config = 2;
 }
 
+// Controls incremental view maintenance (IVM) behavior.
 message IVMConfig {
   MaintenanceLevel level = 1;
 }
 
+// How aggressively the engine maintains derived relations incrementally
+// rather than recomputing from scratch.
 enum MaintenanceLevel {
-  MAINTENANCE_LEVEL_UNSPECIFIED = 0;
-  MAINTENANCE_LEVEL_OFF = 1;
-  MAINTENANCE_LEVEL_AUTO = 2;
-  MAINTENANCE_LEVEL_ALL = 3;
+  MAINTENANCE_LEVEL_UNSPECIFIED = 0; // Use engine default
+  MAINTENANCE_LEVEL_OFF = 1;         // No incremental maintenance; full recomputation
+  MAINTENANCE_LEVEL_AUTO = 2;        // Incrementally maintain relations the engine deems beneficial
+  MAINTENANCE_LEVEL_ALL = 3;         // Maintain all derived relations incrementally
 }
 
+// Declares the set of fragment IDs that the client expects to be installed.
+// The engine reconciles its state: extra fragments are uninstalled, missing
+// fragments cause a desync error with the offending IDs so the client can
+// retry with the missing definitions included.
+// Sending Sync([]) uninstalls all fragments, allowing a clean reinstall.
 message Sync {
   repeated FragmentId fragments = 1;
 }
 
+// An observable state boundary within a transaction. Epochs execute
+// sequentially; each epoch's writes take effect before its reads execute.
 message Epoch {
   repeated Write writes = 1;
   repeated Read reads = 2;
 }
 
 //
-// Write operations
+// Write operations — modify the installed execution graph
 //
 
+// A write operation that changes the state of installed fragments or relations.
 message Write {
   reserved 4; // Sync is now at transaction level
   oneof write_type {
@@ -52,47 +87,58 @@ message Write {
   }
 }
 
+// Installs a fragment (and all its declarations) into the execution graph.
+// If a fragment with the same ID already exists, it is replaced.
 message Define {
   Fragment fragment = 1;
 }
 
+// Removes a previously installed fragment and all its declarations.
 message Undefine {
   FragmentId fragment_id = 1;
 }
 
+// Declares which relations should be optimized together within this epoch.
+// More context gives the optimizer more opportunities for reuse, but
+// increases planning time.
 message Context {
   repeated RelationId relations = 1;
 }
 
-// A single (destination, source) pair within a Snapshot action. The destination_path is
-// relative to the Snapshot's prefix.
+// A single (destination, source) pair within a Snapshot action. Maps a
+// derived relation to a durable EDB path.
 message SnapshotMapping {
+  // Hierarchical destination path for the resulting EDB.
   repeated string destination_path = 1;
+  // The derived relation whose current state is captured.
   RelationId source_relation = 2;
 }
 
-// Demand the source IDBs, take immutable snapshots, and turn them into EDBs under the
-// given paths (specified as sequences of strings, see EDB). If a prefix is specified,
-// the engine should treat this as a complete snapshot of all EDBs under that prefix,
-// removing any pre-existing EDBs for the same prefix that are not in the mappings.
+// Materializes derived relations as durable EDB (base) relations. Demands
+// the source relations, takes immutable snapshots, and stores them under the
+// given paths. When a prefix is specified, any pre-existing EDBs under that
+// prefix not listed in the mappings are removed — enabling atomic replacement
+// of an entire namespace.
 message Snapshot {
   repeated SnapshotMapping mappings = 1;
+  // Optional namespace prefix for atomic replacement of all EDBs under it.
   repeated string prefix = 2;
 }
 
 //
-// Export config
+// Export configuration
 //
 
+// Configuration for exporting relation data to CSV files.
 message ExportCSVConfig {
+  // Destination path (URL or filesystem path).
   string path = 1;
 
   ExportCSVSource csv_source = 10;
   CSVConfig csv_config = 11;
 
-  // Below are all deprecated in favour of the `csv_config` above.
+  // Deprecated fields — use csv_config and csv_source instead.
   repeated ExportCSVColumn data_columns = 2;
-
   optional int64 partition_size = 3;
   optional string compression = 4;
   optional bool             syntax_header_row = 5;
@@ -100,43 +146,51 @@ message ExportCSVConfig {
   optional string           syntax_delim = 7;
   optional string           syntax_quotechar = 8;
   optional string           syntax_escapechar = 9;
-
-  // TODO: support data integration options, e.g., private tokens for private buckets etc.
 }
 
+// Maps a named column to a relation for CSV export.
 message ExportCSVColumn {
   string column_name = 1;
   RelationId column_data = 2;
 }
 
+// A list of CSV export column mappings.
 message ExportCSVColumns {
   repeated ExportCSVColumn columns = 1;
 }
 
+// Defines the data source for CSV export: either individual column mappings
+// (GNF-style) or a single table definition.
 message ExportCSVSource {
   oneof csv_source {
     ExportCSVColumns gnf_columns = 1;
+    // A single relation defining the entire table structure.
     RelationId table_def = 2;
   }
 }
 
-// Iceberg Export config
-
+// Configuration for exporting relation data to an Apache Iceberg table.
 message ExportIcebergConfig {
   IcebergLocator locator = 1;
   IcebergCatalogConfig config = 2;
-  RelationId table_def = 3;              // Which definition to export as a table.
-  reserved 4;                            // was: repeated ExportColumn columns
-  optional string prefix = 5;            // File name prefix for parquet files that are produced.
+  // The relation to export as an Iceberg table.
+  RelationId table_def = 3;
+  reserved 4;
+  // File name prefix for generated Parquet files.
+  optional string prefix = 5;
   optional int64 target_file_size_bytes = 6;
+  // Parquet compression codec (e.g. "snappy", "zstd", "gzip").
   string compression = 7;
+  // Iceberg table properties (e.g. write.format.default).
   map<string, string> table_properties = 8;
 }
 
 //
-// Read operations
+// Read operations — query the execution graph without modifying it
 //
 
+// A read operation that observes the current state of the execution graph.
+// All reads within an epoch execute after all writes in that epoch complete.
 message Read {
   oneof read_type {
     Demand demand = 1;
@@ -147,30 +201,46 @@ message Read {
   }
 }
 
+// Triggers computation of a relation without returning its contents.
+// Used to warm caches or force evaluation of side-effecting rules
+// before subsequent epochs reference them.
 message Demand {
   RelationId relation_id = 1;
 }
 
+// Computes a relation and returns its contents to the client, identified
+// by a human-readable name. Multiple outputs in the same epoch may share
+// a relation_id but must have distinct names.
 message Output {
   string name = 1;
   RelationId relation_id = 2;
 }
 
+// Writes relation data to an external storage system (CSV or Iceberg).
 message Export {
   oneof export_config {
     ExportCSVConfig csv_config = 1;
     ExportIcebergConfig iceberg_config = 2;
-
-    // TODO: support JSON export
   }
 }
 
+// Executes a speculative epoch on a transient fork of the database.
+// Writes within the WhatIf do not persist; reads observe the modified
+// state. Multiple WhatIfs in the same epoch execute independently.
+// WhatIfs can be nested.
 message WhatIf {
+  // Human-readable label for the branch.
   string branch = 1;
+  // The speculative epoch to execute.
   Epoch epoch = 2;
 }
 
+// Conditional transaction abort. If the referenced relation is non-empty
+// after all writes in this epoch, the entire transaction fails. Used to
+// enforce integrity constraints.
 message Abort {
+  // Human-readable error identifier included in the abort message.
   string name = 1;
+  // The "guard" relation: transaction aborts if this is non-empty.
   RelationId relation_id = 2;
 }

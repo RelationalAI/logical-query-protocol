@@ -1,9 +1,21 @@
+// Logical Query Protocol — Logic Definitions
+//
+// This file defines the core logical constructs of the LQP: relation definitions
+// via first-order logic with negation and aggregation (Def), iterative computations
+// (Algorithm), semantic constraints (Constraint), and external data sources (Data).
+//
+// All relations are globally identified by opaque UUIDs (RelationId). Namespacing,
+// scoping, and abstractions are the responsibility of higher-level compilers targeting
+// this protocol.
+
 syntax = "proto3";
 
 option go_package = "github.com/RelationalAI/logical-query-protocol/sdks/go/src/lqp/v1";
 
 package relationalai.lqp.v1;
 
+// A Declaration introduces one or more relations into the execution graph.
+// Declarations are grouped into Fragments for incremental installation.
 message Declaration {
   oneof declaration_type {
     Def def = 1;
@@ -13,12 +25,19 @@ message Declaration {
   }
 }
 
+// Defines a single derived relation via first-order logic. The body is an
+// Abstraction whose bound variables form the relation's columns and whose
+// formula describes which tuples belong to the relation.
+// Supports negation, aggregation (via Reduce), and recursion.
 message Def {
   RelationId name = 1;
   Abstraction body = 2;
   repeated Attribute attrs = 3;
 }
 
+// Declares a semantic constraint on relations, used for validation and
+// optimization. The engine may use constraints to prune search space or
+// verify data integrity.
 message Constraint {
   RelationId name = 2;
   oneof constraint_type {
@@ -26,22 +45,36 @@ message Constraint {
   }
 }
 
+// Declares that within tuples satisfying the guard, the key variables
+// functionally determine the value variables (keys → values).
+// Used for semantic optimization and data validation.
 message FunctionalDependency {
+  // Restricts the scope of the dependency to tuples matching this formula.
   Abstraction guard = 1;
+  // Variables that form the determinant (left-hand side).
   repeated Var keys = 2;
+  // Variables that are determined (right-hand side).
   repeated Var values = 3;
 }
 
+// Derives one or more relations via nested iterative computation.
+// Unlike Def (which is purely declarative), Algorithm provides imperative
+// control over execution order, enabling fixed-point loops, incremental
+// updates, and stateful accumulation.
 message Algorithm {
+  // Relations exported by this algorithm, visible outside its scope.
   repeated RelationId global = 1;
   Script body = 2;
   repeated Attribute attrs = 3;
 }
 
+// An ordered sequence of constructs (loops and instructions) that execute
+// top-to-bottom within an Algorithm or Loop body.
 message Script {
   repeated Construct constructs = 1;
 }
 
+// A single step in a Script: either a Loop or a flat Instruction.
 message Construct {
   oneof construct_type {
     Loop loop = 1;
@@ -49,58 +82,83 @@ message Construct {
   }
 }
 
+// Fixed-point iteration. The init instructions execute once before iteration
+// begins. The body executes repeatedly until a Break condition fires or a
+// fixed point is reached. Loops can be arbitrarily nested.
 message Loop {
+  // Instructions executed once to initialize loop-local relations.
   repeated Instruction init = 1;
+  // Body executed on each iteration.
   Script body = 2;
   repeated Attribute attrs = 3;
 }
 
+// A single imperative step within a Loop. Each instruction type defines a
+// different strategy for updating a relation during iterative computation.
 message Instruction {
-  reserved 4; // Copy rule
+  reserved 4; // Copy rule (removed)
   oneof instr_type {
-    Assign assign = 1; // Work like Defs, but only within a loop
-    Upsert upsert = 2; // In-place update of relation by another by swapping
-    Break break = 3; // Nullary relation that exits the loop when fired
-    MonoidDef monoid_def = 5; // In-place update of relation by another by a monoid operation
-    MonusDef monus_def = 6; // In-place update of relation by another by "subtraction" operation, if it exists
+    Assign assign = 1;
+    Upsert upsert = 2;
+    Break break = 3;
+    MonoidDef monoid_def = 5;
+    MonusDef monus_def = 6;
   }
 }
 
+// Replaces a relation's contents with the result of evaluating the body.
+// Works like a Def, but scoped to a single loop iteration.
 message Assign {
   RelationId name = 1;
   Abstraction body = 2;
   repeated Attribute attrs = 3;
 }
 
+// Merges tuples from the body into the target relation. For tuples sharing
+// the same key, the new value replaces the old one. The value_arity controls
+// how tuple columns are partitioned into keys and values.
 message Upsert {
   RelationId name = 1;
   Abstraction body = 2;
   repeated Attribute attrs = 3;
-  int64 value_arity = 4; // dictates how to partition tuples into key-values pairs
+  // Number of trailing columns that form the value; the rest are keys.
+  int64 value_arity = 4;
 }
 
+// Terminates the enclosing loop when the body evaluates to non-empty.
 message Break {
   RelationId name = 1;
   Abstraction body = 2;
   repeated Attribute attrs = 3;
 }
 
+// Accumulates tuples into a relation using an associative-commutative monoid
+// (e.g. sum, min, max, or). For tuples sharing the same key, values are
+// combined via the monoid operation.
 message MonoidDef {
   Monoid monoid = 1;
   RelationId name = 2;
   Abstraction body = 3;
   repeated Attribute attrs = 4;
-  int64 value_arity = 5; // dictates how to partition tuples into key-values pairs
+  // Number of trailing columns that form the value; the rest are keys.
+  int64 value_arity = 5;
 }
 
+// Removes tuples from a relation using the monus (subtraction) operation
+// dual to the given monoid. For example, sum-monus subtracts values for
+// matching keys.
 message MonusDef {
   Monoid monoid = 1;
   RelationId name = 2;
   Abstraction body = 3;
   repeated Attribute attrs = 4;
-  int64 value_arity = 5; // dictates how to partition tuples into key-values pairs
+  // Number of trailing columns that form the value; the rest are keys.
+  int64 value_arity = 5;
 }
 
+// An associative-commutative aggregation operation used with MonoidDef and
+// MonusDef. The engine leverages the algebraic properties of monoids for
+// parallel and incremental evaluation.
 message Monoid {
   oneof value {
     OrMonoid or_monoid = 1;
@@ -110,33 +168,47 @@ message Monoid {
   }
 }
 
-message OrMonoid {} // Only over Booleans
+// Logical disjunction (OR). Only valid over Boolean values.
+message OrMonoid {}
 
-message MinMonoid { // Parametrized by a type T
+// Minimum over a totally ordered type.
+message MinMonoid {
   Type type = 1;
 }
 
-message MaxMonoid { // Parametrized by a type T
+// Maximum over a totally ordered type.
+message MaxMonoid {
   Type type = 1;
 }
 
-message SumMonoid { // Parametrized by a type T
+// Summation over a numeric type.
+message SumMonoid {
   Type type = 1;
 }
 
 
+// A typed variable binding within an Abstraction.
 message Binding {
   Var var = 1;
   Type type = 2;
 }
 
-// Abstraction and related types
+// A parameterized formula: the bound variables define the relation's columns,
+// and the formula body defines which tuples satisfy the relation. Abstractions
+// appear in Defs, Exists, Reduce, FFI, and loop instructions.
 message Abstraction {
   repeated Binding vars = 1;
   Formula value = 2;
 }
 
-// Formula variants
+// A logical formula in the LQP. Formulas are the building blocks of relation
+// definitions: they combine atoms, logical connectives, quantifiers,
+// aggregations, and built-in operations to describe which tuples a relation
+// contains.
+//
+// Key semantics:
+//   Conjunction([]) = true  (the empty conjunction is always satisfied)
+//   Disjunction([]) = false (the empty disjunction is never satisfied)
 message Formula {
   oneof formula_type {
     Exists exists = 1;
@@ -153,59 +225,95 @@ message Formula {
   }
 }
 
+// Existential quantification. True when at least one binding of the
+// abstraction's variables satisfies the body formula.
 message Exists {
   Abstraction body = 3;
 }
 
+// Aggregation over tuples. The body produces candidate tuples, and the op
+// defines how to combine them (e.g. sum, count). The terms receive the
+// aggregated result. Grouping is implicit via free variables in the terms.
 message Reduce {
+  // The aggregation operator (e.g. sum, min, count).
   Abstraction op = 1;
+  // The relation being aggregated over.
   Abstraction body = 2;
+  // Output terms receiving the aggregated result.
   repeated Term terms = 3;
 }
 
+// Logical AND. All args must be satisfied. An empty Conjunction is true.
 message Conjunction {
   repeated Formula args = 1;
 }
 
+// Logical OR. At least one arg must be satisfied. An empty Disjunction is false.
 message Disjunction {
   repeated Formula args = 1;
 }
 
+// Logical negation. True when the inner formula is not satisfied.
+// Must be used in a stratified manner: the negated formula cannot
+// depend on the relation currently being defined.
 message Not {
   Formula arg = 1;
 }
 
+// Foreign Function Interface call. Invokes an engine-provided function
+// (e.g. rel_primitive_sort, rel_primitive_top) that cannot be expressed
+// in pure first-order logic.
 message FFI {
+  // Function identifier (e.g. "rel_primitive_sort").
   string name = 1;
+  // Input abstractions passed to the function.
   repeated Abstraction args = 2;
+  // Output terms bound by the function.
   repeated Term terms = 3;
 }
 
+// A relation reference (predicate application). Asserts that the given terms
+// form a tuple in the named relation. This is the primary way to reference
+// other Defs, Algorithms, and Data declarations.
 message Atom {
   RelationId name = 1;
   repeated Term terms = 2;
 }
 
+// A compiler directive that influences execution without changing logical
+// semantics (e.g. variable ordering hints, optimization flags).
 message Pragma {
   string name = 1;
   repeated Term terms = 2;
 }
 
+// A built-in primitive operation (arithmetic, comparison, string ops, etc.)
+// hardwired into the engine. Uses RelTerms to allow specialized (constant)
+// arguments alongside variables.
 message Primitive {
+  // Operation identifier (e.g. "rel_primitive_add", "rel_primitive_eq").
   string name = 1;
   repeated RelTerm terms = 2;
 }
 
+// A relation atom identified by a symbolic name (string) rather than a
+// RelationId. Uses RelTerms, allowing mixed constant and variable arguments.
+// Used for engine-internal relations and symbolic tuple construction.
 message RelAtom {
   string name = 3;
   repeated RelTerm terms = 2;
 }
 
+// Type cast from one primitive type to another. The input term is converted
+// and bound to the result term's variable with the target type.
 message Cast {
   Term input = 2;
   Term result = 3;
 }
 
+// A term in a Primitive or RelAtom that can be either a compile-time constant
+// (specialized_value) or a runtime Term. Specialized values allow the engine
+// to optimize for known constants.
 message RelTerm {
   oneof rel_term_type {
     Value specialized_value = 1;
@@ -213,6 +321,7 @@ message RelTerm {
   }
 }
 
+// A term is either a variable reference or a literal constant value.
 message Term {
   oneof term_type {
     Var var = 1;
@@ -220,18 +329,30 @@ message Term {
   }
 }
 
+// A named variable. Variable names are scoped to their enclosing Abstraction.
+// Variables must not shadow bindings from outer Abstractions.
 message Var {
   string name = 1;
 }
 
+// A key-value metadata annotation on a Def, Algorithm, Loop, or Instruction.
+// Used for optimization hints, tagging, and engine directives.
+// Example: @tag(:human_readable_name) for debug/log output.
 message Attribute {
   string name = 1;
   repeated Value args = 2;
 }
 
 //
-// Input data (base relations, CSVs, Iceberg)
+// External data sources
 //
+// Data declarations make external data available as relations in the execution
+// graph. The data is ingested lazily — describing a source does not trigger
+// loading until the relation is actually demanded.
+
+// Declares an external data source. Each variant corresponds to a different
+// storage format. The declared relations can be referenced by Atoms in Defs
+// and Algorithms just like any other relation.
 message Data {
   oneof data_type {
     EDB edb = 1;
@@ -241,25 +362,35 @@ message Data {
   }
 }
 
+// An Extensional Database relation — durable engine-managed data identified
+// by a hierarchical path. EDBs are the result of Snapshot operations and
+// persist across transactions. They are the LQP equivalent of base tables.
 message EDB {
   RelationId target_id = 1;
+  // Hierarchical name path (e.g. ["my_model", "person", "age"]).
   repeated string path = 2;
+  // Column types for the relation.
   repeated Type types = 3;
 }
 
+// A relation backed by a BeTree (B-epsilon tree) storage structure.
+// BeTrees are the engine's native on-disk format for persistent relations.
 message BeTreeRelation {
   RelationId name = 1;
   BeTreeInfo relation_info = 2;
 }
 
+// Physical metadata describing a BeTree-backed relation: its schema,
+// storage configuration, and locator for finding it on disk.
 message BeTreeInfo {
-  reserved 3; // potentially needed for relation_identifier
+  reserved 3;
   repeated Type key_types = 1;
   repeated Type value_types = 2;
   BeTreeConfig storage_config = 4;
   BeTreeLocator relation_locator = 5;
 }
 
+// Tuning parameters for BeTree storage.
 message BeTreeConfig {
   double epsilon = 1;
   int64 max_pivots = 2;
@@ -267,91 +398,114 @@ message BeTreeConfig {
   int64 max_leaf = 4;
 }
 
+// Locates a BeTree on disk, either by page ID or inline data.
 message BeTreeLocator {
   oneof location {
+    // Page ID of the tree's root node.
     UInt128Value root_pageid = 1;
+    // Small relations can be embedded directly as inline bytes.
     bytes inline_data = 4;
   }
   int64 element_count = 2;
   int64 tree_height = 3;
 }
 
+// Loads one or more relations from CSV files. Columns are mapped to
+// relations via GNFColumn entries. The asof timestamp controls cache
+// freshness — changing it triggers re-ingestion.
 message CSVData {
   CSVLocator locator = 1;
   CSVConfig config = 2;
+  // Each column maps a CSV column to a target relation with typed schema.
   repeated GNFColumn columns = 3;
-  string asof = 4; // Blob storage timestamp for freshness requirements
+  // Blob storage timestamp for cache invalidation.
+  string asof = 4;
 }
 
+// Identifies the CSV source: either remote/local file paths or inline data.
 message CSVLocator {
-  repeated string paths = 1; // URL(s) or filesystem path(s) for partitioned loading
-  bytes inline_data = 2; // Inline CSV content (mutually exclusive with paths)
+  // URL(s) or filesystem path(s). Multiple paths for partitioned loading.
+  repeated string paths = 1;
+  // Inline CSV content (mutually exclusive with paths).
+  bytes inline_data = 2;
 }
 
+// Parsing and formatting options for CSV data, used for both import and export.
 message CSVConfig {
-  // Header and structure
-  int32 header_row = 1; // Row number for headers (< 1 means no header)
-  int64 skip = 2; // Lines to skip at start (default: 0)
-  string new_line = 3; // Newline char(s) (default: auto-detect)
-
-  // Delimiters and quotes
-  string delimiter = 4; // Column delimiter (default: ",")
-  string quotechar = 5; // Quote character (default: "\"")
-  string escapechar = 6; // Escape character (default: "\"")
-  string comment = 7; // Comment initiator (default: none)
-
-  // NULL handling
-  repeated string missing_strings = 8; // Strings to treat as NULL/missing
-
-  // Numeric formatting
-  string decimal_separator = 9; // Decimal point (default: ".")
-
-  // Encoding
-  string encoding = 10; // Character encoding (default: "utf-8")
-
-  // Compression
-  string compression = 11; // "none", "gzip", "zstd", "auto" (default: "auto")
-
-  // Partitioning (for export)
-  int64 partition_size_mb = 12;
+  int32 header_row = 1;           // Row number for headers (< 1 means no header)
+  int64 skip = 2;                 // Lines to skip at start (default: 0)
+  string new_line = 3;            // Newline char(s) (default: auto-detect)
+  string delimiter = 4;           // Column delimiter (default: ",")
+  string quotechar = 5;           // Quote character (default: "\"")
+  string escapechar = 6;          // Escape character (default: "\"")
+  string comment = 7;             // Comment line prefix (default: none)
+  repeated string missing_strings = 8; // Strings to interpret as NULL/missing
+  string decimal_separator = 9;   // Decimal point character (default: ".")
+  string encoding = 10;           // Character encoding (default: "utf-8")
+  string compression = 11;        // "none", "gzip", "zstd", "auto" (default: "auto")
+  int64 partition_size_mb = 12;   // Target partition size in MB (for export)
 }
 
+// Loads relations from an Apache Iceberg table. Supports full snapshots
+// and incremental delta reads between two snapshot versions.
 message IcebergData {
   IcebergLocator locator = 1;
   IcebergCatalogConfig config = 2;
+  // Column-to-relation mappings.
   repeated GNFColumn columns = 3;
+  // Start snapshot for incremental reads (omit for full table scan).
   optional string from_snapshot = 4;
+  // End snapshot (omit for latest).
   optional string to_snapshot = 5;
+  // When true, returns insert/delete deltas rather than full state.
   bool returns_delta = 6;
 }
 
+// Identifies an Iceberg table within a catalog.
 message IcebergLocator {
   string table_name = 1;
   repeated string namespace = 2;
   string warehouse = 3;
 }
 
+// Connection and authentication settings for an Iceberg catalog.
 message IcebergCatalogConfig {
   string catalog_uri = 1;
   optional string scope = 2;
+  // Catalog-specific properties (e.g. s3.region).
   map<string, string> properties = 3;
+  // Authentication credentials.
   map<string, string> auth_properties = 4;
 }
 
+// Maps a column from an external data source (CSV or Iceberg) to a relation
+// in the execution graph. The column_path identifies the source column, and
+// target_id + types define the destination relation and its schema.
 message GNFColumn {
-  repeated string column_path = 1; // Column identifier path (was: string column_name)
-  optional RelationId target_id = 2; // Target relation (now explicit optional)
-  repeated Type types = 3; // Relation signature (key types + value types)
+  // Hierarchical column identifier (e.g. ["address", "city"] for nested data).
+  repeated string column_path = 1;
+  // Target relation to populate with this column's data.
+  optional RelationId target_id = 2;
+  // Column schema: key types followed by value types.
+  repeated Type types = 3;
 }
 
 //
 // Relation identifiers and types
 //
+
+// Globally unique, opaque identifier for a relation. All relations in the
+// execution graph are identified by UUIDs. Higher-level naming and namespacing
+// is the responsibility of compilers targeting this protocol.
 message RelationId {
-  fixed64 id_low = 1; // Lower 64 bits of UInt128
+  fixed64 id_low = 1;  // Lower 64 bits of UInt128
   fixed64 id_high = 2; // Upper 64 bits of UInt128
 }
 
+// Primitive data type for a column in a relation. LQP only supports primitive
+// (scalar) types — there are no composite, nested, or user-defined types.
+// These types are aligned with Apache Iceberg's type system.
+// The engine uses type information for equality, ordering, and promotion rules.
 message Type {
   oneof type {
     UnspecifiedType unspecified_type = 1;
@@ -371,37 +525,30 @@ message Type {
   }
 }
 
-message UnspecifiedType {}
+message UnspecifiedType {}          // Type not yet determined
+message StringType {}               // Arbitrary-length UTF-8 string
+message IntType {}                  // 64-bit signed integer (Iceberg LONG)
+message FloatType {}                // 64-bit IEEE 754 float (Iceberg DOUBLE)
+message UInt128Type {}              // 128-bit unsigned integer
+message Int128Type {}               // 128-bit signed integer
+message DateType {}                 // Calendar date without time or timezone
+message DateTimeType {}             // Timestamp with microsecond precision (UTC)
+message MissingType {}              // Represents absence of a value (NULL)
+message BooleanType {}              // True or false
+message Int32Type {}                // 32-bit signed integer (promotes to IntType)
+message Float32Type {}              // 32-bit IEEE 754 float (promotes to FloatType)
+message UInt32Type {}               // 32-bit unsigned integer
 
-message StringType {}
-
-message IntType {}
-
-message FloatType {}
-
-message UInt128Type {}
-
-message Int128Type {}
-
-message DateType {}
-
-message DateTimeType {}
-
-message MissingType {}
-
+// Fixed-point decimal with configurable precision and scale.
+// Precision <= 38. Scale is fixed for a given column.
 message DecimalType {
-  int32 precision = 1;
-  int32 scale = 2;
+  int32 precision = 1; // Total number of digits
+  int32 scale = 2;     // Digits after the decimal point
 }
 
-message BooleanType {}
-
-message Int32Type {}
-
-message Float32Type {}
-
-message UInt32Type {}
-
+// A literal constant value. Each variant corresponds to a primitive Type.
+// Values appear in Terms (as constants), Attributes (as arguments), and
+// RelTerms (as specialized compile-time constants).
 message Value {
   oneof value {
     string string_value = 1;
@@ -420,27 +567,31 @@ message Value {
   }
 }
 
+// 128-bit unsigned integer, split into two 64-bit halves for protobuf encoding.
 message UInt128Value {
-  fixed64 low = 1; // Lower 64 bits of UInt128
-  fixed64 high = 2; // Upper 64 bits of UInt128
+  fixed64 low = 1;
+  fixed64 high = 2;
 }
 
+// 128-bit signed integer, split into two 64-bit halves for protobuf encoding.
 message Int128Value {
-  fixed64 low = 1; // Lower 64 bits of Int128
-  fixed64 high = 2; // Upper 64 bits of Int128
+  fixed64 low = 1;
+  fixed64 high = 2;
 }
 
+// The missing/NULL value.
 message MissingValue {}
 
+// Calendar date without time or timezone.
 message DateValue {
   int32 year = 1;
   int32 month = 2;
   int32 day = 3;
 }
 
+// Timestamp with microsecond precision. All values are UTC, consistent
+// with the Iceberg spec for timestamps.
 message DateTimeValue {
-  // DateTimeValue does not have a timezone - all values are assumed to be UTC. This is in
-  // line with the Iceberg spec for timestamp
   int32 year = 1;
   int32 month = 2;
   int32 day = 3;
@@ -450,8 +601,9 @@ message DateTimeValue {
   int32 microsecond = 7;
 }
 
+// Fixed-point decimal value with explicit precision and scale.
 message DecimalValue {
-  int32 precision = 1; // Total number of digits
-  int32 scale = 2; // Number of digits after decimal point
-  Int128Value value = 3; // Physical representation of decimal value
+  int32 precision = 1;    // Total number of digits
+  int32 scale = 2;        // Digits after the decimal point
+  Int128Value value = 3;  // Unscaled integer representation
 }
