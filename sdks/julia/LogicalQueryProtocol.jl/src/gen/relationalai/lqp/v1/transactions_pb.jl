@@ -25,6 +25,7 @@ struct ExportIcebergConfig
     table_properties::Dict{String,String}
 end
 ExportIcebergConfig(;locator = nothing, config = nothing, table_def = nothing, prefix = "", target_file_size_bytes = zero(Int64), compression = "", table_properties = Dict{String,String}()) = ExportIcebergConfig(locator, config, table_def, prefix, target_file_size_bytes, compression, table_properties)
+PB.reserved_fields(::Type{ExportIcebergConfig}) = (names = String[], numbers = Union{Int,UnitRange{Int}}[4])
 PB.default_values(::Type{ExportIcebergConfig}) = (;locator = nothing, config = nothing, table_def = nothing, prefix = "", target_file_size_bytes = zero(Int64), compression = "", table_properties = Dict{String,String}())
 PB.field_numbers(::Type{ExportIcebergConfig}) = (;locator = 1, config = 2, table_def = 3, prefix = 5, target_file_size_bytes = 6, compression = 7, table_properties = 8)
 

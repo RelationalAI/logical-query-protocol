@@ -316,6 +316,11 @@ message CSVConfig {
   int64 partition_size_mb = 12;
 }
 
+message IcebergTarget {
+  RelationId target_id = 1;     // RelPath for output relation
+  repeated Type types = 2;      // row ID type + all column types, in order
+}
+
 message IcebergData {
   IcebergLocator locator = 1;
   IcebergCatalogConfig config = 2;
@@ -323,6 +328,7 @@ message IcebergData {
   optional string from_snapshot = 4;
   optional string to_snapshot = 5;
   bool returns_delta = 6;
+  optional IcebergTarget target = 7; // if present, single-relation (full_table) mode
 }
 
 message IcebergLocator {

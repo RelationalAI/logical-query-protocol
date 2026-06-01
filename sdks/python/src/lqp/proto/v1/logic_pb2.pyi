@@ -7,7 +7,7 @@ from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class Declaration(_message.Message):
-    __slots__ = ()
+    __slots__ = ("algorithm", "constraint", "data")
     DEF_FIELD_NUMBER: _ClassVar[int]
     ALGORITHM_FIELD_NUMBER: _ClassVar[int]
     CONSTRAINT_FIELD_NUMBER: _ClassVar[int]
@@ -18,7 +18,7 @@ class Declaration(_message.Message):
     def __init__(self, algorithm: _Optional[_Union[Algorithm, _Mapping]] = ..., constraint: _Optional[_Union[Constraint, _Mapping]] = ..., data: _Optional[_Union[Data, _Mapping]] = ..., **kwargs) -> None: ...
 
 class Def(_message.Message):
-    __slots__ = ()
+    __slots__ = ("name", "body", "attrs")
     NAME_FIELD_NUMBER: _ClassVar[int]
     BODY_FIELD_NUMBER: _ClassVar[int]
     ATTRS_FIELD_NUMBER: _ClassVar[int]
@@ -28,7 +28,7 @@ class Def(_message.Message):
     def __init__(self, name: _Optional[_Union[RelationId, _Mapping]] = ..., body: _Optional[_Union[Abstraction, _Mapping]] = ..., attrs: _Optional[_Iterable[_Union[Attribute, _Mapping]]] = ...) -> None: ...
 
 class Constraint(_message.Message):
-    __slots__ = ()
+    __slots__ = ("name", "functional_dependency")
     NAME_FIELD_NUMBER: _ClassVar[int]
     FUNCTIONAL_DEPENDENCY_FIELD_NUMBER: _ClassVar[int]
     name: RelationId
@@ -36,7 +36,7 @@ class Constraint(_message.Message):
     def __init__(self, name: _Optional[_Union[RelationId, _Mapping]] = ..., functional_dependency: _Optional[_Union[FunctionalDependency, _Mapping]] = ...) -> None: ...
 
 class FunctionalDependency(_message.Message):
-    __slots__ = ()
+    __slots__ = ("guard", "keys", "values")
     GUARD_FIELD_NUMBER: _ClassVar[int]
     KEYS_FIELD_NUMBER: _ClassVar[int]
     VALUES_FIELD_NUMBER: _ClassVar[int]
@@ -46,7 +46,7 @@ class FunctionalDependency(_message.Message):
     def __init__(self, guard: _Optional[_Union[Abstraction, _Mapping]] = ..., keys: _Optional[_Iterable[_Union[Var, _Mapping]]] = ..., values: _Optional[_Iterable[_Union[Var, _Mapping]]] = ...) -> None: ...
 
 class Algorithm(_message.Message):
-    __slots__ = ()
+    __slots__ = ("body", "attrs")
     GLOBAL_FIELD_NUMBER: _ClassVar[int]
     BODY_FIELD_NUMBER: _ClassVar[int]
     ATTRS_FIELD_NUMBER: _ClassVar[int]
@@ -55,13 +55,13 @@ class Algorithm(_message.Message):
     def __init__(self, body: _Optional[_Union[Script, _Mapping]] = ..., attrs: _Optional[_Iterable[_Union[Attribute, _Mapping]]] = ..., **kwargs) -> None: ...
 
 class Script(_message.Message):
-    __slots__ = ()
+    __slots__ = ("constructs",)
     CONSTRUCTS_FIELD_NUMBER: _ClassVar[int]
     constructs: _containers.RepeatedCompositeFieldContainer[Construct]
     def __init__(self, constructs: _Optional[_Iterable[_Union[Construct, _Mapping]]] = ...) -> None: ...
 
 class Construct(_message.Message):
-    __slots__ = ()
+    __slots__ = ("loop", "instruction")
     LOOP_FIELD_NUMBER: _ClassVar[int]
     INSTRUCTION_FIELD_NUMBER: _ClassVar[int]
     loop: Loop
@@ -69,7 +69,7 @@ class Construct(_message.Message):
     def __init__(self, loop: _Optional[_Union[Loop, _Mapping]] = ..., instruction: _Optional[_Union[Instruction, _Mapping]] = ...) -> None: ...
 
 class Loop(_message.Message):
-    __slots__ = ()
+    __slots__ = ("init", "body", "attrs")
     INIT_FIELD_NUMBER: _ClassVar[int]
     BODY_FIELD_NUMBER: _ClassVar[int]
     ATTRS_FIELD_NUMBER: _ClassVar[int]
@@ -79,7 +79,7 @@ class Loop(_message.Message):
     def __init__(self, init: _Optional[_Iterable[_Union[Instruction, _Mapping]]] = ..., body: _Optional[_Union[Script, _Mapping]] = ..., attrs: _Optional[_Iterable[_Union[Attribute, _Mapping]]] = ...) -> None: ...
 
 class Instruction(_message.Message):
-    __slots__ = ()
+    __slots__ = ("assign", "upsert", "monoid_def", "monus_def")
     ASSIGN_FIELD_NUMBER: _ClassVar[int]
     UPSERT_FIELD_NUMBER: _ClassVar[int]
     BREAK_FIELD_NUMBER: _ClassVar[int]
@@ -92,7 +92,7 @@ class Instruction(_message.Message):
     def __init__(self, assign: _Optional[_Union[Assign, _Mapping]] = ..., upsert: _Optional[_Union[Upsert, _Mapping]] = ..., monoid_def: _Optional[_Union[MonoidDef, _Mapping]] = ..., monus_def: _Optional[_Union[MonusDef, _Mapping]] = ..., **kwargs) -> None: ...
 
 class Assign(_message.Message):
-    __slots__ = ()
+    __slots__ = ("name", "body", "attrs")
     NAME_FIELD_NUMBER: _ClassVar[int]
     BODY_FIELD_NUMBER: _ClassVar[int]
     ATTRS_FIELD_NUMBER: _ClassVar[int]
@@ -102,7 +102,7 @@ class Assign(_message.Message):
     def __init__(self, name: _Optional[_Union[RelationId, _Mapping]] = ..., body: _Optional[_Union[Abstraction, _Mapping]] = ..., attrs: _Optional[_Iterable[_Union[Attribute, _Mapping]]] = ...) -> None: ...
 
 class Upsert(_message.Message):
-    __slots__ = ()
+    __slots__ = ("name", "body", "attrs", "value_arity")
     NAME_FIELD_NUMBER: _ClassVar[int]
     BODY_FIELD_NUMBER: _ClassVar[int]
     ATTRS_FIELD_NUMBER: _ClassVar[int]
@@ -114,7 +114,7 @@ class Upsert(_message.Message):
     def __init__(self, name: _Optional[_Union[RelationId, _Mapping]] = ..., body: _Optional[_Union[Abstraction, _Mapping]] = ..., attrs: _Optional[_Iterable[_Union[Attribute, _Mapping]]] = ..., value_arity: _Optional[int] = ...) -> None: ...
 
 class Break(_message.Message):
-    __slots__ = ()
+    __slots__ = ("name", "body", "attrs")
     NAME_FIELD_NUMBER: _ClassVar[int]
     BODY_FIELD_NUMBER: _ClassVar[int]
     ATTRS_FIELD_NUMBER: _ClassVar[int]
@@ -124,7 +124,7 @@ class Break(_message.Message):
     def __init__(self, name: _Optional[_Union[RelationId, _Mapping]] = ..., body: _Optional[_Union[Abstraction, _Mapping]] = ..., attrs: _Optional[_Iterable[_Union[Attribute, _Mapping]]] = ...) -> None: ...
 
 class MonoidDef(_message.Message):
-    __slots__ = ()
+    __slots__ = ("monoid", "name", "body", "attrs", "value_arity")
     MONOID_FIELD_NUMBER: _ClassVar[int]
     NAME_FIELD_NUMBER: _ClassVar[int]
     BODY_FIELD_NUMBER: _ClassVar[int]
@@ -138,7 +138,7 @@ class MonoidDef(_message.Message):
     def __init__(self, monoid: _Optional[_Union[Monoid, _Mapping]] = ..., name: _Optional[_Union[RelationId, _Mapping]] = ..., body: _Optional[_Union[Abstraction, _Mapping]] = ..., attrs: _Optional[_Iterable[_Union[Attribute, _Mapping]]] = ..., value_arity: _Optional[int] = ...) -> None: ...
 
 class MonusDef(_message.Message):
-    __slots__ = ()
+    __slots__ = ("monoid", "name", "body", "attrs", "value_arity")
     MONOID_FIELD_NUMBER: _ClassVar[int]
     NAME_FIELD_NUMBER: _ClassVar[int]
     BODY_FIELD_NUMBER: _ClassVar[int]
@@ -152,7 +152,7 @@ class MonusDef(_message.Message):
     def __init__(self, monoid: _Optional[_Union[Monoid, _Mapping]] = ..., name: _Optional[_Union[RelationId, _Mapping]] = ..., body: _Optional[_Union[Abstraction, _Mapping]] = ..., attrs: _Optional[_Iterable[_Union[Attribute, _Mapping]]] = ..., value_arity: _Optional[int] = ...) -> None: ...
 
 class Monoid(_message.Message):
-    __slots__ = ()
+    __slots__ = ("or_monoid", "min_monoid", "max_monoid", "sum_monoid")
     OR_MONOID_FIELD_NUMBER: _ClassVar[int]
     MIN_MONOID_FIELD_NUMBER: _ClassVar[int]
     MAX_MONOID_FIELD_NUMBER: _ClassVar[int]
@@ -168,25 +168,25 @@ class OrMonoid(_message.Message):
     def __init__(self) -> None: ...
 
 class MinMonoid(_message.Message):
-    __slots__ = ()
+    __slots__ = ("type",)
     TYPE_FIELD_NUMBER: _ClassVar[int]
     type: Type
     def __init__(self, type: _Optional[_Union[Type, _Mapping]] = ...) -> None: ...
 
 class MaxMonoid(_message.Message):
-    __slots__ = ()
+    __slots__ = ("type",)
     TYPE_FIELD_NUMBER: _ClassVar[int]
     type: Type
     def __init__(self, type: _Optional[_Union[Type, _Mapping]] = ...) -> None: ...
 
 class SumMonoid(_message.Message):
-    __slots__ = ()
+    __slots__ = ("type",)
     TYPE_FIELD_NUMBER: _ClassVar[int]
     type: Type
     def __init__(self, type: _Optional[_Union[Type, _Mapping]] = ...) -> None: ...
 
 class Binding(_message.Message):
-    __slots__ = ()
+    __slots__ = ("var", "type")
     VAR_FIELD_NUMBER: _ClassVar[int]
     TYPE_FIELD_NUMBER: _ClassVar[int]
     var: Var
@@ -194,7 +194,7 @@ class Binding(_message.Message):
     def __init__(self, var: _Optional[_Union[Var, _Mapping]] = ..., type: _Optional[_Union[Type, _Mapping]] = ...) -> None: ...
 
 class Abstraction(_message.Message):
-    __slots__ = ()
+    __slots__ = ("vars", "value")
     VARS_FIELD_NUMBER: _ClassVar[int]
     VALUE_FIELD_NUMBER: _ClassVar[int]
     vars: _containers.RepeatedCompositeFieldContainer[Binding]
@@ -202,7 +202,7 @@ class Abstraction(_message.Message):
     def __init__(self, vars: _Optional[_Iterable[_Union[Binding, _Mapping]]] = ..., value: _Optional[_Union[Formula, _Mapping]] = ...) -> None: ...
 
 class Formula(_message.Message):
-    __slots__ = ()
+    __slots__ = ("exists", "reduce", "conjunction", "disjunction", "ffi", "atom", "pragma", "primitive", "rel_atom", "cast")
     EXISTS_FIELD_NUMBER: _ClassVar[int]
     REDUCE_FIELD_NUMBER: _ClassVar[int]
     CONJUNCTION_FIELD_NUMBER: _ClassVar[int]
@@ -227,13 +227,13 @@ class Formula(_message.Message):
     def __init__(self, exists: _Optional[_Union[Exists, _Mapping]] = ..., reduce: _Optional[_Union[Reduce, _Mapping]] = ..., conjunction: _Optional[_Union[Conjunction, _Mapping]] = ..., disjunction: _Optional[_Union[Disjunction, _Mapping]] = ..., ffi: _Optional[_Union[FFI, _Mapping]] = ..., atom: _Optional[_Union[Atom, _Mapping]] = ..., pragma: _Optional[_Union[Pragma, _Mapping]] = ..., primitive: _Optional[_Union[Primitive, _Mapping]] = ..., rel_atom: _Optional[_Union[RelAtom, _Mapping]] = ..., cast: _Optional[_Union[Cast, _Mapping]] = ..., **kwargs) -> None: ...
 
 class Exists(_message.Message):
-    __slots__ = ()
+    __slots__ = ("body",)
     BODY_FIELD_NUMBER: _ClassVar[int]
     body: Abstraction
     def __init__(self, body: _Optional[_Union[Abstraction, _Mapping]] = ...) -> None: ...
 
 class Reduce(_message.Message):
-    __slots__ = ()
+    __slots__ = ("op", "body", "terms")
     OP_FIELD_NUMBER: _ClassVar[int]
     BODY_FIELD_NUMBER: _ClassVar[int]
     TERMS_FIELD_NUMBER: _ClassVar[int]
@@ -243,25 +243,25 @@ class Reduce(_message.Message):
     def __init__(self, op: _Optional[_Union[Abstraction, _Mapping]] = ..., body: _Optional[_Union[Abstraction, _Mapping]] = ..., terms: _Optional[_Iterable[_Union[Term, _Mapping]]] = ...) -> None: ...
 
 class Conjunction(_message.Message):
-    __slots__ = ()
+    __slots__ = ("args",)
     ARGS_FIELD_NUMBER: _ClassVar[int]
     args: _containers.RepeatedCompositeFieldContainer[Formula]
     def __init__(self, args: _Optional[_Iterable[_Union[Formula, _Mapping]]] = ...) -> None: ...
 
 class Disjunction(_message.Message):
-    __slots__ = ()
+    __slots__ = ("args",)
     ARGS_FIELD_NUMBER: _ClassVar[int]
     args: _containers.RepeatedCompositeFieldContainer[Formula]
     def __init__(self, args: _Optional[_Iterable[_Union[Formula, _Mapping]]] = ...) -> None: ...
 
 class Not(_message.Message):
-    __slots__ = ()
+    __slots__ = ("arg",)
     ARG_FIELD_NUMBER: _ClassVar[int]
     arg: Formula
     def __init__(self, arg: _Optional[_Union[Formula, _Mapping]] = ...) -> None: ...
 
 class FFI(_message.Message):
-    __slots__ = ()
+    __slots__ = ("name", "args", "terms")
     NAME_FIELD_NUMBER: _ClassVar[int]
     ARGS_FIELD_NUMBER: _ClassVar[int]
     TERMS_FIELD_NUMBER: _ClassVar[int]
@@ -271,7 +271,7 @@ class FFI(_message.Message):
     def __init__(self, name: _Optional[str] = ..., args: _Optional[_Iterable[_Union[Abstraction, _Mapping]]] = ..., terms: _Optional[_Iterable[_Union[Term, _Mapping]]] = ...) -> None: ...
 
 class Atom(_message.Message):
-    __slots__ = ()
+    __slots__ = ("name", "terms")
     NAME_FIELD_NUMBER: _ClassVar[int]
     TERMS_FIELD_NUMBER: _ClassVar[int]
     name: RelationId
@@ -279,7 +279,7 @@ class Atom(_message.Message):
     def __init__(self, name: _Optional[_Union[RelationId, _Mapping]] = ..., terms: _Optional[_Iterable[_Union[Term, _Mapping]]] = ...) -> None: ...
 
 class Pragma(_message.Message):
-    __slots__ = ()
+    __slots__ = ("name", "terms")
     NAME_FIELD_NUMBER: _ClassVar[int]
     TERMS_FIELD_NUMBER: _ClassVar[int]
     name: str
@@ -287,7 +287,7 @@ class Pragma(_message.Message):
     def __init__(self, name: _Optional[str] = ..., terms: _Optional[_Iterable[_Union[Term, _Mapping]]] = ...) -> None: ...
 
 class Primitive(_message.Message):
-    __slots__ = ()
+    __slots__ = ("name", "terms")
     NAME_FIELD_NUMBER: _ClassVar[int]
     TERMS_FIELD_NUMBER: _ClassVar[int]
     name: str
@@ -295,7 +295,7 @@ class Primitive(_message.Message):
     def __init__(self, name: _Optional[str] = ..., terms: _Optional[_Iterable[_Union[RelTerm, _Mapping]]] = ...) -> None: ...
 
 class RelAtom(_message.Message):
-    __slots__ = ()
+    __slots__ = ("name", "terms")
     NAME_FIELD_NUMBER: _ClassVar[int]
     TERMS_FIELD_NUMBER: _ClassVar[int]
     name: str
@@ -303,7 +303,7 @@ class RelAtom(_message.Message):
     def __init__(self, name: _Optional[str] = ..., terms: _Optional[_Iterable[_Union[RelTerm, _Mapping]]] = ...) -> None: ...
 
 class Cast(_message.Message):
-    __slots__ = ()
+    __slots__ = ("input", "result")
     INPUT_FIELD_NUMBER: _ClassVar[int]
     RESULT_FIELD_NUMBER: _ClassVar[int]
     input: Term
@@ -311,7 +311,7 @@ class Cast(_message.Message):
     def __init__(self, input: _Optional[_Union[Term, _Mapping]] = ..., result: _Optional[_Union[Term, _Mapping]] = ...) -> None: ...
 
 class RelTerm(_message.Message):
-    __slots__ = ()
+    __slots__ = ("specialized_value", "term")
     SPECIALIZED_VALUE_FIELD_NUMBER: _ClassVar[int]
     TERM_FIELD_NUMBER: _ClassVar[int]
     specialized_value: Value
@@ -319,7 +319,7 @@ class RelTerm(_message.Message):
     def __init__(self, specialized_value: _Optional[_Union[Value, _Mapping]] = ..., term: _Optional[_Union[Term, _Mapping]] = ...) -> None: ...
 
 class Term(_message.Message):
-    __slots__ = ()
+    __slots__ = ("var", "constant")
     VAR_FIELD_NUMBER: _ClassVar[int]
     CONSTANT_FIELD_NUMBER: _ClassVar[int]
     var: Var
@@ -327,13 +327,13 @@ class Term(_message.Message):
     def __init__(self, var: _Optional[_Union[Var, _Mapping]] = ..., constant: _Optional[_Union[Value, _Mapping]] = ...) -> None: ...
 
 class Var(_message.Message):
-    __slots__ = ()
+    __slots__ = ("name",)
     NAME_FIELD_NUMBER: _ClassVar[int]
     name: str
     def __init__(self, name: _Optional[str] = ...) -> None: ...
 
 class Attribute(_message.Message):
-    __slots__ = ()
+    __slots__ = ("name", "args")
     NAME_FIELD_NUMBER: _ClassVar[int]
     ARGS_FIELD_NUMBER: _ClassVar[int]
     name: str
@@ -341,7 +341,7 @@ class Attribute(_message.Message):
     def __init__(self, name: _Optional[str] = ..., args: _Optional[_Iterable[_Union[Value, _Mapping]]] = ...) -> None: ...
 
 class Data(_message.Message):
-    __slots__ = ()
+    __slots__ = ("edb", "betree_relation", "csv_data", "iceberg_data")
     EDB_FIELD_NUMBER: _ClassVar[int]
     BETREE_RELATION_FIELD_NUMBER: _ClassVar[int]
     CSV_DATA_FIELD_NUMBER: _ClassVar[int]
@@ -353,7 +353,7 @@ class Data(_message.Message):
     def __init__(self, edb: _Optional[_Union[EDB, _Mapping]] = ..., betree_relation: _Optional[_Union[BeTreeRelation, _Mapping]] = ..., csv_data: _Optional[_Union[CSVData, _Mapping]] = ..., iceberg_data: _Optional[_Union[IcebergData, _Mapping]] = ...) -> None: ...
 
 class EDB(_message.Message):
-    __slots__ = ()
+    __slots__ = ("target_id", "path", "types")
     TARGET_ID_FIELD_NUMBER: _ClassVar[int]
     PATH_FIELD_NUMBER: _ClassVar[int]
     TYPES_FIELD_NUMBER: _ClassVar[int]
@@ -363,7 +363,7 @@ class EDB(_message.Message):
     def __init__(self, target_id: _Optional[_Union[RelationId, _Mapping]] = ..., path: _Optional[_Iterable[str]] = ..., types: _Optional[_Iterable[_Union[Type, _Mapping]]] = ...) -> None: ...
 
 class BeTreeRelation(_message.Message):
-    __slots__ = ()
+    __slots__ = ("name", "relation_info")
     NAME_FIELD_NUMBER: _ClassVar[int]
     RELATION_INFO_FIELD_NUMBER: _ClassVar[int]
     name: RelationId
@@ -371,7 +371,7 @@ class BeTreeRelation(_message.Message):
     def __init__(self, name: _Optional[_Union[RelationId, _Mapping]] = ..., relation_info: _Optional[_Union[BeTreeInfo, _Mapping]] = ...) -> None: ...
 
 class BeTreeInfo(_message.Message):
-    __slots__ = ()
+    __slots__ = ("key_types", "value_types", "storage_config", "relation_locator")
     KEY_TYPES_FIELD_NUMBER: _ClassVar[int]
     VALUE_TYPES_FIELD_NUMBER: _ClassVar[int]
     STORAGE_CONFIG_FIELD_NUMBER: _ClassVar[int]
@@ -383,7 +383,7 @@ class BeTreeInfo(_message.Message):
     def __init__(self, key_types: _Optional[_Iterable[_Union[Type, _Mapping]]] = ..., value_types: _Optional[_Iterable[_Union[Type, _Mapping]]] = ..., storage_config: _Optional[_Union[BeTreeConfig, _Mapping]] = ..., relation_locator: _Optional[_Union[BeTreeLocator, _Mapping]] = ...) -> None: ...
 
 class BeTreeConfig(_message.Message):
-    __slots__ = ()
+    __slots__ = ("epsilon", "max_pivots", "max_deltas", "max_leaf")
     EPSILON_FIELD_NUMBER: _ClassVar[int]
     MAX_PIVOTS_FIELD_NUMBER: _ClassVar[int]
     MAX_DELTAS_FIELD_NUMBER: _ClassVar[int]
@@ -395,7 +395,7 @@ class BeTreeConfig(_message.Message):
     def __init__(self, epsilon: _Optional[float] = ..., max_pivots: _Optional[int] = ..., max_deltas: _Optional[int] = ..., max_leaf: _Optional[int] = ...) -> None: ...
 
 class BeTreeLocator(_message.Message):
-    __slots__ = ()
+    __slots__ = ("root_pageid", "inline_data", "element_count", "tree_height")
     ROOT_PAGEID_FIELD_NUMBER: _ClassVar[int]
     INLINE_DATA_FIELD_NUMBER: _ClassVar[int]
     ELEMENT_COUNT_FIELD_NUMBER: _ClassVar[int]
@@ -407,7 +407,7 @@ class BeTreeLocator(_message.Message):
     def __init__(self, root_pageid: _Optional[_Union[UInt128Value, _Mapping]] = ..., inline_data: _Optional[bytes] = ..., element_count: _Optional[int] = ..., tree_height: _Optional[int] = ...) -> None: ...
 
 class CSVData(_message.Message):
-    __slots__ = ()
+    __slots__ = ("locator", "config", "columns", "asof")
     LOCATOR_FIELD_NUMBER: _ClassVar[int]
     CONFIG_FIELD_NUMBER: _ClassVar[int]
     COLUMNS_FIELD_NUMBER: _ClassVar[int]
@@ -419,7 +419,7 @@ class CSVData(_message.Message):
     def __init__(self, locator: _Optional[_Union[CSVLocator, _Mapping]] = ..., config: _Optional[_Union[CSVConfig, _Mapping]] = ..., columns: _Optional[_Iterable[_Union[GNFColumn, _Mapping]]] = ..., asof: _Optional[str] = ...) -> None: ...
 
 class CSVLocator(_message.Message):
-    __slots__ = ()
+    __slots__ = ("paths", "inline_data")
     PATHS_FIELD_NUMBER: _ClassVar[int]
     INLINE_DATA_FIELD_NUMBER: _ClassVar[int]
     paths: _containers.RepeatedScalarFieldContainer[str]
@@ -427,7 +427,7 @@ class CSVLocator(_message.Message):
     def __init__(self, paths: _Optional[_Iterable[str]] = ..., inline_data: _Optional[bytes] = ...) -> None: ...
 
 class CSVConfig(_message.Message):
-    __slots__ = ()
+    __slots__ = ("header_row", "skip", "new_line", "delimiter", "quotechar", "escapechar", "comment", "missing_strings", "decimal_separator", "encoding", "compression", "partition_size_mb")
     HEADER_ROW_FIELD_NUMBER: _ClassVar[int]
     SKIP_FIELD_NUMBER: _ClassVar[int]
     NEW_LINE_FIELD_NUMBER: _ClassVar[int]
@@ -454,24 +454,34 @@ class CSVConfig(_message.Message):
     partition_size_mb: int
     def __init__(self, header_row: _Optional[int] = ..., skip: _Optional[int] = ..., new_line: _Optional[str] = ..., delimiter: _Optional[str] = ..., quotechar: _Optional[str] = ..., escapechar: _Optional[str] = ..., comment: _Optional[str] = ..., missing_strings: _Optional[_Iterable[str]] = ..., decimal_separator: _Optional[str] = ..., encoding: _Optional[str] = ..., compression: _Optional[str] = ..., partition_size_mb: _Optional[int] = ...) -> None: ...
 
+class IcebergTarget(_message.Message):
+    __slots__ = ("target_id", "types")
+    TARGET_ID_FIELD_NUMBER: _ClassVar[int]
+    TYPES_FIELD_NUMBER: _ClassVar[int]
+    target_id: RelationId
+    types: _containers.RepeatedCompositeFieldContainer[Type]
+    def __init__(self, target_id: _Optional[_Union[RelationId, _Mapping]] = ..., types: _Optional[_Iterable[_Union[Type, _Mapping]]] = ...) -> None: ...
+
 class IcebergData(_message.Message):
-    __slots__ = ()
+    __slots__ = ("locator", "config", "columns", "from_snapshot", "to_snapshot", "returns_delta", "target")
     LOCATOR_FIELD_NUMBER: _ClassVar[int]
     CONFIG_FIELD_NUMBER: _ClassVar[int]
     COLUMNS_FIELD_NUMBER: _ClassVar[int]
     FROM_SNAPSHOT_FIELD_NUMBER: _ClassVar[int]
     TO_SNAPSHOT_FIELD_NUMBER: _ClassVar[int]
     RETURNS_DELTA_FIELD_NUMBER: _ClassVar[int]
+    TARGET_FIELD_NUMBER: _ClassVar[int]
     locator: IcebergLocator
     config: IcebergCatalogConfig
     columns: _containers.RepeatedCompositeFieldContainer[GNFColumn]
     from_snapshot: str
     to_snapshot: str
     returns_delta: bool
-    def __init__(self, locator: _Optional[_Union[IcebergLocator, _Mapping]] = ..., config: _Optional[_Union[IcebergCatalogConfig, _Mapping]] = ..., columns: _Optional[_Iterable[_Union[GNFColumn, _Mapping]]] = ..., from_snapshot: _Optional[str] = ..., to_snapshot: _Optional[str] = ..., returns_delta: _Optional[bool] = ...) -> None: ...
+    target: IcebergTarget
+    def __init__(self, locator: _Optional[_Union[IcebergLocator, _Mapping]] = ..., config: _Optional[_Union[IcebergCatalogConfig, _Mapping]] = ..., columns: _Optional[_Iterable[_Union[GNFColumn, _Mapping]]] = ..., from_snapshot: _Optional[str] = ..., to_snapshot: _Optional[str] = ..., returns_delta: _Optional[bool] = ..., target: _Optional[_Union[IcebergTarget, _Mapping]] = ...) -> None: ...
 
 class IcebergLocator(_message.Message):
-    __slots__ = ()
+    __slots__ = ("table_name", "namespace", "warehouse")
     TABLE_NAME_FIELD_NUMBER: _ClassVar[int]
     NAMESPACE_FIELD_NUMBER: _ClassVar[int]
     WAREHOUSE_FIELD_NUMBER: _ClassVar[int]
@@ -481,16 +491,16 @@ class IcebergLocator(_message.Message):
     def __init__(self, table_name: _Optional[str] = ..., namespace: _Optional[_Iterable[str]] = ..., warehouse: _Optional[str] = ...) -> None: ...
 
 class IcebergCatalogConfig(_message.Message):
-    __slots__ = ()
+    __slots__ = ("catalog_uri", "scope", "properties", "auth_properties")
     class PropertiesEntry(_message.Message):
-        __slots__ = ()
+        __slots__ = ("key", "value")
         KEY_FIELD_NUMBER: _ClassVar[int]
         VALUE_FIELD_NUMBER: _ClassVar[int]
         key: str
         value: str
         def __init__(self, key: _Optional[str] = ..., value: _Optional[str] = ...) -> None: ...
     class AuthPropertiesEntry(_message.Message):
-        __slots__ = ()
+        __slots__ = ("key", "value")
         KEY_FIELD_NUMBER: _ClassVar[int]
         VALUE_FIELD_NUMBER: _ClassVar[int]
         key: str
@@ -507,7 +517,7 @@ class IcebergCatalogConfig(_message.Message):
     def __init__(self, catalog_uri: _Optional[str] = ..., scope: _Optional[str] = ..., properties: _Optional[_Mapping[str, str]] = ..., auth_properties: _Optional[_Mapping[str, str]] = ...) -> None: ...
 
 class GNFColumn(_message.Message):
-    __slots__ = ()
+    __slots__ = ("column_path", "target_id", "types")
     COLUMN_PATH_FIELD_NUMBER: _ClassVar[int]
     TARGET_ID_FIELD_NUMBER: _ClassVar[int]
     TYPES_FIELD_NUMBER: _ClassVar[int]
@@ -517,7 +527,7 @@ class GNFColumn(_message.Message):
     def __init__(self, column_path: _Optional[_Iterable[str]] = ..., target_id: _Optional[_Union[RelationId, _Mapping]] = ..., types: _Optional[_Iterable[_Union[Type, _Mapping]]] = ...) -> None: ...
 
 class RelationId(_message.Message):
-    __slots__ = ()
+    __slots__ = ("id_low", "id_high")
     ID_LOW_FIELD_NUMBER: _ClassVar[int]
     ID_HIGH_FIELD_NUMBER: _ClassVar[int]
     id_low: int
@@ -525,7 +535,7 @@ class RelationId(_message.Message):
     def __init__(self, id_low: _Optional[int] = ..., id_high: _Optional[int] = ...) -> None: ...
 
 class Type(_message.Message):
-    __slots__ = ()
+    __slots__ = ("unspecified_type", "string_type", "int_type", "float_type", "uint128_type", "int128_type", "date_type", "datetime_type", "missing_type", "decimal_type", "boolean_type", "int32_type", "float32_type", "uint32_type")
     UNSPECIFIED_TYPE_FIELD_NUMBER: _ClassVar[int]
     STRING_TYPE_FIELD_NUMBER: _ClassVar[int]
     INT_TYPE_FIELD_NUMBER: _ClassVar[int]
@@ -593,7 +603,7 @@ class MissingType(_message.Message):
     def __init__(self) -> None: ...
 
 class DecimalType(_message.Message):
-    __slots__ = ()
+    __slots__ = ("precision", "scale")
     PRECISION_FIELD_NUMBER: _ClassVar[int]
     SCALE_FIELD_NUMBER: _ClassVar[int]
     precision: int
@@ -617,7 +627,7 @@ class UInt32Type(_message.Message):
     def __init__(self) -> None: ...
 
 class Value(_message.Message):
-    __slots__ = ()
+    __slots__ = ("string_value", "int_value", "float_value", "uint128_value", "int128_value", "missing_value", "date_value", "datetime_value", "decimal_value", "boolean_value", "int32_value", "float32_value", "uint32_value")
     STRING_VALUE_FIELD_NUMBER: _ClassVar[int]
     INT_VALUE_FIELD_NUMBER: _ClassVar[int]
     FLOAT_VALUE_FIELD_NUMBER: _ClassVar[int]
@@ -647,7 +657,7 @@ class Value(_message.Message):
     def __init__(self, string_value: _Optional[str] = ..., int_value: _Optional[int] = ..., float_value: _Optional[float] = ..., uint128_value: _Optional[_Union[UInt128Value, _Mapping]] = ..., int128_value: _Optional[_Union[Int128Value, _Mapping]] = ..., missing_value: _Optional[_Union[MissingValue, _Mapping]] = ..., date_value: _Optional[_Union[DateValue, _Mapping]] = ..., datetime_value: _Optional[_Union[DateTimeValue, _Mapping]] = ..., decimal_value: _Optional[_Union[DecimalValue, _Mapping]] = ..., boolean_value: _Optional[bool] = ..., int32_value: _Optional[int] = ..., float32_value: _Optional[float] = ..., uint32_value: _Optional[int] = ...) -> None: ...
 
 class UInt128Value(_message.Message):
-    __slots__ = ()
+    __slots__ = ("low", "high")
     LOW_FIELD_NUMBER: _ClassVar[int]
     HIGH_FIELD_NUMBER: _ClassVar[int]
     low: int
@@ -655,7 +665,7 @@ class UInt128Value(_message.Message):
     def __init__(self, low: _Optional[int] = ..., high: _Optional[int] = ...) -> None: ...
 
 class Int128Value(_message.Message):
-    __slots__ = ()
+    __slots__ = ("low", "high")
     LOW_FIELD_NUMBER: _ClassVar[int]
     HIGH_FIELD_NUMBER: _ClassVar[int]
     low: int
@@ -667,7 +677,7 @@ class MissingValue(_message.Message):
     def __init__(self) -> None: ...
 
 class DateValue(_message.Message):
-    __slots__ = ()
+    __slots__ = ("year", "month", "day")
     YEAR_FIELD_NUMBER: _ClassVar[int]
     MONTH_FIELD_NUMBER: _ClassVar[int]
     DAY_FIELD_NUMBER: _ClassVar[int]
@@ -677,7 +687,7 @@ class DateValue(_message.Message):
     def __init__(self, year: _Optional[int] = ..., month: _Optional[int] = ..., day: _Optional[int] = ...) -> None: ...
 
 class DateTimeValue(_message.Message):
-    __slots__ = ()
+    __slots__ = ("year", "month", "day", "hour", "minute", "second", "microsecond")
     YEAR_FIELD_NUMBER: _ClassVar[int]
     MONTH_FIELD_NUMBER: _ClassVar[int]
     DAY_FIELD_NUMBER: _ClassVar[int]
@@ -695,7 +705,7 @@ class DateTimeValue(_message.Message):
     def __init__(self, year: _Optional[int] = ..., month: _Optional[int] = ..., day: _Optional[int] = ..., hour: _Optional[int] = ..., minute: _Optional[int] = ..., second: _Optional[int] = ..., microsecond: _Optional[int] = ...) -> None: ...
 
 class DecimalValue(_message.Message):
-    __slots__ = ()
+    __slots__ = ("precision", "scale", "value")
     PRECISION_FIELD_NUMBER: _ClassVar[int]
     SCALE_FIELD_NUMBER: _ClassVar[int]
     VALUE_FIELD_NUMBER: _ClassVar[int]

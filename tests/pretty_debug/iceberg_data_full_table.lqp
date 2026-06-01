@@ -1,0 +1,23 @@
+(transaction
+  (configure { :ivm.maintenance_level "off" :semantics_version 0})
+  (epoch
+    (writes
+      (define
+        (fragment
+          :f1
+          (iceberg_data
+            (iceberg_locator
+              (table_name "edges")
+              (namespace "graph" "raw")
+              (warehouse "wh"))
+            (iceberg_catalog_config
+              (catalog_uri "https://catalog.example")
+              (properties (prop "type" "rest"))
+              (auth_properties))
+            (full_table 0x7b31a79c38a81db1da7df4ef1cf8be23 [UINT128 INT INT])
+            false))))))
+
+;; Debug information
+;; -----------------------
+;; Original names
+;; 	 ID `0x7b31a79c38a81db1da7df4ef1cf8be23` -> `edges`

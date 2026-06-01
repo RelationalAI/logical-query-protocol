@@ -123,6 +123,7 @@
 %nonterm iceberg_catalog_config_scope String
 %nonterm iceberg_catalog_uri String
 %nonterm iceberg_data logic.IcebergData
+%nonterm full_table logic.IcebergTarget
 %nonterm iceberg_from_snapshot String
 %nonterm iceberg_locator logic.IcebergLocator
 %nonterm iceberg_locator_namespace Sequence[String]
@@ -1225,16 +1226,24 @@ iceberg_to_snapshot
       construct: $$ = $3
       deconstruct: $3: String = $$
 
+full_table
+    : "(" "full_table" relation_id "[" type* "]" ")"
+      construct: $$ = logic.IcebergTarget(target_id=$3, types=$5)
+      deconstruct:
+        $3: logic.RelationId = $$.target_id
+        $5: Sequence[logic.Type] = $$.types
+
 iceberg_data
-    : "(" "iceberg_data" iceberg_locator iceberg_catalog_config gnf_columns iceberg_from_snapshot? iceberg_to_snapshot? boolean_value ")"
-      construct: $$ = construct_iceberg_data($3, $4, $5, $6, $7, $8)
+    : "(" "iceberg_data" iceberg_locator iceberg_catalog_config gnf_columns? full_table? iceberg_from_snapshot? iceberg_to_snapshot? boolean_value ")"
+      construct: $$ = construct_iceberg_data($3, $4, $5, $6, $7, $8, $9)
       deconstruct:
         $3: logic.IcebergLocator = $$.locator
         $4: logic.IcebergCatalogConfig = $$.config
-        $5: Sequence[logic.GNFColumn] = $$.columns
-        $6: Optional[String] = deconstruct_iceberg_data_from_snapshot_optional($$)
-        $7: Optional[String] = deconstruct_iceberg_data_to_snapshot_optional($$)
-        $8: Boolean = $$.returns_delta
+        $5: Optional[Sequence[logic.GNFColumn]] = $$.columns if not builtin.is_empty($$.columns) else None
+        $6: Optional[logic.IcebergTarget] = $$.target if builtin.has_proto_field($$, 'target') else None
+        $7: Optional[String] = deconstruct_iceberg_data_from_snapshot_optional($$)
+        $8: Optional[String] = deconstruct_iceberg_data_to_snapshot_optional($$)
+        $9: Boolean = $$.returns_delta
 
 undefine
     : "(" "undefine" fragment_id ")"
@@ -1724,7 +1733,8 @@ def deconstruct_iceberg_catalog_config_scope_optional(msg: logic.IcebergCatalogC
 def construct_iceberg_data(
     locator: logic.IcebergLocator,
     config: logic.IcebergCatalogConfig,
-    columns: Sequence[logic.GNFColumn],
+    columns_opt: Optional[Sequence[logic.GNFColumn]],
+    target_opt: Optional[logic.IcebergTarget],
     from_snapshot_opt: Optional[String],
     to_snapshot_opt: Optional[String],
     returns_delta: Boolean,
@@ -1732,7 +1742,8 @@ def construct_iceberg_data(
     return logic.IcebergData(
         locator=locator,
         config=config,
-        columns=columns,
+        columns=builtin.unwrap_option_or(columns_opt, list[logic.GNFColumn]()),
+        target=target_opt,
         from_snapshot=builtin.some(builtin.unwrap_option_or(from_snapshot_opt, "")),
         to_snapshot=builtin.some(builtin.unwrap_option_or(to_snapshot_opt, "")),
         returns_delta=returns_delta,
