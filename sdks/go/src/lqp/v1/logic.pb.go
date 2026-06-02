@@ -3197,8 +3197,8 @@ func (x *CSVConfig) GetPartitionSizeMb() int64 {
 
 type IcebergTarget struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	TargetId      *RelationId            `protobuf:"bytes,1,opt,name=target_id,json=targetId,proto3" json:"target_id,omitempty"` // RelPath for output relation
-	Types         []*Type                `protobuf:"bytes,2,rep,name=types,proto3" json:"types,omitempty"`                       // row ID type + all column types, in order
+	TargetId      *RelationId            `protobuf:"bytes,1,opt,name=target_id,json=targetId,proto3" json:"target_id,omitempty"`
+	Types         []*Type                `protobuf:"bytes,2,rep,name=types,proto3" json:"types,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -3255,7 +3255,7 @@ type IcebergData struct {
 	FromSnapshot  *string                `protobuf:"bytes,4,opt,name=from_snapshot,json=fromSnapshot,proto3,oneof" json:"from_snapshot,omitempty"`
 	ToSnapshot    *string                `protobuf:"bytes,5,opt,name=to_snapshot,json=toSnapshot,proto3,oneof" json:"to_snapshot,omitempty"`
 	ReturnsDelta  bool                   `protobuf:"varint,6,opt,name=returns_delta,json=returnsDelta,proto3" json:"returns_delta,omitempty"`
-	Target        *IcebergTarget         `protobuf:"bytes,7,opt,name=target,proto3,oneof" json:"target,omitempty"` // if present, single-relation (full_table) mode
+	Target        *IcebergTarget         `protobuf:"bytes,7,opt,name=target,proto3,oneof" json:"target,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
