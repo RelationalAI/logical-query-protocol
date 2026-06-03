@@ -276,11 +276,18 @@ message BeTreeLocator {
   int64 tree_height = 3;
 }
 
+message CSVTarget {
+  RelationId target_id = 1;          // Output relation path
+  repeated string column_names = 2; // CSV column names in order (no METADATA$ columns)
+  repeated Type types = 3;          // Column types in order (same length as column_names)
+}
+
 message CSVData {
   CSVLocator locator = 1;
   CSVConfig config = 2;
   repeated GNFColumn columns = 3;
   string asof = 4; // Blob storage timestamp for freshness requirements
+  optional CSVTarget target = 5; // If present, single-relation (table) mode; mutually exclusive with columns
 }
 
 message CSVLocator {

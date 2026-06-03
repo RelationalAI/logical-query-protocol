@@ -10,11 +10,11 @@ export Int32Type, Float32Type, BeTreeConfig, DateTimeValue, IcebergLocator, Date
 export OrMonoid, CSVLocator, Int128Type, DecimalType, UnspecifiedType, DateType
 export MissingType, MissingValue, CSVConfig, IntType, StringType, Int128Value, UInt128Value
 export BooleanType, UInt32Type, DecimalValue, BeTreeLocator, var"#Type", Value, GNFColumn
-export MinMonoid, SumMonoid, MaxMonoid, BeTreeInfo, Binding, EDB, Attribute, Term, CSVData
-export IcebergData, Monoid, BeTreeRelation, Cast, Pragma, Atom, RelTerm, Data, Primitive
-export RelAtom, Abstraction, Algorithm, Assign, Break, Conjunction, Constraint, Def
-export Disjunction, Exists, FFI, FunctionalDependency, MonoidDef, MonusDef, Not, Reduce
-export Script, Upsert, Construct, Loop, Declaration, Instruction, Formula
+export CSVTarget, MinMonoid, SumMonoid, MaxMonoid, BeTreeInfo, Binding, EDB, Attribute
+export Term, IcebergData, CSVData, Monoid, BeTreeRelation, Cast, Pragma, Atom, RelTerm
+export Data, Primitive, RelAtom, Abstraction, Algorithm, Assign, Break, Conjunction
+export Constraint, Def, Disjunction, Exists, FFI, FunctionalDependency, MonoidDef, MonusDef
+export Not, Reduce, Script, Upsert, Construct, Loop, Declaration, Instruction, Formula
 abstract type var"##Abstract#Abstraction" end
 abstract type var"##Abstract#Not" end
 abstract type var"##Abstract#Break" end
@@ -1262,6 +1262,49 @@ function PB._encoded_size(x::GNFColumn)
     return encoded_size
 end
 
+struct CSVTarget
+    target_id::Union{Nothing,RelationId}
+    column_names::Vector{String}
+    types::Vector{var"#Type"}
+end
+CSVTarget(;target_id = nothing, column_names = Vector{String}(), types = Vector{var"#Type"}()) = CSVTarget(target_id, column_names, types)
+PB.default_values(::Type{CSVTarget}) = (;target_id = nothing, column_names = Vector{String}(), types = Vector{var"#Type"}())
+PB.field_numbers(::Type{CSVTarget}) = (;target_id = 1, column_names = 2, types = 3)
+
+function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:CSVTarget}, _endpos::Int=0, _group::Bool=false)
+    target_id = Ref{Union{Nothing,RelationId}}(nothing)
+    column_names = PB.BufferedVector{String}()
+    types = PB.BufferedVector{var"#Type"}()
+    while !PB.message_done(d, _endpos, _group)
+        field_number, wire_type = PB.decode_tag(d)
+        if field_number == 1
+            PB.decode!(d, target_id)
+        elseif field_number == 2
+            PB.decode!(d, column_names)
+        elseif field_number == 3
+            PB.decode!(d, types)
+        else
+            Base.skip(d, wire_type)
+        end
+    end
+    return CSVTarget(target_id[], column_names[], types[])
+end
+
+function PB.encode(e::PB.AbstractProtoEncoder, x::CSVTarget)
+    initpos = position(e.io)
+    !isnothing(x.target_id) && PB.encode(e, 1, x.target_id)
+    !isempty(x.column_names) && PB.encode(e, 2, x.column_names)
+    !isempty(x.types) && PB.encode(e, 3, x.types)
+    return position(e.io) - initpos
+end
+function PB._encoded_size(x::CSVTarget)
+    encoded_size = 0
+    !isnothing(x.target_id) && (encoded_size += PB._encoded_size(x.target_id, 1))
+    !isempty(x.column_names) && (encoded_size += PB._encoded_size(x.column_names, 2))
+    !isempty(x.types) && (encoded_size += PB._encoded_size(x.types, 3))
+    return encoded_size
+end
+
 struct MinMonoid
     var"#type"::Union{Nothing,var"#Type"}
 end
@@ -1568,55 +1611,6 @@ function PB._encoded_size(x::Term)
     return encoded_size
 end
 
-struct CSVData
-    locator::Union{Nothing,CSVLocator}
-    config::Union{Nothing,CSVConfig}
-    columns::Vector{GNFColumn}
-    asof::String
-end
-CSVData(;locator = nothing, config = nothing, columns = Vector{GNFColumn}(), asof = "") = CSVData(locator, config, columns, asof)
-PB.default_values(::Type{CSVData}) = (;locator = nothing, config = nothing, columns = Vector{GNFColumn}(), asof = "")
-PB.field_numbers(::Type{CSVData}) = (;locator = 1, config = 2, columns = 3, asof = 4)
-
-function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:CSVData}, _endpos::Int=0, _group::Bool=false)
-    locator = Ref{Union{Nothing,CSVLocator}}(nothing)
-    config = Ref{Union{Nothing,CSVConfig}}(nothing)
-    columns = PB.BufferedVector{GNFColumn}()
-    asof = ""
-    while !PB.message_done(d, _endpos, _group)
-        field_number, wire_type = PB.decode_tag(d)
-        if field_number == 1
-            PB.decode!(d, locator)
-        elseif field_number == 2
-            PB.decode!(d, config)
-        elseif field_number == 3
-            PB.decode!(d, columns)
-        elseif field_number == 4
-            asof = PB.decode(d, String)
-        else
-            Base.skip(d, wire_type)
-        end
-    end
-    return CSVData(locator[], config[], columns[], asof)
-end
-
-function PB.encode(e::PB.AbstractProtoEncoder, x::CSVData)
-    initpos = position(e.io)
-    !isnothing(x.locator) && PB.encode(e, 1, x.locator)
-    !isnothing(x.config) && PB.encode(e, 2, x.config)
-    !isempty(x.columns) && PB.encode(e, 3, x.columns)
-    !isempty(x.asof) && PB.encode(e, 4, x.asof)
-    return position(e.io) - initpos
-end
-function PB._encoded_size(x::CSVData)
-    encoded_size = 0
-    !isnothing(x.locator) && (encoded_size += PB._encoded_size(x.locator, 1))
-    !isnothing(x.config) && (encoded_size += PB._encoded_size(x.config, 2))
-    !isempty(x.columns) && (encoded_size += PB._encoded_size(x.columns, 3))
-    !isempty(x.asof) && (encoded_size += PB._encoded_size(x.asof, 4))
-    return encoded_size
-end
-
 struct IcebergData
     locator::Union{Nothing,IcebergLocator}
     config::Union{Nothing,IcebergCatalogConfig}
@@ -1675,6 +1669,61 @@ function PB._encoded_size(x::IcebergData)
     !isempty(x.from_snapshot) && (encoded_size += PB._encoded_size(x.from_snapshot, 4))
     !isempty(x.to_snapshot) && (encoded_size += PB._encoded_size(x.to_snapshot, 5))
     x.returns_delta != false && (encoded_size += PB._encoded_size(x.returns_delta, 6))
+    return encoded_size
+end
+
+struct CSVData
+    locator::Union{Nothing,CSVLocator}
+    config::Union{Nothing,CSVConfig}
+    columns::Vector{GNFColumn}
+    asof::String
+    target::Union{Nothing,CSVTarget}
+end
+CSVData(;locator = nothing, config = nothing, columns = Vector{GNFColumn}(), asof = "", target = nothing) = CSVData(locator, config, columns, asof, target)
+PB.default_values(::Type{CSVData}) = (;locator = nothing, config = nothing, columns = Vector{GNFColumn}(), asof = "", target = nothing)
+PB.field_numbers(::Type{CSVData}) = (;locator = 1, config = 2, columns = 3, asof = 4, target = 5)
+
+function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:CSVData}, _endpos::Int=0, _group::Bool=false)
+    locator = Ref{Union{Nothing,CSVLocator}}(nothing)
+    config = Ref{Union{Nothing,CSVConfig}}(nothing)
+    columns = PB.BufferedVector{GNFColumn}()
+    asof = ""
+    target = Ref{Union{Nothing,CSVTarget}}(nothing)
+    while !PB.message_done(d, _endpos, _group)
+        field_number, wire_type = PB.decode_tag(d)
+        if field_number == 1
+            PB.decode!(d, locator)
+        elseif field_number == 2
+            PB.decode!(d, config)
+        elseif field_number == 3
+            PB.decode!(d, columns)
+        elseif field_number == 4
+            asof = PB.decode(d, String)
+        elseif field_number == 5
+            PB.decode!(d, target)
+        else
+            Base.skip(d, wire_type)
+        end
+    end
+    return CSVData(locator[], config[], columns[], asof, target[])
+end
+
+function PB.encode(e::PB.AbstractProtoEncoder, x::CSVData)
+    initpos = position(e.io)
+    !isnothing(x.locator) && PB.encode(e, 1, x.locator)
+    !isnothing(x.config) && PB.encode(e, 2, x.config)
+    !isempty(x.columns) && PB.encode(e, 3, x.columns)
+    !isempty(x.asof) && PB.encode(e, 4, x.asof)
+    !isnothing(x.target) && PB.encode(e, 5, x.target)
+    return position(e.io) - initpos
+end
+function PB._encoded_size(x::CSVData)
+    encoded_size = 0
+    !isnothing(x.locator) && (encoded_size += PB._encoded_size(x.locator, 1))
+    !isnothing(x.config) && (encoded_size += PB._encoded_size(x.config, 2))
+    !isempty(x.columns) && (encoded_size += PB._encoded_size(x.columns, 3))
+    !isempty(x.asof) && (encoded_size += PB._encoded_size(x.asof, 4))
+    !isnothing(x.target) && (encoded_size += PB._encoded_size(x.target, 5))
     return encoded_size
 end
 

@@ -1,0 +1,68 @@
+(transaction
+  (configure { :ivm.maintenance_level "off" :semantics_version 0})
+  (epoch
+    (writes
+      (define
+        (fragment
+          :f1
+          (csv_data
+            (csv_locator (paths "s3://bucket/edges.csv"))
+            (csv_config
+              {
+               :csv_compression "auto"
+               :csv_decimal_separator "."
+               :csv_delimiter ","
+               :csv_encoding "utf-8"
+               :csv_escapechar "\""
+               :csv_header_row 1i32
+               :csv_quotechar "\""
+               :csv_skip 0})
+            (table :edges ["src" "dst"] [INT INT])
+            (asof "2025-04-01T00:00:00Z"))
+          (csv_data
+            (csv_locator (inline_data "name,score\nAlice,9.5\nBob,8.7"))
+            (csv_config
+              {
+               :csv_compression "auto"
+               :csv_decimal_separator "."
+               :csv_delimiter ","
+               :csv_encoding "utf-8"
+               :csv_escapechar "\""
+               :csv_header_row 1i32
+               :csv_quotechar "\""
+               :csv_skip 0})
+            (table :scores ["name" "score"] [STRING FLOAT])
+            (asof "2025-04-15T00:00:00Z"))
+          (csv_data
+            (csv_locator (paths "data/tags.csv"))
+            (csv_config
+              {
+               :csv_compression "auto"
+               :csv_decimal_separator "."
+               :csv_delimiter ","
+               :csv_encoding "utf-8"
+               :csv_escapechar "\""
+               :csv_header_row 1i32
+               :csv_quotechar "\""
+               :csv_skip 0})
+            (table :tags ["tag"] [STRING])
+            (asof "2025-05-01T00:00:00Z"))
+          (csv_data
+            (csv_locator (paths "data/pipe_separated.csv"))
+            (csv_config
+              {
+               :csv_compression "auto"
+               :csv_decimal_separator "."
+               :csv_delimiter "|"
+               :csv_encoding "utf-8"
+               :csv_escapechar "\""
+               :csv_header_row 1i32
+               :csv_quotechar "\""
+               :csv_skip 0})
+            (table :items ["id" "name" "value"] [INT STRING FLOAT])
+            (asof "2025-05-15T00:00:00Z")))))
+    (reads
+      (output :edges :edges)
+      (output :scores :scores)
+      (output :tags :tags)
+      (output :items :items))))
