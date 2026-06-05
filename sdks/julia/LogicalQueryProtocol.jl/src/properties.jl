@@ -224,6 +224,11 @@ function global_ids(data::Data)
     elseif dt.name == :csv_data
         csv_data = dt[]::CSVData
         ids = LQPRelationId[]
+        # Table mode: the target carries a single relation ID for the whole table.
+        if !isnothing(csv_data.target) && !isnothing(csv_data.target.target_id)
+            push!(ids, persistent_id(csv_data.target.target_id))
+        end
+        # Column mode: each GNFColumn has its own target_id.
         for column in csv_data.columns
             if !isnothing(column.target_id)
                 push!(ids, persistent_id(column.target_id))
