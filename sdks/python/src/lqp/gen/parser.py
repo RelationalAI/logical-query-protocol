@@ -3304,9 +3304,9 @@ class Parser:
     def parse_csv_locator_inline_data(self) -> str:
         self.consume_literal("(")
         self.consume_literal("inline_data")
-        string1187 = self.consume_terminal("STRING")
+        formatted_string1187 = self.consume_terminal("STRING")
         self.consume_literal(")")
-        return string1187
+        return formatted_string1187
 
     def parse_csv_config(self) -> logic_pb2.CSVConfig:
         span_start1189 = self.span_start()

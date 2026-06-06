@@ -3978,7 +3978,7 @@ function pretty_csv_locator_inline_data(pp::PrettyPrinter, msg::String)
         write(pp, "(inline_data")
         indent_sexp!(pp)
         newline(pp)
-        write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, fields1415))
+        write(pp, format_string(pp, fields1415))
         dedent!(pp)
         write(pp, ")")
     end

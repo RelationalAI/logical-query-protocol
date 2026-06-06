@@ -4293,9 +4293,9 @@ func (p *Parser) parse_csv_locator_paths() []string {
 func (p *Parser) parse_csv_locator_inline_data() string {
 	p.consumeLiteral("(")
 	p.consumeLiteral("inline_data")
-	string1187 := p.consumeTerminal("STRING").Value.str
+	formatted_string1187 := p.consumeTerminal("STRING").Value.str
 	p.consumeLiteral(")")
-	return string1187
+	return formatted_string1187
 }
 
 func (p *Parser) parse_csv_config() *pb.CSVConfig {

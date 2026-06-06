@@ -1127,7 +1127,7 @@ csv_locator_paths
     : "(" "paths" STRING* ")"
 
 csv_locator_inline_data
-    : "(" "inline_data" STRING ")"
+    : "(" "inline_data" FORMATTED_STRING ")"
 
 csvlocator
     : "(" "csv_locator" csv_locator_paths? csv_locator_inline_data? ")"

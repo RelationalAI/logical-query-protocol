@@ -3616,9 +3616,9 @@ end
 function parse_csv_locator_inline_data(parser::ParserState)::String
     consume_literal!(parser, "(")
     consume_literal!(parser, "inline_data")
-    string1187 = consume_terminal!(parser, "STRING")
+    formatted_string1187 = consume_terminal!(parser, "STRING")
     consume_literal!(parser, ")")
-    return string1187
+    return formatted_string1187
 end
 
 function parse_csv_config(parser::ParserState)::Proto.CSVConfig
