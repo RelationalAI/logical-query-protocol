@@ -5,16 +5,17 @@ import ProtoBuf as PB
 using ProtoBuf: OneOf
 using ProtoBuf.EnumX: @enumx
 
-export DateTimeType, RelationId, Var, FloatType, IcebergCatalogConfig, UInt128Type
-export Int32Type, Float32Type, BeTreeConfig, DateTimeValue, IcebergLocator, DateValue
-export OrMonoid, CSVLocator, Int128Type, DecimalType, UnspecifiedType, DateType
-export MissingType, MissingValue, CSVConfig, IntType, StringType, Int128Value, UInt128Value
-export BooleanType, UInt32Type, DecimalValue, BeTreeLocator, var"#Type", Value, GNFColumn
-export MinMonoid, SumMonoid, MaxMonoid, BeTreeInfo, Binding, EDB, Attribute, Term, CSVData
-export IcebergData, Monoid, BeTreeRelation, Cast, Pragma, Atom, RelTerm, Data, Primitive
-export RelAtom, Abstraction, Algorithm, Assign, Break, Conjunction, Constraint, Def
-export Disjunction, Exists, FFI, FunctionalDependency, MonoidDef, MonusDef, Not, Reduce
-export Script, Upsert, Construct, Loop, Declaration, Instruction, Formula
+export DateTimeType, CSVStorageIntegration, RelationId, Var, FloatType
+export IcebergCatalogConfig, UInt128Type, Int32Type, Float32Type, BeTreeConfig
+export DateTimeValue, IcebergLocator, DateValue, OrMonoid, CSVLocator, Int128Type
+export DecimalType, UnspecifiedType, DateType, MissingType, MissingValue, IntType
+export StringType, Int128Value, UInt128Value, BooleanType, UInt32Type, CSVConfig
+export DecimalValue, BeTreeLocator, var"#Type", Value, GNFColumn, MinMonoid, SumMonoid
+export MaxMonoid, BeTreeInfo, Binding, EDB, Attribute, Term, CSVData, IcebergData, Monoid
+export BeTreeRelation, Cast, Pragma, Atom, RelTerm, Data, Primitive, RelAtom, Abstraction
+export Algorithm, Assign, Break, Conjunction, Constraint, Def, Disjunction, Exists, FFI
+export FunctionalDependency, MonoidDef, MonusDef, Not, Reduce, Script, Upsert, Construct
+export Loop, Declaration, Instruction, Formula
 abstract type var"##Abstract#Abstraction" end
 abstract type var"##Abstract#Not" end
 abstract type var"##Abstract#Break" end
@@ -55,6 +56,61 @@ function PB.encode(e::PB.AbstractProtoEncoder, x::DateTimeType)
 end
 function PB._encoded_size(x::DateTimeType)
     encoded_size = 0
+    return encoded_size
+end
+
+struct CSVStorageIntegration
+    provider::String
+    azure_sas_token::String
+    s3_region::String
+    s3_access_key_id::String
+    s3_secret_access_key::String
+end
+CSVStorageIntegration(;provider = "", azure_sas_token = "", s3_region = "", s3_access_key_id = "", s3_secret_access_key = "") = CSVStorageIntegration(provider, azure_sas_token, s3_region, s3_access_key_id, s3_secret_access_key)
+PB.default_values(::Type{CSVStorageIntegration}) = (;provider = "", azure_sas_token = "", s3_region = "", s3_access_key_id = "", s3_secret_access_key = "")
+PB.field_numbers(::Type{CSVStorageIntegration}) = (;provider = 1, azure_sas_token = 2, s3_region = 3, s3_access_key_id = 4, s3_secret_access_key = 5)
+
+function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:CSVStorageIntegration}, _endpos::Int=0, _group::Bool=false)
+    provider = ""
+    azure_sas_token = ""
+    s3_region = ""
+    s3_access_key_id = ""
+    s3_secret_access_key = ""
+    while !PB.message_done(d, _endpos, _group)
+        field_number, wire_type = PB.decode_tag(d)
+        if field_number == 1
+            provider = PB.decode(d, String)
+        elseif field_number == 2
+            azure_sas_token = PB.decode(d, String)
+        elseif field_number == 3
+            s3_region = PB.decode(d, String)
+        elseif field_number == 4
+            s3_access_key_id = PB.decode(d, String)
+        elseif field_number == 5
+            s3_secret_access_key = PB.decode(d, String)
+        else
+            Base.skip(d, wire_type)
+        end
+    end
+    return CSVStorageIntegration(provider, azure_sas_token, s3_region, s3_access_key_id, s3_secret_access_key)
+end
+
+function PB.encode(e::PB.AbstractProtoEncoder, x::CSVStorageIntegration)
+    initpos = position(e.io)
+    !isempty(x.provider) && PB.encode(e, 1, x.provider)
+    !isempty(x.azure_sas_token) && PB.encode(e, 2, x.azure_sas_token)
+    !isempty(x.s3_region) && PB.encode(e, 3, x.s3_region)
+    !isempty(x.s3_access_key_id) && PB.encode(e, 4, x.s3_access_key_id)
+    !isempty(x.s3_secret_access_key) && PB.encode(e, 5, x.s3_secret_access_key)
+    return position(e.io) - initpos
+end
+function PB._encoded_size(x::CSVStorageIntegration)
+    encoded_size = 0
+    !isempty(x.provider) && (encoded_size += PB._encoded_size(x.provider, 1))
+    !isempty(x.azure_sas_token) && (encoded_size += PB._encoded_size(x.azure_sas_token, 2))
+    !isempty(x.s3_region) && (encoded_size += PB._encoded_size(x.s3_region, 3))
+    !isempty(x.s3_access_key_id) && (encoded_size += PB._encoded_size(x.s3_access_key_id, 4))
+    !isempty(x.s3_secret_access_key) && (encoded_size += PB._encoded_size(x.s3_secret_access_key, 5))
     return encoded_size
 end
 
@@ -641,103 +697,6 @@ function PB._encoded_size(x::MissingValue)
     return encoded_size
 end
 
-struct CSVConfig
-    header_row::Int32
-    skip::Int64
-    new_line::String
-    delimiter::String
-    quotechar::String
-    escapechar::String
-    comment::String
-    missing_strings::Vector{String}
-    decimal_separator::String
-    encoding::String
-    compression::String
-    partition_size_mb::Int64
-end
-CSVConfig(;header_row = zero(Int32), skip = zero(Int64), new_line = "", delimiter = "", quotechar = "", escapechar = "", comment = "", missing_strings = Vector{String}(), decimal_separator = "", encoding = "", compression = "", partition_size_mb = zero(Int64)) = CSVConfig(header_row, skip, new_line, delimiter, quotechar, escapechar, comment, missing_strings, decimal_separator, encoding, compression, partition_size_mb)
-PB.default_values(::Type{CSVConfig}) = (;header_row = zero(Int32), skip = zero(Int64), new_line = "", delimiter = "", quotechar = "", escapechar = "", comment = "", missing_strings = Vector{String}(), decimal_separator = "", encoding = "", compression = "", partition_size_mb = zero(Int64))
-PB.field_numbers(::Type{CSVConfig}) = (;header_row = 1, skip = 2, new_line = 3, delimiter = 4, quotechar = 5, escapechar = 6, comment = 7, missing_strings = 8, decimal_separator = 9, encoding = 10, compression = 11, partition_size_mb = 12)
-
-function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:CSVConfig}, _endpos::Int=0, _group::Bool=false)
-    header_row = zero(Int32)
-    skip = zero(Int64)
-    new_line = ""
-    delimiter = ""
-    quotechar = ""
-    escapechar = ""
-    comment = ""
-    missing_strings = PB.BufferedVector{String}()
-    decimal_separator = ""
-    encoding = ""
-    compression = ""
-    partition_size_mb = zero(Int64)
-    while !PB.message_done(d, _endpos, _group)
-        field_number, wire_type = PB.decode_tag(d)
-        if field_number == 1
-            header_row = PB.decode(d, Int32)
-        elseif field_number == 2
-            skip = PB.decode(d, Int64)
-        elseif field_number == 3
-            new_line = PB.decode(d, String)
-        elseif field_number == 4
-            delimiter = PB.decode(d, String)
-        elseif field_number == 5
-            quotechar = PB.decode(d, String)
-        elseif field_number == 6
-            escapechar = PB.decode(d, String)
-        elseif field_number == 7
-            comment = PB.decode(d, String)
-        elseif field_number == 8
-            PB.decode!(d, missing_strings)
-        elseif field_number == 9
-            decimal_separator = PB.decode(d, String)
-        elseif field_number == 10
-            encoding = PB.decode(d, String)
-        elseif field_number == 11
-            compression = PB.decode(d, String)
-        elseif field_number == 12
-            partition_size_mb = PB.decode(d, Int64)
-        else
-            Base.skip(d, wire_type)
-        end
-    end
-    return CSVConfig(header_row, skip, new_line, delimiter, quotechar, escapechar, comment, missing_strings[], decimal_separator, encoding, compression, partition_size_mb)
-end
-
-function PB.encode(e::PB.AbstractProtoEncoder, x::CSVConfig)
-    initpos = position(e.io)
-    x.header_row != zero(Int32) && PB.encode(e, 1, x.header_row)
-    x.skip != zero(Int64) && PB.encode(e, 2, x.skip)
-    !isempty(x.new_line) && PB.encode(e, 3, x.new_line)
-    !isempty(x.delimiter) && PB.encode(e, 4, x.delimiter)
-    !isempty(x.quotechar) && PB.encode(e, 5, x.quotechar)
-    !isempty(x.escapechar) && PB.encode(e, 6, x.escapechar)
-    !isempty(x.comment) && PB.encode(e, 7, x.comment)
-    !isempty(x.missing_strings) && PB.encode(e, 8, x.missing_strings)
-    !isempty(x.decimal_separator) && PB.encode(e, 9, x.decimal_separator)
-    !isempty(x.encoding) && PB.encode(e, 10, x.encoding)
-    !isempty(x.compression) && PB.encode(e, 11, x.compression)
-    x.partition_size_mb != zero(Int64) && PB.encode(e, 12, x.partition_size_mb)
-    return position(e.io) - initpos
-end
-function PB._encoded_size(x::CSVConfig)
-    encoded_size = 0
-    x.header_row != zero(Int32) && (encoded_size += PB._encoded_size(x.header_row, 1))
-    x.skip != zero(Int64) && (encoded_size += PB._encoded_size(x.skip, 2))
-    !isempty(x.new_line) && (encoded_size += PB._encoded_size(x.new_line, 3))
-    !isempty(x.delimiter) && (encoded_size += PB._encoded_size(x.delimiter, 4))
-    !isempty(x.quotechar) && (encoded_size += PB._encoded_size(x.quotechar, 5))
-    !isempty(x.escapechar) && (encoded_size += PB._encoded_size(x.escapechar, 6))
-    !isempty(x.comment) && (encoded_size += PB._encoded_size(x.comment, 7))
-    !isempty(x.missing_strings) && (encoded_size += PB._encoded_size(x.missing_strings, 8))
-    !isempty(x.decimal_separator) && (encoded_size += PB._encoded_size(x.decimal_separator, 9))
-    !isempty(x.encoding) && (encoded_size += PB._encoded_size(x.encoding, 10))
-    !isempty(x.compression) && (encoded_size += PB._encoded_size(x.compression, 11))
-    x.partition_size_mb != zero(Int64) && (encoded_size += PB._encoded_size(x.partition_size_mb, 12))
-    return encoded_size
-end
-
 struct IntType end
 
 function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:IntType}, _endpos::Int=0, _group::Bool=false)
@@ -885,6 +844,109 @@ function PB.encode(e::PB.AbstractProtoEncoder, x::UInt32Type)
 end
 function PB._encoded_size(x::UInt32Type)
     encoded_size = 0
+    return encoded_size
+end
+
+struct CSVConfig
+    header_row::Int32
+    skip::Int64
+    new_line::String
+    delimiter::String
+    quotechar::String
+    escapechar::String
+    comment::String
+    missing_strings::Vector{String}
+    decimal_separator::String
+    encoding::String
+    compression::String
+    partition_size_mb::Int64
+    storage_integration::Union{Nothing,CSVStorageIntegration}
+end
+CSVConfig(;header_row = zero(Int32), skip = zero(Int64), new_line = "", delimiter = "", quotechar = "", escapechar = "", comment = "", missing_strings = Vector{String}(), decimal_separator = "", encoding = "", compression = "", partition_size_mb = zero(Int64), storage_integration = nothing) = CSVConfig(header_row, skip, new_line, delimiter, quotechar, escapechar, comment, missing_strings, decimal_separator, encoding, compression, partition_size_mb, storage_integration)
+PB.default_values(::Type{CSVConfig}) = (;header_row = zero(Int32), skip = zero(Int64), new_line = "", delimiter = "", quotechar = "", escapechar = "", comment = "", missing_strings = Vector{String}(), decimal_separator = "", encoding = "", compression = "", partition_size_mb = zero(Int64), storage_integration = nothing)
+PB.field_numbers(::Type{CSVConfig}) = (;header_row = 1, skip = 2, new_line = 3, delimiter = 4, quotechar = 5, escapechar = 6, comment = 7, missing_strings = 8, decimal_separator = 9, encoding = 10, compression = 11, partition_size_mb = 12, storage_integration = 13)
+
+function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:CSVConfig}, _endpos::Int=0, _group::Bool=false)
+    header_row = zero(Int32)
+    skip = zero(Int64)
+    new_line = ""
+    delimiter = ""
+    quotechar = ""
+    escapechar = ""
+    comment = ""
+    missing_strings = PB.BufferedVector{String}()
+    decimal_separator = ""
+    encoding = ""
+    compression = ""
+    partition_size_mb = zero(Int64)
+    storage_integration = Ref{Union{Nothing,CSVStorageIntegration}}(nothing)
+    while !PB.message_done(d, _endpos, _group)
+        field_number, wire_type = PB.decode_tag(d)
+        if field_number == 1
+            header_row = PB.decode(d, Int32)
+        elseif field_number == 2
+            skip = PB.decode(d, Int64)
+        elseif field_number == 3
+            new_line = PB.decode(d, String)
+        elseif field_number == 4
+            delimiter = PB.decode(d, String)
+        elseif field_number == 5
+            quotechar = PB.decode(d, String)
+        elseif field_number == 6
+            escapechar = PB.decode(d, String)
+        elseif field_number == 7
+            comment = PB.decode(d, String)
+        elseif field_number == 8
+            PB.decode!(d, missing_strings)
+        elseif field_number == 9
+            decimal_separator = PB.decode(d, String)
+        elseif field_number == 10
+            encoding = PB.decode(d, String)
+        elseif field_number == 11
+            compression = PB.decode(d, String)
+        elseif field_number == 12
+            partition_size_mb = PB.decode(d, Int64)
+        elseif field_number == 13
+            PB.decode!(d, storage_integration)
+        else
+            Base.skip(d, wire_type)
+        end
+    end
+    return CSVConfig(header_row, skip, new_line, delimiter, quotechar, escapechar, comment, missing_strings[], decimal_separator, encoding, compression, partition_size_mb, storage_integration[])
+end
+
+function PB.encode(e::PB.AbstractProtoEncoder, x::CSVConfig)
+    initpos = position(e.io)
+    x.header_row != zero(Int32) && PB.encode(e, 1, x.header_row)
+    x.skip != zero(Int64) && PB.encode(e, 2, x.skip)
+    !isempty(x.new_line) && PB.encode(e, 3, x.new_line)
+    !isempty(x.delimiter) && PB.encode(e, 4, x.delimiter)
+    !isempty(x.quotechar) && PB.encode(e, 5, x.quotechar)
+    !isempty(x.escapechar) && PB.encode(e, 6, x.escapechar)
+    !isempty(x.comment) && PB.encode(e, 7, x.comment)
+    !isempty(x.missing_strings) && PB.encode(e, 8, x.missing_strings)
+    !isempty(x.decimal_separator) && PB.encode(e, 9, x.decimal_separator)
+    !isempty(x.encoding) && PB.encode(e, 10, x.encoding)
+    !isempty(x.compression) && PB.encode(e, 11, x.compression)
+    x.partition_size_mb != zero(Int64) && PB.encode(e, 12, x.partition_size_mb)
+    !isnothing(x.storage_integration) && PB.encode(e, 13, x.storage_integration)
+    return position(e.io) - initpos
+end
+function PB._encoded_size(x::CSVConfig)
+    encoded_size = 0
+    x.header_row != zero(Int32) && (encoded_size += PB._encoded_size(x.header_row, 1))
+    x.skip != zero(Int64) && (encoded_size += PB._encoded_size(x.skip, 2))
+    !isempty(x.new_line) && (encoded_size += PB._encoded_size(x.new_line, 3))
+    !isempty(x.delimiter) && (encoded_size += PB._encoded_size(x.delimiter, 4))
+    !isempty(x.quotechar) && (encoded_size += PB._encoded_size(x.quotechar, 5))
+    !isempty(x.escapechar) && (encoded_size += PB._encoded_size(x.escapechar, 6))
+    !isempty(x.comment) && (encoded_size += PB._encoded_size(x.comment, 7))
+    !isempty(x.missing_strings) && (encoded_size += PB._encoded_size(x.missing_strings, 8))
+    !isempty(x.decimal_separator) && (encoded_size += PB._encoded_size(x.decimal_separator, 9))
+    !isempty(x.encoding) && (encoded_size += PB._encoded_size(x.encoding, 10))
+    !isempty(x.compression) && (encoded_size += PB._encoded_size(x.compression, 11))
+    x.partition_size_mb != zero(Int64) && (encoded_size += PB._encoded_size(x.partition_size_mb, 12))
+    !isnothing(x.storage_integration) && (encoded_size += PB._encoded_size(x.storage_integration, 13))
     return encoded_size
 end
 

@@ -326,6 +326,9 @@ message CSVConfig {
 
   // Partitioning (for export)
   int64 partition_size_mb = 12;
+
+  // Storage integration (credentials for private buckets)
+  optional CSVStorageIntegration storage_integration = 13;
 }
 
 message IcebergData {
