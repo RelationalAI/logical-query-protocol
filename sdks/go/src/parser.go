@@ -4305,18 +4305,18 @@ func (p *Parser) parse_csv_config() *pb.CSVConfig {
 	config_dict1177 := _t1976
 	var _t1977 [][]interface{}
 	if p.matchLookaheadLiteral("(", 0) {
-		_t1978 := p.parse_csv_storage_integration()
+		_t1978 := p.parse_storage_integration()
 		_t1977 = _t1978
 	}
-	csv_storage_integration1178 := _t1977
+	storage_integration1178 := _t1977
 	p.consumeLiteral(")")
-	_t1979 := p.construct_csv_config(config_dict1177, csv_storage_integration1178)
+	_t1979 := p.construct_csv_config(config_dict1177, storage_integration1178)
 	result1180 := _t1979
 	p.recordSpan(int(span_start1179), "CSVConfig")
 	return result1180
 }
 
-func (p *Parser) parse_csv_storage_integration() [][]interface{} {
+func (p *Parser) parse_storage_integration() [][]interface{} {
 	p.consumeLiteral("(")
 	p.consumeLiteral("storage_integration")
 	_t1980 := p.parse_config_dict()

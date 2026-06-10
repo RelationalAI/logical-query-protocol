@@ -91,7 +91,7 @@
 %nonterm csv_data logic.CSVData
 %nonterm csv_locator_inline_data String
 %nonterm csv_locator_paths Sequence[String]
-%nonterm csv_storage_integration Sequence[Tuple[String, logic.Value]]
+%nonterm storage_integration Sequence[Tuple[String, logic.Value]]
 %nonterm csvlocator logic.CSVLocator
 %nonterm data logic.Data
 %nonterm date logic.DateValue
@@ -1129,13 +1129,13 @@ csvlocator
         $4: Optional[String] = builtin.decode_string($$.inline_data) if builtin.decode_string($$.inline_data) != "" else None
 
 csv_config
-    : "(" "csv_config" config_dict csv_storage_integration? ")"
+    : "(" "csv_config" config_dict storage_integration? ")"
       construct: $$ = construct_csv_config($3, $4)
       deconstruct:
         $3: Sequence[Tuple[String, logic.Value]] = deconstruct_csv_config($$)
         $4: Optional[Sequence[Tuple[String, logic.Value]]] = deconstruct_csv_storage_integration_optional($$)
 
-csv_storage_integration
+storage_integration
     : "(" "storage_integration" config_dict ")"
       construct: $$ = $3
       deconstruct: $3: Sequence[Tuple[String, logic.Value]] = $$

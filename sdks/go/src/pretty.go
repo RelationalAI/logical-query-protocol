@@ -3926,7 +3926,7 @@ func (p *PrettyPrinter) pretty_csv_config(msg *pb.CSVConfig) interface{} {
 		if field1409 != nil {
 			p.newline()
 			opt_val1410 := field1409
-			p.pretty_csv_storage_integration(opt_val1410)
+			p.pretty_storage_integration(opt_val1410)
 		}
 		p.dedent()
 		p.write(")")
@@ -3934,8 +3934,8 @@ func (p *PrettyPrinter) pretty_csv_config(msg *pb.CSVConfig) interface{} {
 	return nil
 }
 
-func (p *PrettyPrinter) pretty_csv_storage_integration(msg [][]interface{}) interface{} {
-	flat1413 := p.tryFlat(msg, func() { p.pretty_csv_storage_integration(msg) })
+func (p *PrettyPrinter) pretty_storage_integration(msg [][]interface{}) interface{} {
+	flat1413 := p.tryFlat(msg, func() { p.pretty_storage_integration(msg) })
 	if flat1413 != nil {
 		p.write(*flat1413)
 		return nil

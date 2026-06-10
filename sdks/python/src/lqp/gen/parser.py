@@ -3318,18 +3318,18 @@ class Parser:
         _t1963 = self.parse_config_dict()
         config_dict1177 = _t1963
         if self.match_lookahead_literal("(", 0):
-            _t1965 = self.parse_csv_storage_integration()
+            _t1965 = self.parse_storage_integration()
             _t1964 = _t1965
         else:
             _t1964 = None
-        csv_storage_integration1178 = _t1964
+        storage_integration1178 = _t1964
         self.consume_literal(")")
-        _t1966 = self.construct_csv_config(config_dict1177, csv_storage_integration1178)
+        _t1966 = self.construct_csv_config(config_dict1177, storage_integration1178)
         result1180 = _t1966
         self.record_span(span_start1179, "CSVConfig")
         return result1180
 
-    def parse_csv_storage_integration(self) -> Sequence[tuple[str, logic_pb2.Value]]:
+    def parse_storage_integration(self) -> Sequence[tuple[str, logic_pb2.Value]]:
         self.consume_literal("(")
         self.consume_literal("storage_integration")
         _t1967 = self.parse_config_dict()

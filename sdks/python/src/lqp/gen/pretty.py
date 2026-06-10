@@ -3438,12 +3438,12 @@ class PrettyPrinter:
                 self.newline()
                 assert field1409 is not None
                 opt_val1410 = field1409
-                self.pretty_csv_storage_integration(opt_val1410)
+                self.pretty_storage_integration(opt_val1410)
             self.dedent()
             self.write(")")
 
-    def pretty_csv_storage_integration(self, msg: Sequence[tuple[str, logic_pb2.Value]]):
-        flat1413 = self._try_flat(msg, self.pretty_csv_storage_integration)
+    def pretty_storage_integration(self, msg: Sequence[tuple[str, logic_pb2.Value]]):
+        flat1413 = self._try_flat(msg, self.pretty_storage_integration)
         if flat1413 is not None:
             assert flat1413 is not None
             self.write(flat1413)

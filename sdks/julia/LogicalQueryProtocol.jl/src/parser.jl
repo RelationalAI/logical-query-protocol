@@ -3629,20 +3629,20 @@ function parse_csv_config(parser::ParserState)::Proto.CSVConfig
     _t1963 = parse_config_dict(parser)
     config_dict1177 = _t1963
     if match_lookahead_literal(parser, "(", 0)
-        _t1965 = parse_csv_storage_integration(parser)
+        _t1965 = parse_storage_integration(parser)
         _t1964 = _t1965
     else
         _t1964 = nothing
     end
-    csv_storage_integration1178 = _t1964
+    storage_integration1178 = _t1964
     consume_literal!(parser, ")")
-    _t1966 = construct_csv_config(parser, config_dict1177, csv_storage_integration1178)
+    _t1966 = construct_csv_config(parser, config_dict1177, storage_integration1178)
     result1180 = _t1966
     record_span!(parser, span_start1179, "CSVConfig")
     return result1180
 end
 
-function parse_csv_storage_integration(parser::ParserState)::Vector{Tuple{String, Proto.Value}}
+function parse_storage_integration(parser::ParserState)::Vector{Tuple{String, Proto.Value}}
     consume_literal!(parser, "(")
     consume_literal!(parser, "storage_integration")
     _t1967 = parse_config_dict(parser)

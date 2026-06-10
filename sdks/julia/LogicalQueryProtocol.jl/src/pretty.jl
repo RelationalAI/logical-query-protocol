@@ -4007,7 +4007,7 @@ function pretty_csv_config(pp::PrettyPrinter, msg::Proto.CSVConfig)
         if !isnothing(field1409)
             newline(pp)
             opt_val1410 = field1409
-            pretty_csv_storage_integration(pp, opt_val1410)
+            pretty_storage_integration(pp, opt_val1410)
         end
         dedent!(pp)
         write(pp, ")")
@@ -4015,8 +4015,8 @@ function pretty_csv_config(pp::PrettyPrinter, msg::Proto.CSVConfig)
     return nothing
 end
 
-function pretty_csv_storage_integration(pp::PrettyPrinter, msg::Vector{Tuple{String, Proto.Value}})
-    flat1413 = try_flat(pp, msg, pretty_csv_storage_integration)
+function pretty_storage_integration(pp::PrettyPrinter, msg::Vector{Tuple{String, Proto.Value}})
+    flat1413 = try_flat(pp, msg, pretty_storage_integration)
     if !isnothing(flat1413)
         write(pp, flat1413)
         return nothing
