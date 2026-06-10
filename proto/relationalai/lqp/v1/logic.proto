@@ -288,6 +288,18 @@ message CSVLocator {
   bytes inline_data = 2; // Inline CSV content (mutually exclusive with paths)
 }
 
+message CSVStorageIntegration {
+  string provider = 1; // "azure" or "s3"
+
+  // Options for azure
+  string azure_sas_token = 2;
+
+  // Options for s3
+  string s3_region = 3;
+  string s3_access_key_id = 4;
+  string s3_secret_access_key = 5;
+}
+
 message CSVConfig {
   // Header and structure
   int32 header_row = 1; // Row number for headers (< 1 means no header)
