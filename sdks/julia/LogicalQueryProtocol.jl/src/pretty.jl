@@ -4007,7 +4007,7 @@ function pretty_csv_config(pp::PrettyPrinter, msg::Proto.CSVConfig)
         if !isnothing(field1409)
             newline(pp)
             opt_val1410 = field1409
-            pretty_storage_integration(pp, opt_val1410)
+            pretty__storage_integration(pp, opt_val1410)
         end
         dedent!(pp)
         write(pp, ")")
@@ -4015,8 +4015,8 @@ function pretty_csv_config(pp::PrettyPrinter, msg::Proto.CSVConfig)
     return nothing
 end
 
-function pretty_storage_integration(pp::PrettyPrinter, msg::Vector{Tuple{String, Proto.Value}})
-    flat1413 = try_flat(pp, msg, pretty_storage_integration)
+function pretty__storage_integration(pp::PrettyPrinter, msg::Vector{Tuple{String, Proto.Value}})
+    flat1413 = try_flat(pp, msg, pretty__storage_integration)
     if !isnothing(flat1413)
         write(pp, flat1413)
         return nothing
@@ -5145,29 +5145,6 @@ function pretty_be_tree_locator(pp::PrettyPrinter, msg::Proto.BeTreeLocator)
     return nothing
 end
 
-function pretty_csv_storage_integration(pp::PrettyPrinter, msg::Proto.CSVStorageIntegration)
-    write(pp, "(csv_storage_integration")
-    indent_sexp!(pp)
-    newline(pp)
-    write(pp, ":provider ")
-    write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, msg.provider))
-    newline(pp)
-    write(pp, ":azure_sas_token ")
-    write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, msg.azure_sas_token))
-    newline(pp)
-    write(pp, ":s3_region ")
-    write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, msg.s3_region))
-    newline(pp)
-    write(pp, ":s3_access_key_id ")
-    write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, msg.s3_access_key_id))
-    newline(pp)
-    write(pp, ":s3_secret_access_key ")
-    write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, msg.s3_secret_access_key))
-    write(pp, ")")
-    dedent!(pp)
-    return nothing
-end
-
 function pretty_decimal_value(pp::PrettyPrinter, msg::Proto.DecimalValue)
     write(pp, format_decimal(pp, msg))
     return nothing
@@ -5210,6 +5187,29 @@ end
 
 function pretty_missing_value(pp::PrettyPrinter, msg::Proto.MissingValue)
     write(pp, "missing")
+    return nothing
+end
+
+function pretty_storage_integration(pp::PrettyPrinter, msg::Proto.StorageIntegration)
+    write(pp, "(storage_integration")
+    indent_sexp!(pp)
+    newline(pp)
+    write(pp, ":provider ")
+    write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, msg.provider))
+    newline(pp)
+    write(pp, ":azure_sas_token ")
+    write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, msg.azure_sas_token))
+    newline(pp)
+    write(pp, ":s3_region ")
+    write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, msg.s3_region))
+    newline(pp)
+    write(pp, ":s3_access_key_id ")
+    write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, msg.s3_access_key_id))
+    newline(pp)
+    write(pp, ":s3_secret_access_key ")
+    write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, msg.s3_secret_access_key))
+    write(pp, ")")
+    dedent!(pp)
     return nothing
 end
 
@@ -5377,11 +5377,11 @@ _pprint_dispatch(pp::PrettyPrinter, x::Proto.ExportIcebergConfig) = pretty_expor
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.DebugInfo) = pretty_debug_info(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.BeTreeConfig) = pretty_be_tree_config(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.BeTreeLocator) = pretty_be_tree_locator(pp, x)
-_pprint_dispatch(pp::PrettyPrinter, x::Proto.CSVStorageIntegration) = pretty_csv_storage_integration(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.DecimalValue) = pretty_decimal_value(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.FunctionalDependency) = pretty_functional_dependency(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.Int128Value) = pretty_int128_value(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.MissingValue) = pretty_missing_value(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.StorageIntegration) = pretty_storage_integration(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.UInt128Value) = pretty_u_int128_value(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.ExportCSVColumns) = pretty_export_csv_columns(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.IVMConfig) = pretty_ivm_config(pp, x)

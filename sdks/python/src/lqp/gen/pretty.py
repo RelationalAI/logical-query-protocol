@@ -3438,12 +3438,12 @@ class PrettyPrinter:
                 self.newline()
                 assert field1409 is not None
                 opt_val1410 = field1409
-                self.pretty_storage_integration(opt_val1410)
+                self.pretty__storage_integration(opt_val1410)
             self.dedent()
             self.write(")")
 
-    def pretty_storage_integration(self, msg: Sequence[tuple[str, logic_pb2.Value]]):
-        flat1413 = self._try_flat(msg, self.pretty_storage_integration)
+    def pretty__storage_integration(self, msg: Sequence[tuple[str, logic_pb2.Value]]):
+        flat1413 = self._try_flat(msg, self.pretty__storage_integration)
         if flat1413 is not None:
             assert flat1413 is not None
             self.write(flat1413)
@@ -4441,27 +4441,6 @@ class PrettyPrinter:
         self.write(")")
         self.dedent()
 
-    def pretty_csv_storage_integration(self, msg: logic_pb2.CSVStorageIntegration):
-        self.write("(csv_storage_integration")
-        self.indent_sexp()
-        self.newline()
-        self.write(":provider ")
-        self.write(self.format_string_value(msg.provider))
-        self.newline()
-        self.write(":azure_sas_token ")
-        self.write(self.format_string_value(msg.azure_sas_token))
-        self.newline()
-        self.write(":s3_region ")
-        self.write(self.format_string_value(msg.s3_region))
-        self.newline()
-        self.write(":s3_access_key_id ")
-        self.write(self.format_string_value(msg.s3_access_key_id))
-        self.newline()
-        self.write(":s3_secret_access_key ")
-        self.write(self.format_string_value(msg.s3_secret_access_key))
-        self.write(")")
-        self.dedent()
-
     def pretty_decimal_value(self, msg: logic_pb2.DecimalValue):
         self.write(self.format_decimal(msg))
 
@@ -4492,6 +4471,27 @@ class PrettyPrinter:
 
     def pretty_missing_value(self, msg: logic_pb2.MissingValue):
         self.write("missing")
+
+    def pretty_storage_integration(self, msg: logic_pb2.StorageIntegration):
+        self.write("(storage_integration")
+        self.indent_sexp()
+        self.newline()
+        self.write(":provider ")
+        self.write(self.format_string_value(msg.provider))
+        self.newline()
+        self.write(":azure_sas_token ")
+        self.write(self.format_string_value(msg.azure_sas_token))
+        self.newline()
+        self.write(":s3_region ")
+        self.write(self.format_string_value(msg.s3_region))
+        self.newline()
+        self.write(":s3_access_key_id ")
+        self.write(self.format_string_value(msg.s3_access_key_id))
+        self.newline()
+        self.write(":s3_secret_access_key ")
+        self.write(self.format_string_value(msg.s3_secret_access_key))
+        self.write(")")
+        self.dedent()
 
     def pretty_u_int128_value(self, msg: logic_pb2.UInt128Value):
         self.write(self.format_uint128(msg))
@@ -4719,8 +4719,6 @@ class PrettyPrinter:
             self.pretty_be_tree_config(msg)
         elif isinstance(msg, logic_pb2.BeTreeLocator):
             self.pretty_be_tree_locator(msg)
-        elif isinstance(msg, logic_pb2.CSVStorageIntegration):
-            self.pretty_csv_storage_integration(msg)
         elif isinstance(msg, logic_pb2.DecimalValue):
             self.pretty_decimal_value(msg)
         elif isinstance(msg, logic_pb2.FunctionalDependency):
@@ -4729,6 +4727,8 @@ class PrettyPrinter:
             self.pretty_int128_value(msg)
         elif isinstance(msg, logic_pb2.MissingValue):
             self.pretty_missing_value(msg)
+        elif isinstance(msg, logic_pb2.StorageIntegration):
+            self.pretty_storage_integration(msg)
         elif isinstance(msg, logic_pb2.UInt128Value):
             self.pretty_u_int128_value(msg)
         elif isinstance(msg, transactions_pb2.ExportCSVColumns):

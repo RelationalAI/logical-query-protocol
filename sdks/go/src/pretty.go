@@ -3926,7 +3926,7 @@ func (p *PrettyPrinter) pretty_csv_config(msg *pb.CSVConfig) interface{} {
 		if field1409 != nil {
 			p.newline()
 			opt_val1410 := field1409
-			p.pretty_storage_integration(opt_val1410)
+			p.pretty__storage_integration(opt_val1410)
 		}
 		p.dedent()
 		p.write(")")
@@ -3934,8 +3934,8 @@ func (p *PrettyPrinter) pretty_csv_config(msg *pb.CSVConfig) interface{} {
 	return nil
 }
 
-func (p *PrettyPrinter) pretty_storage_integration(msg [][]interface{}) interface{} {
-	flat1413 := p.tryFlat(msg, func() { p.pretty_storage_integration(msg) })
+func (p *PrettyPrinter) pretty__storage_integration(msg [][]interface{}) interface{} {
+	flat1413 := p.tryFlat(msg, func() { p.pretty__storage_integration(msg) })
 	if flat1413 != nil {
 		p.write(*flat1413)
 		return nil
@@ -5074,29 +5074,6 @@ func (p *PrettyPrinter) pretty_be_tree_locator(msg *pb.BeTreeLocator) interface{
 	return nil
 }
 
-func (p *PrettyPrinter) pretty_csv_storage_integration(msg *pb.CSVStorageIntegration) interface{} {
-	p.write("(csv_storage_integration")
-	p.indentSexp()
-	p.newline()
-	p.write(":provider ")
-	p.write(p.formatStringValue(msg.GetProvider()))
-	p.newline()
-	p.write(":azure_sas_token ")
-	p.write(p.formatStringValue(msg.GetAzureSasToken()))
-	p.newline()
-	p.write(":s3_region ")
-	p.write(p.formatStringValue(msg.GetS3Region()))
-	p.newline()
-	p.write(":s3_access_key_id ")
-	p.write(p.formatStringValue(msg.GetS3AccessKeyId()))
-	p.newline()
-	p.write(":s3_secret_access_key ")
-	p.write(p.formatStringValue(msg.GetS3SecretAccessKey()))
-	p.write(")")
-	p.dedent()
-	return nil
-}
-
 func (p *PrettyPrinter) pretty_decimal_value(msg *pb.DecimalValue) interface{} {
 	p.write(p.formatDecimal(msg))
 	return nil
@@ -5140,6 +5117,29 @@ func (p *PrettyPrinter) pretty_int128_value(msg *pb.Int128Value) interface{} {
 
 func (p *PrettyPrinter) pretty_missing_value(msg *pb.MissingValue) interface{} {
 	p.write("missing")
+	return nil
+}
+
+func (p *PrettyPrinter) pretty_storage_integration(msg *pb.StorageIntegration) interface{} {
+	p.write("(storage_integration")
+	p.indentSexp()
+	p.newline()
+	p.write(":provider ")
+	p.write(p.formatStringValue(msg.GetProvider()))
+	p.newline()
+	p.write(":azure_sas_token ")
+	p.write(p.formatStringValue(msg.GetAzureSasToken()))
+	p.newline()
+	p.write(":s3_region ")
+	p.write(p.formatStringValue(msg.GetS3Region()))
+	p.newline()
+	p.write(":s3_access_key_id ")
+	p.write(p.formatStringValue(msg.GetS3AccessKeyId()))
+	p.newline()
+	p.write(":s3_secret_access_key ")
+	p.write(p.formatStringValue(msg.GetS3SecretAccessKey()))
+	p.write(")")
+	p.dedent()
 	return nil
 }
 
@@ -5413,8 +5413,6 @@ func (p *PrettyPrinter) pprintDispatch(msg interface{}) {
 		p.pretty_be_tree_config(m)
 	case *pb.BeTreeLocator:
 		p.pretty_be_tree_locator(m)
-	case *pb.CSVStorageIntegration:
-		p.pretty_csv_storage_integration(m)
 	case *pb.DecimalValue:
 		p.pretty_decimal_value(m)
 	case *pb.FunctionalDependency:
@@ -5423,6 +5421,8 @@ func (p *PrettyPrinter) pprintDispatch(msg interface{}) {
 		p.pretty_int128_value(m)
 	case *pb.MissingValue:
 		p.pretty_missing_value(m)
+	case *pb.StorageIntegration:
+		p.pretty_storage_integration(m)
 	case *pb.UInt128Value:
 		p.pretty_u_int128_value(m)
 	case *pb.ExportCSVColumns:

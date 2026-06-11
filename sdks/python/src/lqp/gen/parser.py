@@ -569,7 +569,7 @@ class Parser:
         _t2119 = logic_pb2.CSVConfig(header_row=header_row, skip=skip, new_line=new_line, delimiter=delimiter, quotechar=quotechar, escapechar=escapechar, comment=comment, missing_strings=missing_strings, decimal_separator=decimal_separator, encoding=encoding, compression=compression, partition_size_mb=partition_size_mb, storage_integration=storage_integration)
         return _t2119
 
-    def construct_csv_storage_integration(self, storage_integration_opt: Sequence[tuple[str, logic_pb2.Value]] | None) -> logic_pb2.CSVStorageIntegration | None:
+    def construct_csv_storage_integration(self, storage_integration_opt: Sequence[tuple[str, logic_pb2.Value]] | None) -> logic_pb2.StorageIntegration | None:
         if storage_integration_opt is None:
             return None
         else:
@@ -581,7 +581,7 @@ class Parser:
         _t2123 = self._extract_value_string(config.get("s3_region"), "")
         _t2124 = self._extract_value_string(config.get("s3_access_key_id"), "")
         _t2125 = self._extract_value_string(config.get("s3_secret_access_key"), "")
-        _t2126 = logic_pb2.CSVStorageIntegration(provider=_t2121, azure_sas_token=_t2122, s3_region=_t2123, s3_access_key_id=_t2124, s3_secret_access_key=_t2125)
+        _t2126 = logic_pb2.StorageIntegration(provider=_t2121, azure_sas_token=_t2122, s3_region=_t2123, s3_access_key_id=_t2124, s3_secret_access_key=_t2125)
         return _t2126
 
     def construct_betree_info(self, key_types: Sequence[logic_pb2.Type], value_types: Sequence[logic_pb2.Type], config_dict: Sequence[tuple[str, logic_pb2.Value]]) -> logic_pb2.BeTreeInfo:
@@ -3318,18 +3318,18 @@ class Parser:
         _t1963 = self.parse_config_dict()
         config_dict1177 = _t1963
         if self.match_lookahead_literal("(", 0):
-            _t1965 = self.parse_storage_integration()
+            _t1965 = self.parse__storage_integration()
             _t1964 = _t1965
         else:
             _t1964 = None
-        storage_integration1178 = _t1964
+        _storage_integration1178 = _t1964
         self.consume_literal(")")
-        _t1966 = self.construct_csv_config(config_dict1177, storage_integration1178)
+        _t1966 = self.construct_csv_config(config_dict1177, _storage_integration1178)
         result1180 = _t1966
         self.record_span(span_start1179, "CSVConfig")
         return result1180
 
-    def parse_storage_integration(self) -> Sequence[tuple[str, logic_pb2.Value]]:
+    def parse__storage_integration(self) -> Sequence[tuple[str, logic_pb2.Value]]:
         self.consume_literal("(")
         self.consume_literal("storage_integration")
         _t1967 = self.parse_config_dict()

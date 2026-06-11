@@ -481,7 +481,7 @@ function construct_csv_config(parser::ParserState, config_dict::Vector{Tuple{Str
     return _t2110
 end
 
-function construct_csv_storage_integration(parser::ParserState, storage_integration_opt::Union{Nothing, Vector{Tuple{String, Proto.Value}}})::Union{Nothing, Proto.CSVStorageIntegration}
+function construct_csv_storage_integration(parser::ParserState, storage_integration_opt::Union{Nothing, Vector{Tuple{String, Proto.Value}}})::Union{Nothing, Proto.StorageIntegration}
     if isnothing(storage_integration_opt)
         return nothing
     else
@@ -493,7 +493,7 @@ function construct_csv_storage_integration(parser::ParserState, storage_integrat
     _t2114 = _extract_value_string(parser, get(config, "s3_region", nothing), "")
     _t2115 = _extract_value_string(parser, get(config, "s3_access_key_id", nothing), "")
     _t2116 = _extract_value_string(parser, get(config, "s3_secret_access_key", nothing), "")
-    _t2117 = Proto.CSVStorageIntegration(provider=_t2112, azure_sas_token=_t2113, s3_region=_t2114, s3_access_key_id=_t2115, s3_secret_access_key=_t2116)
+    _t2117 = Proto.StorageIntegration(provider=_t2112, azure_sas_token=_t2113, s3_region=_t2114, s3_access_key_id=_t2115, s3_secret_access_key=_t2116)
     return _t2117
 end
 
@@ -3629,20 +3629,20 @@ function parse_csv_config(parser::ParserState)::Proto.CSVConfig
     _t1963 = parse_config_dict(parser)
     config_dict1177 = _t1963
     if match_lookahead_literal(parser, "(", 0)
-        _t1965 = parse_storage_integration(parser)
+        _t1965 = parse__storage_integration(parser)
         _t1964 = _t1965
     else
         _t1964 = nothing
     end
-    storage_integration1178 = _t1964
+    _storage_integration1178 = _t1964
     consume_literal!(parser, ")")
-    _t1966 = construct_csv_config(parser, config_dict1177, storage_integration1178)
+    _t1966 = construct_csv_config(parser, config_dict1177, _storage_integration1178)
     result1180 = _t1966
     record_span!(parser, span_start1179, "CSVConfig")
     return result1180
 end
 
-function parse_storage_integration(parser::ParserState)::Vector{Tuple{String, Proto.Value}}
+function parse__storage_integration(parser::ParserState)::Vector{Tuple{String, Proto.Value}}
     consume_literal!(parser, "(")
     consume_literal!(parser, "storage_integration")
     _t1967 = parse_config_dict(parser)

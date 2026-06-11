@@ -91,7 +91,7 @@
 %nonterm csv_data logic.CSVData
 %nonterm csv_locator_inline_data String
 %nonterm csv_locator_paths Sequence[String]
-%nonterm storage_integration Sequence[Tuple[String, logic.Value]]
+%nonterm _storage_integration Sequence[Tuple[String, logic.Value]]
 %nonterm csvlocator logic.CSVLocator
 %nonterm data logic.Data
 %nonterm date logic.DateValue
@@ -217,7 +217,7 @@
 %validator_ignore_completeness BeTreeLocator
 %validator_ignore_completeness BeTreeConfig
 %validator_ignore_completeness ExportCSVColumns
-%validator_ignore_completeness CSVStorageIntegration
+%validator_ignore_completeness StorageIntegration
 
 %%
 
@@ -1129,13 +1129,13 @@ csvlocator
         $4: Optional[String] = builtin.decode_string($$.inline_data) if builtin.decode_string($$.inline_data) != "" else None
 
 csv_config
-    : "(" "csv_config" config_dict storage_integration? ")"
+    : "(" "csv_config" config_dict _storage_integration? ")"
       construct: $$ = construct_csv_config($3, $4)
       deconstruct:
         $3: Sequence[Tuple[String, logic.Value]] = deconstruct_csv_config($$)
         $4: Optional[Sequence[Tuple[String, logic.Value]]] = deconstruct_csv_storage_integration_optional($$)
 
-storage_integration
+_storage_integration
     : "(" "storage_integration" config_dict ")"
       construct: $$ = $3
       deconstruct: $3: Sequence[Tuple[String, logic.Value]] = $$
@@ -1490,7 +1490,7 @@ def construct_csv_config(
     encoding: str = _extract_value_string(builtin.dict_get(config, "csv_encoding"), "utf-8")
     compression: str = _extract_value_string(builtin.dict_get(config, "csv_compression"), "auto")
     partition_size_mb: int = _extract_value_int64(builtin.dict_get(config, "csv_partition_size_mb"), 0)
-    storage_integration: Optional[logic.CSVStorageIntegration] = construct_csv_storage_integration(storage_integration_opt)
+    storage_integration: Optional[logic.StorageIntegration] = construct_csv_storage_integration(storage_integration_opt)
     return logic.CSVConfig(
         header_row=header_row,
         skip=skip,
@@ -1510,11 +1510,11 @@ def construct_csv_config(
 
 def construct_csv_storage_integration(
     storage_integration_opt: Optional[Sequence[Tuple[String, logic.Value]]],
-) -> Optional[logic.CSVStorageIntegration]:
+) -> Optional[logic.StorageIntegration]:
     if storage_integration_opt is None:
         return builtin.none()
     config: Dict[String, logic.Value] = builtin.dict_from_list(builtin.unwrap_option(storage_integration_opt))
-    return builtin.some(logic.CSVStorageIntegration(
+    return builtin.some(logic.StorageIntegration(
         provider=_extract_value_string(builtin.dict_get(config, "provider"), ""),
         azure_sas_token=_extract_value_string(builtin.dict_get(config, "azure_sas_token"), ""),
         s3_region=_extract_value_string(builtin.dict_get(config, "s3_region"), ""),
@@ -1692,7 +1692,7 @@ def deconstruct_csv_config(msg: logic.CSVConfig) -> List[Tuple[String, logic.Val
 def deconstruct_csv_storage_integration_optional(msg: logic.CSVConfig) -> Optional[Sequence[Tuple[String, logic.Value]]]:
     if not builtin.has_proto_field(msg, "storage_integration"):
         return builtin.none()
-    si: logic.CSVStorageIntegration = builtin.unwrap_option(msg.storage_integration)
+    si: logic.StorageIntegration = builtin.unwrap_option(msg.storage_integration)
     result: List[Tuple[String, logic.Value]] = list[Tuple[String, logic.Value]]()
     if si.provider != "":
         builtin.list_push(result, builtin.tuple("provider", _make_value_string(si.provider)))

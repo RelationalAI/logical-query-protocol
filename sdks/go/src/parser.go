@@ -767,7 +767,7 @@ func (p *Parser) construct_csv_config(config_dict [][]interface{}, storage_integ
 	return _t2123
 }
 
-func (p *Parser) construct_csv_storage_integration(storage_integration_opt [][]interface{}) *pb.CSVStorageIntegration {
+func (p *Parser) construct_csv_storage_integration(storage_integration_opt [][]interface{}) *pb.StorageIntegration {
 	var _t2124 interface{}
 	if storage_integration_opt == nil {
 		return nil
@@ -779,7 +779,7 @@ func (p *Parser) construct_csv_storage_integration(storage_integration_opt [][]i
 	_t2127 := p._extract_value_string(dictGetValue(config, "s3_region"), "")
 	_t2128 := p._extract_value_string(dictGetValue(config, "s3_access_key_id"), "")
 	_t2129 := p._extract_value_string(dictGetValue(config, "s3_secret_access_key"), "")
-	_t2130 := &pb.CSVStorageIntegration{Provider: _t2125, AzureSasToken: _t2126, S3Region: _t2127, S3AccessKeyId: _t2128, S3SecretAccessKey: _t2129}
+	_t2130 := &pb.StorageIntegration{Provider: _t2125, AzureSasToken: _t2126, S3Region: _t2127, S3AccessKeyId: _t2128, S3SecretAccessKey: _t2129}
 	return _t2130
 }
 
@@ -4305,18 +4305,18 @@ func (p *Parser) parse_csv_config() *pb.CSVConfig {
 	config_dict1177 := _t1976
 	var _t1977 [][]interface{}
 	if p.matchLookaheadLiteral("(", 0) {
-		_t1978 := p.parse_storage_integration()
+		_t1978 := p.parse__storage_integration()
 		_t1977 = _t1978
 	}
-	storage_integration1178 := _t1977
+	_storage_integration1178 := _t1977
 	p.consumeLiteral(")")
-	_t1979 := p.construct_csv_config(config_dict1177, storage_integration1178)
+	_t1979 := p.construct_csv_config(config_dict1177, _storage_integration1178)
 	result1180 := _t1979
 	p.recordSpan(int(span_start1179), "CSVConfig")
 	return result1180
 }
 
-func (p *Parser) parse_storage_integration() [][]interface{} {
+func (p *Parser) parse__storage_integration() [][]interface{} {
 	p.consumeLiteral("(")
 	p.consumeLiteral("storage_integration")
 	_t1980 := p.parse_config_dict()

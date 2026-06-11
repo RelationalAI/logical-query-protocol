@@ -276,6 +276,18 @@ message BeTreeLocator {
   int64 tree_height = 3;
 }
 
+message StorageIntegration {
+  string provider = 1; // "azure" or "s3"
+
+  // Options for azure
+  string azure_sas_token = 2;
+
+  // Options for s3
+  string s3_region = 3;
+  string s3_access_key_id = 4;
+  string s3_secret_access_key = 5;
+}
+
 message CSVData {
   CSVLocator locator = 1;
   CSVConfig config = 2;
@@ -286,18 +298,6 @@ message CSVData {
 message CSVLocator {
   repeated string paths = 1; // URL(s) or filesystem path(s) for partitioned loading
   bytes inline_data = 2; // Inline CSV content (mutually exclusive with paths)
-}
-
-message CSVStorageIntegration {
-  string provider = 1; // "azure" or "s3"
-
-  // Options for azure
-  string azure_sas_token = 2;
-
-  // Options for s3
-  string s3_region = 3;
-  string s3_access_key_id = 4;
-  string s3_secret_access_key = 5;
 }
 
 message CSVConfig {
@@ -328,7 +328,7 @@ message CSVConfig {
   int64 partition_size_mb = 12;
 
   // Storage integration (credentials for private buckets)
-  optional CSVStorageIntegration storage_integration = 13;
+  optional StorageIntegration storage_integration = 13;
 }
 
 message IcebergData {
