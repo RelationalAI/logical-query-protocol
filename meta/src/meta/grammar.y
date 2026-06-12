@@ -1488,7 +1488,7 @@ def construct_csv_config(
     missing_strings: Sequence[String] = _extract_value_string_list(builtin.dict_get(config, "csv_missing_strings"), list[str]())
     decimal_separator: str = _extract_value_string(builtin.dict_get(config, "csv_decimal_separator"), ".")
     encoding: str = _extract_value_string(builtin.dict_get(config, "csv_encoding"), "utf-8")
-    compression: str = _extract_value_string(builtin.dict_get(config, "csv_compression"), "auto")
+    compression: str = _extract_value_string(builtin.dict_get(config, "csv_compression"), "")
     partition_size_mb: int = _extract_value_int64(builtin.dict_get(config, "csv_partition_size_mb"), 0)
     storage_integration: Optional[logic.StorageIntegration] = construct_csv_storage_integration(storage_integration_opt)
     return logic.CSVConfig(
