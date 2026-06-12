@@ -1,0 +1,22 @@
+(transaction
+  (epoch
+    (writes
+      (define
+        (fragment :f1
+          ;; Generalized CSV loading: an arity-4 `edge` relation. Shared keys (src, dst)
+          ;; plus two value columns of mixed type (Float weight, String label).
+          (csv_data
+            (csv_locator
+              (paths "s3://bucket/edges.csv"))
+            (csv_config {})
+            (relations
+              (keys
+                (column "src" INT)
+                (column "dst" INT))
+              (relation :edge
+                (column "weight" FLOAT)
+                (column "label" STRING)))
+            (asof "2025-06-01T00:00:00Z")))))
+
+    (reads
+      (output :edge :edge))))

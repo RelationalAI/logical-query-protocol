@@ -576,10 +576,25 @@ Base.:(==)(a::BeTreeRelation, b::BeTreeRelation) = a.name == b.name && a.relatio
 Base.hash(a::BeTreeRelation, h::UInt) = hash(a.relation_info, hash(a.name, h))
 Base.isequal(a::BeTreeRelation, b::BeTreeRelation) = isequal(a.name, b.name) && isequal(a.relation_info, b.relation_info)
 
+# NamedColumn
+Base.:(==)(a::NamedColumn, b::NamedColumn) = a.name == b.name && a.var"#type" == b.var"#type"
+Base.hash(a::NamedColumn, h::UInt) = hash(a.var"#type", hash(a.name, h))
+Base.isequal(a::NamedColumn, b::NamedColumn) = isequal(a.name, b.name) && isequal(a.var"#type", b.var"#type")
+
+# OutputRelation
+Base.:(==)(a::OutputRelation, b::OutputRelation) = a.target_id == b.target_id && a.values == b.values
+Base.hash(a::OutputRelation, h::UInt) = hash(a.values, hash(a.target_id, h))
+Base.isequal(a::OutputRelation, b::OutputRelation) = isequal(a.target_id, b.target_id) && isequal(a.values, b.values)
+
+# Relations
+Base.:(==)(a::Relations, b::Relations) = a.keys == b.keys && a.relations == b.relations && a.inserts == b.inserts && a.deletes == b.deletes
+Base.hash(a::Relations, h::UInt) = hash(a.deletes, hash(a.inserts, hash(a.relations, hash(a.keys, h))))
+Base.isequal(a::Relations, b::Relations) = isequal(a.keys, b.keys) && isequal(a.relations, b.relations) && isequal(a.inserts, b.inserts) && isequal(a.deletes, b.deletes)
+
 # CSVData
-Base.:(==)(a::CSVData, b::CSVData) = a.locator == b.locator && a.config == b.config && a.columns == b.columns && a.asof == b.asof
-Base.hash(a::CSVData, h::UInt) = hash(a.asof, hash(a.columns, hash(a.config, hash(a.locator, h))))
-Base.isequal(a::CSVData, b::CSVData) = isequal(a.locator, b.locator) && isequal(a.config, b.config) && isequal(a.columns, b.columns) && isequal(a.asof, b.asof)
+Base.:(==)(a::CSVData, b::CSVData) = a.locator == b.locator && a.config == b.config && a.columns == b.columns && a.asof == b.asof && a.relations == b.relations
+Base.hash(a::CSVData, h::UInt) = hash(a.relations, hash(a.asof, hash(a.columns, hash(a.config, hash(a.locator, h)))))
+Base.isequal(a::CSVData, b::CSVData) = isequal(a.locator, b.locator) && isequal(a.config, b.config) && isequal(a.columns, b.columns) && isequal(a.asof, b.asof) && isequal(a.relations, b.relations)
 
 # Data
 function Base.:(==)(a::Data, b::Data)

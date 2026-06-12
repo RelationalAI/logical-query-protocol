@@ -224,6 +224,20 @@ function global_ids(data::Data)
     elseif dt.name == :csv_data
         csv_data = dt[]::CSVData
         ids = LQPRelationId[]
+        if !isnothing(csv_data.relations)
+            # Generalized form: the defined relations are the output relations across the
+            # non-CDC `relations` group and the CDC `inserts`/`deletes` groups. CDC insert and
+            # delete groups may share a target, so deduplicate.
+            rels = csv_data.relations
+            for group in (rels.relations, rels.inserts, rels.deletes)
+                for outrel in group
+                    if !isnothing(outrel.target_id)
+                        push!(ids, persistent_id(outrel.target_id))
+                    end
+                end
+            end
+            return unique(ids)
+        end
         for column in csv_data.columns
             if !isnothing(column.target_id)
                 push!(ids, persistent_id(column.target_id))

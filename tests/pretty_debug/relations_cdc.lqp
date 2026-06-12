@@ -1,0 +1,34 @@
+(transaction
+  (configure { :ivm.maintenance_level "off" :semantics_version 0})
+  (epoch
+    (writes
+      (define
+        (fragment
+          :f1
+          (csv_data
+            (csv_locator (paths "s3://bucket/cdc/edges_batch_001.csv"))
+            (csv_config
+              {
+               :csv_compression "auto"
+               :csv_decimal_separator "."
+               :csv_delimiter ","
+               :csv_encoding "utf-8"
+               :csv_escapechar "\""
+               :csv_header_row 1i32
+               :csv_quotechar "\""
+               :csv_skip 0})
+            (relations
+              (keys (column "METADATA$KEY" UINT128))
+              (inserts
+                (relation 0x6c9225cf3609ca4d26168fd6652e0d03 (column "weight" FLOAT))) (deletes
+                (relation 0x5ef875f96a25ff5f076bea0e815c6ce0 (column "weight" FLOAT))))
+            (asof "2025-06-01T00:00:00Z")))))
+    (reads
+      (output :edge_ins 0x6c9225cf3609ca4d26168fd6652e0d03)
+      (output :edge_del 0x5ef875f96a25ff5f076bea0e815c6ce0))))
+
+;; Debug information
+;; -----------------------
+;; Original names
+;; 	 ID `0x5ef875f96a25ff5f076bea0e815c6ce0` -> `edge_del`
+;; 	 ID `0x6c9225cf3609ca4d26168fd6652e0d03` -> `edge_ins`

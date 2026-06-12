@@ -288,11 +288,36 @@ message StorageIntegration {
   string s3_secret_access_key = 5;
 }
 
+// A single named CSV column with its type. Used to describe both shared key columns and
+// per-relation value columns in the generalized `Relations` loading construct.
+message NamedColumn {
+  string name = 1; // CSV column name (e.g. "src"); special name "METADATA$KEY" => derived hash
+  Type type = 2;   // Column type
+}
+
+// One output relation: the shared keys plus this relation's own (possibly empty) value columns.
+message OutputRelation {
+  RelationId target_id = 1;        // Output relation path
+  repeated NamedColumn values = 2; // Value columns for this relation (may be empty)
+}
+
+// Generalized CSV loading: a shared set of key columns and one or more output relations.
+// CDC vs non-CDC is implied by which group is populated:
+//   - `relations` populated => non-CDC outputs
+//   - `inserts`/`deletes`   => CDC insert/delete groups
+message Relations {
+  repeated NamedColumn keys = 1;         // Shared key columns (name "METADATA$KEY" => derived hash)
+  repeated OutputRelation relations = 2; // Non-CDC outputs
+  repeated OutputRelation inserts = 3;   // CDC insert group
+  repeated OutputRelation deletes = 4;   // CDC delete group
+}
+
 message CSVData {
   CSVLocator locator = 1;
   CSVConfig config = 2;
   repeated GNFColumn columns = 3;
   string asof = 4; // Blob storage timestamp for freshness requirements
+  optional Relations relations = 5; // If present, generalized loading; mutually exclusive with columns
 }
 
 message CSVLocator {

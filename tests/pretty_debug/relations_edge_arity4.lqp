@@ -1,0 +1,32 @@
+(transaction
+  (configure { :ivm.maintenance_level "off" :semantics_version 0})
+  (epoch
+    (writes
+      (define
+        (fragment
+          :f1
+          (csv_data
+            (csv_locator (paths "s3://bucket/edges.csv"))
+            (csv_config
+              {
+               :csv_compression "auto"
+               :csv_decimal_separator "."
+               :csv_delimiter ","
+               :csv_encoding "utf-8"
+               :csv_escapechar "\""
+               :csv_header_row 1i32
+               :csv_quotechar "\""
+               :csv_skip 0})
+            (relations
+              (keys (column "src" INT) (column "dst" INT))
+              (relation
+                0x25a8e9d4bdd35e32df1a80b66b896254
+                (column "weight" FLOAT)
+                (column "label" STRING)))
+            (asof "2025-06-01T00:00:00Z")))))
+    (reads (output :edge 0x25a8e9d4bdd35e32df1a80b66b896254))))
+
+;; Debug information
+;; -----------------------
+;; Original names
+;; 	 ID `0x25a8e9d4bdd35e32df1a80b66b896254` -> `edge`
