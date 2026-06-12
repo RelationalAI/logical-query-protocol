@@ -9,7 +9,7 @@
             (csv_locator (paths "s3://private-bucket/data.csv"))
             (csv_config
               {
-               :csv_compression "auto"
+               :csv_compression ""
                :csv_decimal_separator "."
                :csv_delimiter ","
                :csv_encoding "utf-8"
@@ -26,7 +26,7 @@
             (csv_locator (paths "https://account.blob.core.windows.net/container/data.csv"))
             (csv_config
               {
-               :csv_compression "auto"
+               :csv_compression ""
                :csv_decimal_separator "."
                :csv_delimiter "|"
                :csv_encoding "utf-8"
@@ -54,7 +54,7 @@
           (table_def 0xe239456d024bc2c38b99cd9d5fabadab)
           (csv_config
             {
-             :csv_compression "auto"
+             :csv_compression ""
              :csv_decimal_separator "."
              :csv_delimiter ","
              :csv_encoding "utf-8"
