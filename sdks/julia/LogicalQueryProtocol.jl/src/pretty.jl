@@ -377,151 +377,182 @@ end
 # --- Helper functions ---
 
 function _make_value_int32(pp::PrettyPrinter, v::Int32)::Proto.Value
-    _t1770 = Proto.Value(value=OneOf(:int32_value, v))
-    return _t1770
+    _t1781 = Proto.Value(value=OneOf(:int32_value, v))
+    return _t1781
 end
 
 function _make_value_int64(pp::PrettyPrinter, v::Int64)::Proto.Value
-    _t1771 = Proto.Value(value=OneOf(:int_value, v))
-    return _t1771
+    _t1782 = Proto.Value(value=OneOf(:int_value, v))
+    return _t1782
 end
 
 function _make_value_float64(pp::PrettyPrinter, v::Float64)::Proto.Value
-    _t1772 = Proto.Value(value=OneOf(:float_value, v))
-    return _t1772
+    _t1783 = Proto.Value(value=OneOf(:float_value, v))
+    return _t1783
 end
 
 function _make_value_string(pp::PrettyPrinter, v::String)::Proto.Value
-    _t1773 = Proto.Value(value=OneOf(:string_value, v))
-    return _t1773
+    _t1784 = Proto.Value(value=OneOf(:string_value, v))
+    return _t1784
 end
 
 function _make_value_boolean(pp::PrettyPrinter, v::Bool)::Proto.Value
-    _t1774 = Proto.Value(value=OneOf(:boolean_value, v))
-    return _t1774
+    _t1785 = Proto.Value(value=OneOf(:boolean_value, v))
+    return _t1785
 end
 
 function _make_value_uint128(pp::PrettyPrinter, v::Proto.UInt128Value)::Proto.Value
-    _t1775 = Proto.Value(value=OneOf(:uint128_value, v))
-    return _t1775
+    _t1786 = Proto.Value(value=OneOf(:uint128_value, v))
+    return _t1786
 end
 
 function deconstruct_configure(pp::PrettyPrinter, msg::Proto.Configure)::Vector{Tuple{String, Proto.Value}}
     result = Tuple{String, Proto.Value}[]
     if msg.ivm_config.level == Proto.MaintenanceLevel.MAINTENANCE_LEVEL_AUTO
-        _t1776 = _make_value_string(pp, "auto")
-        push!(result, ("ivm.maintenance_level", _t1776,))
+        _t1787 = _make_value_string(pp, "auto")
+        push!(result, ("ivm.maintenance_level", _t1787,))
     else
         if msg.ivm_config.level == Proto.MaintenanceLevel.MAINTENANCE_LEVEL_ALL
-            _t1777 = _make_value_string(pp, "all")
-            push!(result, ("ivm.maintenance_level", _t1777,))
+            _t1788 = _make_value_string(pp, "all")
+            push!(result, ("ivm.maintenance_level", _t1788,))
         else
             if msg.ivm_config.level == Proto.MaintenanceLevel.MAINTENANCE_LEVEL_OFF
-                _t1778 = _make_value_string(pp, "off")
-                push!(result, ("ivm.maintenance_level", _t1778,))
+                _t1789 = _make_value_string(pp, "off")
+                push!(result, ("ivm.maintenance_level", _t1789,))
             end
         end
     end
-    _t1779 = _make_value_int64(pp, msg.semantics_version)
-    push!(result, ("semantics_version", _t1779,))
+    _t1790 = _make_value_int64(pp, msg.semantics_version)
+    push!(result, ("semantics_version", _t1790,))
     return sort(result)
 end
 
 function deconstruct_csv_config(pp::PrettyPrinter, msg::Proto.CSVConfig)::Vector{Tuple{String, Proto.Value}}
     result = Tuple{String, Proto.Value}[]
-    _t1780 = _make_value_int32(pp, msg.header_row)
-    push!(result, ("csv_header_row", _t1780,))
-    _t1781 = _make_value_int64(pp, msg.skip)
-    push!(result, ("csv_skip", _t1781,))
+    _t1791 = _make_value_int32(pp, msg.header_row)
+    push!(result, ("csv_header_row", _t1791,))
+    _t1792 = _make_value_int64(pp, msg.skip)
+    push!(result, ("csv_skip", _t1792,))
     if msg.new_line != ""
-        _t1782 = _make_value_string(pp, msg.new_line)
-        push!(result, ("csv_new_line", _t1782,))
+        _t1793 = _make_value_string(pp, msg.new_line)
+        push!(result, ("csv_new_line", _t1793,))
     end
-    _t1783 = _make_value_string(pp, msg.delimiter)
-    push!(result, ("csv_delimiter", _t1783,))
-    _t1784 = _make_value_string(pp, msg.quotechar)
-    push!(result, ("csv_quotechar", _t1784,))
-    _t1785 = _make_value_string(pp, msg.escapechar)
-    push!(result, ("csv_escapechar", _t1785,))
+    _t1794 = _make_value_string(pp, msg.delimiter)
+    push!(result, ("csv_delimiter", _t1794,))
+    _t1795 = _make_value_string(pp, msg.quotechar)
+    push!(result, ("csv_quotechar", _t1795,))
+    _t1796 = _make_value_string(pp, msg.escapechar)
+    push!(result, ("csv_escapechar", _t1796,))
     if msg.comment != ""
-        _t1786 = _make_value_string(pp, msg.comment)
-        push!(result, ("csv_comment", _t1786,))
+        _t1797 = _make_value_string(pp, msg.comment)
+        push!(result, ("csv_comment", _t1797,))
     end
     for missing_string in msg.missing_strings
-        _t1787 = _make_value_string(pp, missing_string)
-        push!(result, ("csv_missing_strings", _t1787,))
+        _t1798 = _make_value_string(pp, missing_string)
+        push!(result, ("csv_missing_strings", _t1798,))
     end
-    _t1788 = _make_value_string(pp, msg.decimal_separator)
-    push!(result, ("csv_decimal_separator", _t1788,))
-    _t1789 = _make_value_string(pp, msg.encoding)
-    push!(result, ("csv_encoding", _t1789,))
-    _t1790 = _make_value_string(pp, msg.compression)
-    push!(result, ("csv_compression", _t1790,))
+    _t1799 = _make_value_string(pp, msg.decimal_separator)
+    push!(result, ("csv_decimal_separator", _t1799,))
+    _t1800 = _make_value_string(pp, msg.encoding)
+    push!(result, ("csv_encoding", _t1800,))
+    _t1801 = _make_value_string(pp, msg.compression)
+    push!(result, ("csv_compression", _t1801,))
     if msg.partition_size_mb != 0
-        _t1791 = _make_value_int64(pp, msg.partition_size_mb)
-        push!(result, ("csv_partition_size_mb", _t1791,))
+        _t1802 = _make_value_int64(pp, msg.partition_size_mb)
+        push!(result, ("csv_partition_size_mb", _t1802,))
+    end
+    return sort(result)
+end
+
+function deconstruct_csv_storage_integration_optional(pp::PrettyPrinter, msg::Proto.CSVConfig)::Union{Nothing, Vector{Tuple{String, Proto.Value}}}
+    if !_has_proto_field(msg, Symbol("storage_integration"))
+        return nothing
+    else
+        _t1803 = nothing
+    end
+    si = msg.storage_integration
+    result = Tuple{String, Proto.Value}[]
+    if si.provider != ""
+        _t1804 = _make_value_string(pp, si.provider)
+        push!(result, ("provider", _t1804,))
+    end
+    if si.azure_sas_token != ""
+        _t1805 = _make_value_string(pp, "***")
+        push!(result, ("azure_sas_token", _t1805,))
+    end
+    if si.s3_region != ""
+        _t1806 = _make_value_string(pp, si.s3_region)
+        push!(result, ("s3_region", _t1806,))
+    end
+    if si.s3_access_key_id != ""
+        _t1807 = _make_value_string(pp, "***")
+        push!(result, ("s3_access_key_id", _t1807,))
+    end
+    if si.s3_secret_access_key != ""
+        _t1808 = _make_value_string(pp, "***")
+        push!(result, ("s3_secret_access_key", _t1808,))
     end
     return sort(result)
 end
 
 function deconstruct_betree_info_config(pp::PrettyPrinter, msg::Proto.BeTreeInfo)::Vector{Tuple{String, Proto.Value}}
     result = Tuple{String, Proto.Value}[]
-    _t1792 = _make_value_float64(pp, msg.storage_config.epsilon)
-    push!(result, ("betree_config_epsilon", _t1792,))
-    _t1793 = _make_value_int64(pp, msg.storage_config.max_pivots)
-    push!(result, ("betree_config_max_pivots", _t1793,))
-    _t1794 = _make_value_int64(pp, msg.storage_config.max_deltas)
-    push!(result, ("betree_config_max_deltas", _t1794,))
-    _t1795 = _make_value_int64(pp, msg.storage_config.max_leaf)
-    push!(result, ("betree_config_max_leaf", _t1795,))
+    _t1809 = _make_value_float64(pp, msg.storage_config.epsilon)
+    push!(result, ("betree_config_epsilon", _t1809,))
+    _t1810 = _make_value_int64(pp, msg.storage_config.max_pivots)
+    push!(result, ("betree_config_max_pivots", _t1810,))
+    _t1811 = _make_value_int64(pp, msg.storage_config.max_deltas)
+    push!(result, ("betree_config_max_deltas", _t1811,))
+    _t1812 = _make_value_int64(pp, msg.storage_config.max_leaf)
+    push!(result, ("betree_config_max_leaf", _t1812,))
     if _has_proto_field(msg.relation_locator, Symbol("root_pageid"))
         if !isnothing(_get_oneof_field(msg.relation_locator, :root_pageid))
-            _t1796 = _make_value_uint128(pp, _get_oneof_field(msg.relation_locator, :root_pageid))
-            push!(result, ("betree_locator_root_pageid", _t1796,))
+            _t1813 = _make_value_uint128(pp, _get_oneof_field(msg.relation_locator, :root_pageid))
+            push!(result, ("betree_locator_root_pageid", _t1813,))
         end
     end
     if _has_proto_field(msg.relation_locator, Symbol("inline_data"))
         if !isnothing(_get_oneof_field(msg.relation_locator, :inline_data))
-            _t1797 = _make_value_string(pp, String(copy(_get_oneof_field(msg.relation_locator, :inline_data))))
-            push!(result, ("betree_locator_inline_data", _t1797,))
+            _t1814 = _make_value_string(pp, String(copy(_get_oneof_field(msg.relation_locator, :inline_data))))
+            push!(result, ("betree_locator_inline_data", _t1814,))
         end
     end
-    _t1798 = _make_value_int64(pp, msg.relation_locator.element_count)
-    push!(result, ("betree_locator_element_count", _t1798,))
-    _t1799 = _make_value_int64(pp, msg.relation_locator.tree_height)
-    push!(result, ("betree_locator_tree_height", _t1799,))
+    _t1815 = _make_value_int64(pp, msg.relation_locator.element_count)
+    push!(result, ("betree_locator_element_count", _t1815,))
+    _t1816 = _make_value_int64(pp, msg.relation_locator.tree_height)
+    push!(result, ("betree_locator_tree_height", _t1816,))
     return sort(result)
 end
 
 function deconstruct_export_csv_config(pp::PrettyPrinter, msg::Proto.ExportCSVConfig)::Vector{Tuple{String, Proto.Value}}
     result = Tuple{String, Proto.Value}[]
     if !isnothing(msg.partition_size)
-        _t1800 = _make_value_int64(pp, msg.partition_size)
-        push!(result, ("partition_size", _t1800,))
+        _t1817 = _make_value_int64(pp, msg.partition_size)
+        push!(result, ("partition_size", _t1817,))
     end
     if !isnothing(msg.compression)
-        _t1801 = _make_value_string(pp, msg.compression)
-        push!(result, ("compression", _t1801,))
+        _t1818 = _make_value_string(pp, msg.compression)
+        push!(result, ("compression", _t1818,))
     end
     if !isnothing(msg.syntax_header_row)
-        _t1802 = _make_value_boolean(pp, msg.syntax_header_row)
-        push!(result, ("syntax_header_row", _t1802,))
+        _t1819 = _make_value_boolean(pp, msg.syntax_header_row)
+        push!(result, ("syntax_header_row", _t1819,))
     end
     if !isnothing(msg.syntax_missing_string)
-        _t1803 = _make_value_string(pp, msg.syntax_missing_string)
-        push!(result, ("syntax_missing_string", _t1803,))
+        _t1820 = _make_value_string(pp, msg.syntax_missing_string)
+        push!(result, ("syntax_missing_string", _t1820,))
     end
     if !isnothing(msg.syntax_delim)
-        _t1804 = _make_value_string(pp, msg.syntax_delim)
-        push!(result, ("syntax_delim", _t1804,))
+        _t1821 = _make_value_string(pp, msg.syntax_delim)
+        push!(result, ("syntax_delim", _t1821,))
     end
     if !isnothing(msg.syntax_quotechar)
-        _t1805 = _make_value_string(pp, msg.syntax_quotechar)
-        push!(result, ("syntax_quotechar", _t1805,))
+        _t1822 = _make_value_string(pp, msg.syntax_quotechar)
+        push!(result, ("syntax_quotechar", _t1822,))
     end
     if !isnothing(msg.syntax_escapechar)
-        _t1806 = _make_value_string(pp, msg.syntax_escapechar)
-        push!(result, ("syntax_escapechar", _t1806,))
+        _t1823 = _make_value_string(pp, msg.syntax_escapechar)
+        push!(result, ("syntax_escapechar", _t1823,))
     end
     return sort(result)
 end
@@ -534,7 +565,7 @@ function deconstruct_iceberg_catalog_config_scope_optional(pp::PrettyPrinter, ms
     if msg.scope != ""
         return msg.scope
     else
-        _t1807 = nothing
+        _t1824 = nothing
     end
     return nothing
 end
@@ -543,7 +574,7 @@ function deconstruct_iceberg_data_from_snapshot_optional(pp::PrettyPrinter, msg:
     if msg.from_snapshot != ""
         return msg.from_snapshot
     else
-        _t1808 = nothing
+        _t1825 = nothing
     end
     return nothing
 end
@@ -552,7 +583,7 @@ function deconstruct_iceberg_data_to_snapshot_optional(pp::PrettyPrinter, msg::P
     if msg.to_snapshot != ""
         return msg.to_snapshot
     else
-        _t1809 = nothing
+        _t1826 = nothing
     end
     return nothing
 end
@@ -560,21 +591,21 @@ end
 function deconstruct_export_iceberg_config_optional(pp::PrettyPrinter, msg::Proto.ExportIcebergConfig)::Union{Nothing, Vector{Tuple{String, Proto.Value}}}
     result = Tuple{String, Proto.Value}[]
     if msg.prefix != ""
-        _t1810 = _make_value_string(pp, msg.prefix)
-        push!(result, ("prefix", _t1810,))
+        _t1827 = _make_value_string(pp, msg.prefix)
+        push!(result, ("prefix", _t1827,))
     end
     if msg.target_file_size_bytes != 0
-        _t1811 = _make_value_int64(pp, msg.target_file_size_bytes)
-        push!(result, ("target_file_size_bytes", _t1811,))
+        _t1828 = _make_value_int64(pp, msg.target_file_size_bytes)
+        push!(result, ("target_file_size_bytes", _t1828,))
     end
     if msg.compression != ""
-        _t1812 = _make_value_string(pp, msg.compression)
-        push!(result, ("compression", _t1812,))
+        _t1829 = _make_value_string(pp, msg.compression)
+        push!(result, ("compression", _t1829,))
     end
     if length(result) == 0
         return nothing
     else
-        _t1813 = nothing
+        _t1830 = nothing
     end
     return sort(result)
 end
@@ -589,7 +620,7 @@ function deconstruct_relation_id_uint128(pp::PrettyPrinter, msg::Proto.RelationI
     if isnothing(name)
         return relation_id_to_uint128(pp, msg)
     else
-        _t1814 = nothing
+        _t1831 = nothing
     end
     return nothing
 end
@@ -608,47 +639,47 @@ end
 # --- Pretty-print functions ---
 
 function pretty_transaction(pp::PrettyPrinter, msg::Proto.Transaction)
-    flat803 = try_flat(pp, msg, pretty_transaction)
-    if !isnothing(flat803)
-        write(pp, flat803)
+    flat808 = try_flat(pp, msg, pretty_transaction)
+    if !isnothing(flat808)
+        write(pp, flat808)
         return nothing
     else
         _dollar_dollar = msg
         if _has_proto_field(_dollar_dollar, Symbol("configure"))
-            _t1588 = _dollar_dollar.configure
+            _t1598 = _dollar_dollar.configure
         else
-            _t1588 = nothing
+            _t1598 = nothing
         end
         if _has_proto_field(_dollar_dollar, Symbol("sync"))
-            _t1589 = _dollar_dollar.sync
+            _t1599 = _dollar_dollar.sync
         else
-            _t1589 = nothing
+            _t1599 = nothing
         end
-        fields794 = (_t1588, _t1589, _dollar_dollar.epochs,)
-        unwrapped_fields795 = fields794
+        fields799 = (_t1598, _t1599, _dollar_dollar.epochs,)
+        unwrapped_fields800 = fields799
         write(pp, "(transaction")
         indent_sexp!(pp)
-        field796 = unwrapped_fields795[1]
-        if !isnothing(field796)
+        field801 = unwrapped_fields800[1]
+        if !isnothing(field801)
             newline(pp)
-            opt_val797 = field796
-            pretty_configure(pp, opt_val797)
+            opt_val802 = field801
+            pretty_configure(pp, opt_val802)
         end
-        field798 = unwrapped_fields795[2]
-        if !isnothing(field798)
+        field803 = unwrapped_fields800[2]
+        if !isnothing(field803)
             newline(pp)
-            opt_val799 = field798
-            pretty_sync(pp, opt_val799)
+            opt_val804 = field803
+            pretty_sync(pp, opt_val804)
         end
-        field800 = unwrapped_fields795[3]
-        if !isempty(field800)
+        field805 = unwrapped_fields800[3]
+        if !isempty(field805)
             newline(pp)
-            for (i1590, elem801) in enumerate(field800)
-                i802 = i1590 - 1
-                if (i802 > 0)
+            for (i1600, elem806) in enumerate(field805)
+                i807 = i1600 - 1
+                if (i807 > 0)
                     newline(pp)
                 end
-                pretty_epoch(pp, elem801)
+                pretty_epoch(pp, elem806)
             end
         end
         dedent!(pp)
@@ -658,19 +689,19 @@ function pretty_transaction(pp::PrettyPrinter, msg::Proto.Transaction)
 end
 
 function pretty_configure(pp::PrettyPrinter, msg::Proto.Configure)
-    flat806 = try_flat(pp, msg, pretty_configure)
-    if !isnothing(flat806)
-        write(pp, flat806)
+    flat811 = try_flat(pp, msg, pretty_configure)
+    if !isnothing(flat811)
+        write(pp, flat811)
         return nothing
     else
         _dollar_dollar = msg
-        _t1591 = deconstruct_configure(pp, _dollar_dollar)
-        fields804 = _t1591
-        unwrapped_fields805 = fields804
+        _t1601 = deconstruct_configure(pp, _dollar_dollar)
+        fields809 = _t1601
+        unwrapped_fields810 = fields809
         write(pp, "(configure")
         indent_sexp!(pp)
         newline(pp)
-        pretty_config_dict(pp, unwrapped_fields805)
+        pretty_config_dict(pp, unwrapped_fields810)
         dedent!(pp)
         write(pp, ")")
     end
@@ -678,22 +709,22 @@ function pretty_configure(pp::PrettyPrinter, msg::Proto.Configure)
 end
 
 function pretty_config_dict(pp::PrettyPrinter, msg::Vector{Tuple{String, Proto.Value}})
-    flat810 = try_flat(pp, msg, pretty_config_dict)
-    if !isnothing(flat810)
-        write(pp, flat810)
+    flat815 = try_flat(pp, msg, pretty_config_dict)
+    if !isnothing(flat815)
+        write(pp, flat815)
         return nothing
     else
-        fields807 = msg
+        fields812 = msg
         write(pp, "{")
         indent!(pp)
-        if !isempty(fields807)
+        if !isempty(fields812)
             newline(pp)
-            for (i1592, elem808) in enumerate(fields807)
-                i809 = i1592 - 1
-                if (i809 > 0)
+            for (i1602, elem813) in enumerate(fields812)
+                i814 = i1602 - 1
+                if (i814 > 0)
                     newline(pp)
                 end
-                pretty_config_key_value(pp, elem808)
+                pretty_config_key_value(pp, elem813)
             end
         end
         dedent!(pp)
@@ -703,163 +734,163 @@ function pretty_config_dict(pp::PrettyPrinter, msg::Vector{Tuple{String, Proto.V
 end
 
 function pretty_config_key_value(pp::PrettyPrinter, msg::Tuple{String, Proto.Value})
-    flat815 = try_flat(pp, msg, pretty_config_key_value)
-    if !isnothing(flat815)
-        write(pp, flat815)
+    flat820 = try_flat(pp, msg, pretty_config_key_value)
+    if !isnothing(flat820)
+        write(pp, flat820)
         return nothing
     else
         _dollar_dollar = msg
-        fields811 = (_dollar_dollar[1], _dollar_dollar[2],)
-        unwrapped_fields812 = fields811
+        fields816 = (_dollar_dollar[1], _dollar_dollar[2],)
+        unwrapped_fields817 = fields816
         write(pp, ":")
-        field813 = unwrapped_fields812[1]
-        write(pp, field813)
+        field818 = unwrapped_fields817[1]
+        write(pp, field818)
         write(pp, " ")
-        field814 = unwrapped_fields812[2]
-        pretty_raw_value(pp, field814)
+        field819 = unwrapped_fields817[2]
+        pretty_raw_value(pp, field819)
     end
     return nothing
 end
 
 function pretty_raw_value(pp::PrettyPrinter, msg::Proto.Value)
-    flat841 = try_flat(pp, msg, pretty_raw_value)
-    if !isnothing(flat841)
-        write(pp, flat841)
+    flat846 = try_flat(pp, msg, pretty_raw_value)
+    if !isnothing(flat846)
+        write(pp, flat846)
         return nothing
     else
         _dollar_dollar = msg
         if _has_proto_field(_dollar_dollar, Symbol("date_value"))
-            _t1593 = _get_oneof_field(_dollar_dollar, :date_value)
+            _t1603 = _get_oneof_field(_dollar_dollar, :date_value)
         else
-            _t1593 = nothing
+            _t1603 = nothing
         end
-        deconstruct_result839 = _t1593
-        if !isnothing(deconstruct_result839)
-            unwrapped840 = deconstruct_result839
-            pretty_raw_date(pp, unwrapped840)
+        deconstruct_result844 = _t1603
+        if !isnothing(deconstruct_result844)
+            unwrapped845 = deconstruct_result844
+            pretty_raw_date(pp, unwrapped845)
         else
             _dollar_dollar = msg
             if _has_proto_field(_dollar_dollar, Symbol("datetime_value"))
-                _t1594 = _get_oneof_field(_dollar_dollar, :datetime_value)
+                _t1604 = _get_oneof_field(_dollar_dollar, :datetime_value)
             else
-                _t1594 = nothing
+                _t1604 = nothing
             end
-            deconstruct_result837 = _t1594
-            if !isnothing(deconstruct_result837)
-                unwrapped838 = deconstruct_result837
-                pretty_raw_datetime(pp, unwrapped838)
+            deconstruct_result842 = _t1604
+            if !isnothing(deconstruct_result842)
+                unwrapped843 = deconstruct_result842
+                pretty_raw_datetime(pp, unwrapped843)
             else
                 _dollar_dollar = msg
                 if _has_proto_field(_dollar_dollar, Symbol("string_value"))
-                    _t1595 = _get_oneof_field(_dollar_dollar, :string_value)
+                    _t1605 = _get_oneof_field(_dollar_dollar, :string_value)
                 else
-                    _t1595 = nothing
+                    _t1605 = nothing
                 end
-                deconstruct_result835 = _t1595
-                if !isnothing(deconstruct_result835)
-                    unwrapped836 = deconstruct_result835
-                    write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, unwrapped836))
+                deconstruct_result840 = _t1605
+                if !isnothing(deconstruct_result840)
+                    unwrapped841 = deconstruct_result840
+                    write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, unwrapped841))
                 else
                     _dollar_dollar = msg
                     if _has_proto_field(_dollar_dollar, Symbol("int32_value"))
-                        _t1596 = _get_oneof_field(_dollar_dollar, :int32_value)
+                        _t1606 = _get_oneof_field(_dollar_dollar, :int32_value)
                     else
-                        _t1596 = nothing
+                        _t1606 = nothing
                     end
-                    deconstruct_result833 = _t1596
-                    if !isnothing(deconstruct_result833)
-                        unwrapped834 = deconstruct_result833
-                        write(pp, (string(Int64(unwrapped834)) * "i32"))
+                    deconstruct_result838 = _t1606
+                    if !isnothing(deconstruct_result838)
+                        unwrapped839 = deconstruct_result838
+                        write(pp, (string(Int64(unwrapped839)) * "i32"))
                     else
                         _dollar_dollar = msg
                         if _has_proto_field(_dollar_dollar, Symbol("int_value"))
-                            _t1597 = _get_oneof_field(_dollar_dollar, :int_value)
+                            _t1607 = _get_oneof_field(_dollar_dollar, :int_value)
                         else
-                            _t1597 = nothing
+                            _t1607 = nothing
                         end
-                        deconstruct_result831 = _t1597
-                        if !isnothing(deconstruct_result831)
-                            unwrapped832 = deconstruct_result831
-                            write(pp, string(unwrapped832))
+                        deconstruct_result836 = _t1607
+                        if !isnothing(deconstruct_result836)
+                            unwrapped837 = deconstruct_result836
+                            write(pp, string(unwrapped837))
                         else
                             _dollar_dollar = msg
                             if _has_proto_field(_dollar_dollar, Symbol("float32_value"))
-                                _t1598 = _get_oneof_field(_dollar_dollar, :float32_value)
+                                _t1608 = _get_oneof_field(_dollar_dollar, :float32_value)
                             else
-                                _t1598 = nothing
+                                _t1608 = nothing
                             end
-                            deconstruct_result829 = _t1598
-                            if !isnothing(deconstruct_result829)
-                                unwrapped830 = deconstruct_result829
-                                write(pp, format_float32_literal(unwrapped830))
+                            deconstruct_result834 = _t1608
+                            if !isnothing(deconstruct_result834)
+                                unwrapped835 = deconstruct_result834
+                                write(pp, format_float32_literal(unwrapped835))
                             else
                                 _dollar_dollar = msg
                                 if _has_proto_field(_dollar_dollar, Symbol("float_value"))
-                                    _t1599 = _get_oneof_field(_dollar_dollar, :float_value)
+                                    _t1609 = _get_oneof_field(_dollar_dollar, :float_value)
                                 else
-                                    _t1599 = nothing
+                                    _t1609 = nothing
                                 end
-                                deconstruct_result827 = _t1599
-                                if !isnothing(deconstruct_result827)
-                                    unwrapped828 = deconstruct_result827
-                                    write(pp, lowercase(string(unwrapped828)))
+                                deconstruct_result832 = _t1609
+                                if !isnothing(deconstruct_result832)
+                                    unwrapped833 = deconstruct_result832
+                                    write(pp, lowercase(string(unwrapped833)))
                                 else
                                     _dollar_dollar = msg
                                     if _has_proto_field(_dollar_dollar, Symbol("uint32_value"))
-                                        _t1600 = _get_oneof_field(_dollar_dollar, :uint32_value)
+                                        _t1610 = _get_oneof_field(_dollar_dollar, :uint32_value)
                                     else
-                                        _t1600 = nothing
+                                        _t1610 = nothing
                                     end
-                                    deconstruct_result825 = _t1600
-                                    if !isnothing(deconstruct_result825)
-                                        unwrapped826 = deconstruct_result825
-                                        write(pp, (string(Int64(unwrapped826)) * "u32"))
+                                    deconstruct_result830 = _t1610
+                                    if !isnothing(deconstruct_result830)
+                                        unwrapped831 = deconstruct_result830
+                                        write(pp, (string(Int64(unwrapped831)) * "u32"))
                                     else
                                         _dollar_dollar = msg
                                         if _has_proto_field(_dollar_dollar, Symbol("uint128_value"))
-                                            _t1601 = _get_oneof_field(_dollar_dollar, :uint128_value)
+                                            _t1611 = _get_oneof_field(_dollar_dollar, :uint128_value)
                                         else
-                                            _t1601 = nothing
+                                            _t1611 = nothing
                                         end
-                                        deconstruct_result823 = _t1601
-                                        if !isnothing(deconstruct_result823)
-                                            unwrapped824 = deconstruct_result823
-                                            write(pp, format_uint128(DEFAULT_CONSTANT_FORMATTER, pp, unwrapped824))
+                                        deconstruct_result828 = _t1611
+                                        if !isnothing(deconstruct_result828)
+                                            unwrapped829 = deconstruct_result828
+                                            write(pp, format_uint128(DEFAULT_CONSTANT_FORMATTER, pp, unwrapped829))
                                         else
                                             _dollar_dollar = msg
                                             if _has_proto_field(_dollar_dollar, Symbol("int128_value"))
-                                                _t1602 = _get_oneof_field(_dollar_dollar, :int128_value)
+                                                _t1612 = _get_oneof_field(_dollar_dollar, :int128_value)
                                             else
-                                                _t1602 = nothing
+                                                _t1612 = nothing
                                             end
-                                            deconstruct_result821 = _t1602
-                                            if !isnothing(deconstruct_result821)
-                                                unwrapped822 = deconstruct_result821
-                                                write(pp, format_int128(DEFAULT_CONSTANT_FORMATTER, pp, unwrapped822))
+                                            deconstruct_result826 = _t1612
+                                            if !isnothing(deconstruct_result826)
+                                                unwrapped827 = deconstruct_result826
+                                                write(pp, format_int128(DEFAULT_CONSTANT_FORMATTER, pp, unwrapped827))
                                             else
                                                 _dollar_dollar = msg
                                                 if _has_proto_field(_dollar_dollar, Symbol("decimal_value"))
-                                                    _t1603 = _get_oneof_field(_dollar_dollar, :decimal_value)
+                                                    _t1613 = _get_oneof_field(_dollar_dollar, :decimal_value)
                                                 else
-                                                    _t1603 = nothing
+                                                    _t1613 = nothing
                                                 end
-                                                deconstruct_result819 = _t1603
-                                                if !isnothing(deconstruct_result819)
-                                                    unwrapped820 = deconstruct_result819
-                                                    write(pp, format_decimal(DEFAULT_CONSTANT_FORMATTER, pp, unwrapped820))
+                                                deconstruct_result824 = _t1613
+                                                if !isnothing(deconstruct_result824)
+                                                    unwrapped825 = deconstruct_result824
+                                                    write(pp, format_decimal(DEFAULT_CONSTANT_FORMATTER, pp, unwrapped825))
                                                 else
                                                     _dollar_dollar = msg
                                                     if _has_proto_field(_dollar_dollar, Symbol("boolean_value"))
-                                                        _t1604 = _get_oneof_field(_dollar_dollar, :boolean_value)
+                                                        _t1614 = _get_oneof_field(_dollar_dollar, :boolean_value)
                                                     else
-                                                        _t1604 = nothing
+                                                        _t1614 = nothing
                                                     end
-                                                    deconstruct_result817 = _t1604
-                                                    if !isnothing(deconstruct_result817)
-                                                        unwrapped818 = deconstruct_result817
-                                                        pretty_boolean_value(pp, unwrapped818)
+                                                    deconstruct_result822 = _t1614
+                                                    if !isnothing(deconstruct_result822)
+                                                        unwrapped823 = deconstruct_result822
+                                                        pretty_boolean_value(pp, unwrapped823)
                                                     else
-                                                        fields816 = msg
+                                                        fields821 = msg
                                                         write(pp, "missing")
                                                     end
                                                 end
@@ -878,25 +909,25 @@ function pretty_raw_value(pp::PrettyPrinter, msg::Proto.Value)
 end
 
 function pretty_raw_date(pp::PrettyPrinter, msg::Proto.DateValue)
-    flat847 = try_flat(pp, msg, pretty_raw_date)
-    if !isnothing(flat847)
-        write(pp, flat847)
+    flat852 = try_flat(pp, msg, pretty_raw_date)
+    if !isnothing(flat852)
+        write(pp, flat852)
         return nothing
     else
         _dollar_dollar = msg
-        fields842 = (Int64(_dollar_dollar.year), Int64(_dollar_dollar.month), Int64(_dollar_dollar.day),)
-        unwrapped_fields843 = fields842
+        fields847 = (Int64(_dollar_dollar.year), Int64(_dollar_dollar.month), Int64(_dollar_dollar.day),)
+        unwrapped_fields848 = fields847
         write(pp, "(date")
         indent_sexp!(pp)
         newline(pp)
-        field844 = unwrapped_fields843[1]
-        write(pp, string(field844))
+        field849 = unwrapped_fields848[1]
+        write(pp, string(field849))
         newline(pp)
-        field845 = unwrapped_fields843[2]
-        write(pp, string(field845))
+        field850 = unwrapped_fields848[2]
+        write(pp, string(field850))
         newline(pp)
-        field846 = unwrapped_fields843[3]
-        write(pp, string(field846))
+        field851 = unwrapped_fields848[3]
+        write(pp, string(field851))
         dedent!(pp)
         write(pp, ")")
     end
@@ -904,39 +935,39 @@ function pretty_raw_date(pp::PrettyPrinter, msg::Proto.DateValue)
 end
 
 function pretty_raw_datetime(pp::PrettyPrinter, msg::Proto.DateTimeValue)
-    flat858 = try_flat(pp, msg, pretty_raw_datetime)
-    if !isnothing(flat858)
-        write(pp, flat858)
+    flat863 = try_flat(pp, msg, pretty_raw_datetime)
+    if !isnothing(flat863)
+        write(pp, flat863)
         return nothing
     else
         _dollar_dollar = msg
-        fields848 = (Int64(_dollar_dollar.year), Int64(_dollar_dollar.month), Int64(_dollar_dollar.day), Int64(_dollar_dollar.hour), Int64(_dollar_dollar.minute), Int64(_dollar_dollar.second), Int64(_dollar_dollar.microsecond),)
-        unwrapped_fields849 = fields848
+        fields853 = (Int64(_dollar_dollar.year), Int64(_dollar_dollar.month), Int64(_dollar_dollar.day), Int64(_dollar_dollar.hour), Int64(_dollar_dollar.minute), Int64(_dollar_dollar.second), Int64(_dollar_dollar.microsecond),)
+        unwrapped_fields854 = fields853
         write(pp, "(datetime")
         indent_sexp!(pp)
         newline(pp)
-        field850 = unwrapped_fields849[1]
-        write(pp, string(field850))
-        newline(pp)
-        field851 = unwrapped_fields849[2]
-        write(pp, string(field851))
-        newline(pp)
-        field852 = unwrapped_fields849[3]
-        write(pp, string(field852))
-        newline(pp)
-        field853 = unwrapped_fields849[4]
-        write(pp, string(field853))
-        newline(pp)
-        field854 = unwrapped_fields849[5]
-        write(pp, string(field854))
-        newline(pp)
-        field855 = unwrapped_fields849[6]
+        field855 = unwrapped_fields854[1]
         write(pp, string(field855))
-        field856 = unwrapped_fields849[7]
-        if !isnothing(field856)
+        newline(pp)
+        field856 = unwrapped_fields854[2]
+        write(pp, string(field856))
+        newline(pp)
+        field857 = unwrapped_fields854[3]
+        write(pp, string(field857))
+        newline(pp)
+        field858 = unwrapped_fields854[4]
+        write(pp, string(field858))
+        newline(pp)
+        field859 = unwrapped_fields854[5]
+        write(pp, string(field859))
+        newline(pp)
+        field860 = unwrapped_fields854[6]
+        write(pp, string(field860))
+        field861 = unwrapped_fields854[7]
+        if !isnothing(field861)
             newline(pp)
-            opt_val857 = field856
-            write(pp, string(opt_val857))
+            opt_val862 = field861
+            write(pp, string(opt_val862))
         end
         dedent!(pp)
         write(pp, ")")
@@ -947,24 +978,24 @@ end
 function pretty_boolean_value(pp::PrettyPrinter, msg::Bool)
     _dollar_dollar = msg
     if _dollar_dollar
-        _t1605 = ()
+        _t1615 = ()
     else
-        _t1605 = nothing
+        _t1615 = nothing
     end
-    deconstruct_result861 = _t1605
-    if !isnothing(deconstruct_result861)
-        unwrapped862 = deconstruct_result861
+    deconstruct_result866 = _t1615
+    if !isnothing(deconstruct_result866)
+        unwrapped867 = deconstruct_result866
         write(pp, "true")
     else
         _dollar_dollar = msg
         if !_dollar_dollar
-            _t1606 = ()
+            _t1616 = ()
         else
-            _t1606 = nothing
+            _t1616 = nothing
         end
-        deconstruct_result859 = _t1606
-        if !isnothing(deconstruct_result859)
-            unwrapped860 = deconstruct_result859
+        deconstruct_result864 = _t1616
+        if !isnothing(deconstruct_result864)
+            unwrapped865 = deconstruct_result864
             write(pp, "false")
         else
             throw(ParseError("No matching rule for boolean_value"))
@@ -974,24 +1005,24 @@ function pretty_boolean_value(pp::PrettyPrinter, msg::Bool)
 end
 
 function pretty_sync(pp::PrettyPrinter, msg::Proto.Sync)
-    flat867 = try_flat(pp, msg, pretty_sync)
-    if !isnothing(flat867)
-        write(pp, flat867)
+    flat872 = try_flat(pp, msg, pretty_sync)
+    if !isnothing(flat872)
+        write(pp, flat872)
         return nothing
     else
         _dollar_dollar = msg
-        fields863 = _dollar_dollar.fragments
-        unwrapped_fields864 = fields863
+        fields868 = _dollar_dollar.fragments
+        unwrapped_fields869 = fields868
         write(pp, "(sync")
         indent_sexp!(pp)
-        if !isempty(unwrapped_fields864)
+        if !isempty(unwrapped_fields869)
             newline(pp)
-            for (i1607, elem865) in enumerate(unwrapped_fields864)
-                i866 = i1607 - 1
-                if (i866 > 0)
+            for (i1617, elem870) in enumerate(unwrapped_fields869)
+                i871 = i1617 - 1
+                if (i871 > 0)
                     newline(pp)
                 end
-                pretty_fragment_id(pp, elem865)
+                pretty_fragment_id(pp, elem870)
             end
         end
         dedent!(pp)
@@ -1001,52 +1032,52 @@ function pretty_sync(pp::PrettyPrinter, msg::Proto.Sync)
 end
 
 function pretty_fragment_id(pp::PrettyPrinter, msg::Proto.FragmentId)
-    flat870 = try_flat(pp, msg, pretty_fragment_id)
-    if !isnothing(flat870)
-        write(pp, flat870)
+    flat875 = try_flat(pp, msg, pretty_fragment_id)
+    if !isnothing(flat875)
+        write(pp, flat875)
         return nothing
     else
         _dollar_dollar = msg
-        fields868 = fragment_id_to_string(pp, _dollar_dollar)
-        unwrapped_fields869 = fields868
+        fields873 = fragment_id_to_string(pp, _dollar_dollar)
+        unwrapped_fields874 = fields873
         write(pp, ":")
-        write(pp, unwrapped_fields869)
+        write(pp, unwrapped_fields874)
     end
     return nothing
 end
 
 function pretty_epoch(pp::PrettyPrinter, msg::Proto.Epoch)
-    flat877 = try_flat(pp, msg, pretty_epoch)
-    if !isnothing(flat877)
-        write(pp, flat877)
+    flat882 = try_flat(pp, msg, pretty_epoch)
+    if !isnothing(flat882)
+        write(pp, flat882)
         return nothing
     else
         _dollar_dollar = msg
         if !isempty(_dollar_dollar.writes)
-            _t1608 = _dollar_dollar.writes
+            _t1618 = _dollar_dollar.writes
         else
-            _t1608 = nothing
+            _t1618 = nothing
         end
         if !isempty(_dollar_dollar.reads)
-            _t1609 = _dollar_dollar.reads
+            _t1619 = _dollar_dollar.reads
         else
-            _t1609 = nothing
+            _t1619 = nothing
         end
-        fields871 = (_t1608, _t1609,)
-        unwrapped_fields872 = fields871
+        fields876 = (_t1618, _t1619,)
+        unwrapped_fields877 = fields876
         write(pp, "(epoch")
         indent_sexp!(pp)
-        field873 = unwrapped_fields872[1]
-        if !isnothing(field873)
+        field878 = unwrapped_fields877[1]
+        if !isnothing(field878)
             newline(pp)
-            opt_val874 = field873
-            pretty_epoch_writes(pp, opt_val874)
+            opt_val879 = field878
+            pretty_epoch_writes(pp, opt_val879)
         end
-        field875 = unwrapped_fields872[2]
-        if !isnothing(field875)
+        field880 = unwrapped_fields877[2]
+        if !isnothing(field880)
             newline(pp)
-            opt_val876 = field875
-            pretty_epoch_reads(pp, opt_val876)
+            opt_val881 = field880
+            pretty_epoch_reads(pp, opt_val881)
         end
         dedent!(pp)
         write(pp, ")")
@@ -1055,22 +1086,22 @@ function pretty_epoch(pp::PrettyPrinter, msg::Proto.Epoch)
 end
 
 function pretty_epoch_writes(pp::PrettyPrinter, msg::Vector{Proto.Write})
-    flat881 = try_flat(pp, msg, pretty_epoch_writes)
-    if !isnothing(flat881)
-        write(pp, flat881)
+    flat886 = try_flat(pp, msg, pretty_epoch_writes)
+    if !isnothing(flat886)
+        write(pp, flat886)
         return nothing
     else
-        fields878 = msg
+        fields883 = msg
         write(pp, "(writes")
         indent_sexp!(pp)
-        if !isempty(fields878)
+        if !isempty(fields883)
             newline(pp)
-            for (i1610, elem879) in enumerate(fields878)
-                i880 = i1610 - 1
-                if (i880 > 0)
+            for (i1620, elem884) in enumerate(fields883)
+                i885 = i1620 - 1
+                if (i885 > 0)
                     newline(pp)
                 end
-                pretty_write(pp, elem879)
+                pretty_write(pp, elem884)
             end
         end
         dedent!(pp)
@@ -1080,54 +1111,54 @@ function pretty_epoch_writes(pp::PrettyPrinter, msg::Vector{Proto.Write})
 end
 
 function pretty_write(pp::PrettyPrinter, msg::Proto.Write)
-    flat890 = try_flat(pp, msg, pretty_write)
-    if !isnothing(flat890)
-        write(pp, flat890)
+    flat895 = try_flat(pp, msg, pretty_write)
+    if !isnothing(flat895)
+        write(pp, flat895)
         return nothing
     else
         _dollar_dollar = msg
         if _has_proto_field(_dollar_dollar, Symbol("define"))
-            _t1611 = _get_oneof_field(_dollar_dollar, :define)
+            _t1621 = _get_oneof_field(_dollar_dollar, :define)
         else
-            _t1611 = nothing
+            _t1621 = nothing
         end
-        deconstruct_result888 = _t1611
-        if !isnothing(deconstruct_result888)
-            unwrapped889 = deconstruct_result888
-            pretty_define(pp, unwrapped889)
+        deconstruct_result893 = _t1621
+        if !isnothing(deconstruct_result893)
+            unwrapped894 = deconstruct_result893
+            pretty_define(pp, unwrapped894)
         else
             _dollar_dollar = msg
             if _has_proto_field(_dollar_dollar, Symbol("undefine"))
-                _t1612 = _get_oneof_field(_dollar_dollar, :undefine)
+                _t1622 = _get_oneof_field(_dollar_dollar, :undefine)
             else
-                _t1612 = nothing
+                _t1622 = nothing
             end
-            deconstruct_result886 = _t1612
-            if !isnothing(deconstruct_result886)
-                unwrapped887 = deconstruct_result886
-                pretty_undefine(pp, unwrapped887)
+            deconstruct_result891 = _t1622
+            if !isnothing(deconstruct_result891)
+                unwrapped892 = deconstruct_result891
+                pretty_undefine(pp, unwrapped892)
             else
                 _dollar_dollar = msg
                 if _has_proto_field(_dollar_dollar, Symbol("context"))
-                    _t1613 = _get_oneof_field(_dollar_dollar, :context)
+                    _t1623 = _get_oneof_field(_dollar_dollar, :context)
                 else
-                    _t1613 = nothing
+                    _t1623 = nothing
                 end
-                deconstruct_result884 = _t1613
-                if !isnothing(deconstruct_result884)
-                    unwrapped885 = deconstruct_result884
-                    pretty_context(pp, unwrapped885)
+                deconstruct_result889 = _t1623
+                if !isnothing(deconstruct_result889)
+                    unwrapped890 = deconstruct_result889
+                    pretty_context(pp, unwrapped890)
                 else
                     _dollar_dollar = msg
                     if _has_proto_field(_dollar_dollar, Symbol("snapshot"))
-                        _t1614 = _get_oneof_field(_dollar_dollar, :snapshot)
+                        _t1624 = _get_oneof_field(_dollar_dollar, :snapshot)
                     else
-                        _t1614 = nothing
+                        _t1624 = nothing
                     end
-                    deconstruct_result882 = _t1614
-                    if !isnothing(deconstruct_result882)
-                        unwrapped883 = deconstruct_result882
-                        pretty_snapshot(pp, unwrapped883)
+                    deconstruct_result887 = _t1624
+                    if !isnothing(deconstruct_result887)
+                        unwrapped888 = deconstruct_result887
+                        pretty_snapshot(pp, unwrapped888)
                     else
                         throw(ParseError("No matching rule for write"))
                     end
@@ -1139,18 +1170,18 @@ function pretty_write(pp::PrettyPrinter, msg::Proto.Write)
 end
 
 function pretty_define(pp::PrettyPrinter, msg::Proto.Define)
-    flat893 = try_flat(pp, msg, pretty_define)
-    if !isnothing(flat893)
-        write(pp, flat893)
+    flat898 = try_flat(pp, msg, pretty_define)
+    if !isnothing(flat898)
+        write(pp, flat898)
         return nothing
     else
         _dollar_dollar = msg
-        fields891 = _dollar_dollar.fragment
-        unwrapped_fields892 = fields891
+        fields896 = _dollar_dollar.fragment
+        unwrapped_fields897 = fields896
         write(pp, "(define")
         indent_sexp!(pp)
         newline(pp)
-        pretty_fragment(pp, unwrapped_fields892)
+        pretty_fragment(pp, unwrapped_fields897)
         dedent!(pp)
         write(pp, ")")
     end
@@ -1158,29 +1189,29 @@ function pretty_define(pp::PrettyPrinter, msg::Proto.Define)
 end
 
 function pretty_fragment(pp::PrettyPrinter, msg::Proto.Fragment)
-    flat900 = try_flat(pp, msg, pretty_fragment)
-    if !isnothing(flat900)
-        write(pp, flat900)
+    flat905 = try_flat(pp, msg, pretty_fragment)
+    if !isnothing(flat905)
+        write(pp, flat905)
         return nothing
     else
         _dollar_dollar = msg
         start_pretty_fragment(pp, _dollar_dollar)
-        fields894 = (_dollar_dollar.id, _dollar_dollar.declarations,)
-        unwrapped_fields895 = fields894
+        fields899 = (_dollar_dollar.id, _dollar_dollar.declarations,)
+        unwrapped_fields900 = fields899
         write(pp, "(fragment")
         indent_sexp!(pp)
         newline(pp)
-        field896 = unwrapped_fields895[1]
-        pretty_new_fragment_id(pp, field896)
-        field897 = unwrapped_fields895[2]
-        if !isempty(field897)
+        field901 = unwrapped_fields900[1]
+        pretty_new_fragment_id(pp, field901)
+        field902 = unwrapped_fields900[2]
+        if !isempty(field902)
             newline(pp)
-            for (i1615, elem898) in enumerate(field897)
-                i899 = i1615 - 1
-                if (i899 > 0)
+            for (i1625, elem903) in enumerate(field902)
+                i904 = i1625 - 1
+                if (i904 > 0)
                     newline(pp)
                 end
-                pretty_declaration(pp, elem898)
+                pretty_declaration(pp, elem903)
             end
         end
         dedent!(pp)
@@ -1190,66 +1221,66 @@ function pretty_fragment(pp::PrettyPrinter, msg::Proto.Fragment)
 end
 
 function pretty_new_fragment_id(pp::PrettyPrinter, msg::Proto.FragmentId)
-    flat902 = try_flat(pp, msg, pretty_new_fragment_id)
-    if !isnothing(flat902)
-        write(pp, flat902)
+    flat907 = try_flat(pp, msg, pretty_new_fragment_id)
+    if !isnothing(flat907)
+        write(pp, flat907)
         return nothing
     else
-        fields901 = msg
-        pretty_fragment_id(pp, fields901)
+        fields906 = msg
+        pretty_fragment_id(pp, fields906)
     end
     return nothing
 end
 
 function pretty_declaration(pp::PrettyPrinter, msg::Proto.Declaration)
-    flat911 = try_flat(pp, msg, pretty_declaration)
-    if !isnothing(flat911)
-        write(pp, flat911)
+    flat916 = try_flat(pp, msg, pretty_declaration)
+    if !isnothing(flat916)
+        write(pp, flat916)
         return nothing
     else
         _dollar_dollar = msg
         if _has_proto_field(_dollar_dollar, Symbol("def"))
-            _t1616 = _get_oneof_field(_dollar_dollar, :def)
+            _t1626 = _get_oneof_field(_dollar_dollar, :def)
         else
-            _t1616 = nothing
+            _t1626 = nothing
         end
-        deconstruct_result909 = _t1616
-        if !isnothing(deconstruct_result909)
-            unwrapped910 = deconstruct_result909
-            pretty_def(pp, unwrapped910)
+        deconstruct_result914 = _t1626
+        if !isnothing(deconstruct_result914)
+            unwrapped915 = deconstruct_result914
+            pretty_def(pp, unwrapped915)
         else
             _dollar_dollar = msg
             if _has_proto_field(_dollar_dollar, Symbol("algorithm"))
-                _t1617 = _get_oneof_field(_dollar_dollar, :algorithm)
+                _t1627 = _get_oneof_field(_dollar_dollar, :algorithm)
             else
-                _t1617 = nothing
+                _t1627 = nothing
             end
-            deconstruct_result907 = _t1617
-            if !isnothing(deconstruct_result907)
-                unwrapped908 = deconstruct_result907
-                pretty_algorithm(pp, unwrapped908)
+            deconstruct_result912 = _t1627
+            if !isnothing(deconstruct_result912)
+                unwrapped913 = deconstruct_result912
+                pretty_algorithm(pp, unwrapped913)
             else
                 _dollar_dollar = msg
                 if _has_proto_field(_dollar_dollar, Symbol("constraint"))
-                    _t1618 = _get_oneof_field(_dollar_dollar, :constraint)
+                    _t1628 = _get_oneof_field(_dollar_dollar, :constraint)
                 else
-                    _t1618 = nothing
+                    _t1628 = nothing
                 end
-                deconstruct_result905 = _t1618
-                if !isnothing(deconstruct_result905)
-                    unwrapped906 = deconstruct_result905
-                    pretty_constraint(pp, unwrapped906)
+                deconstruct_result910 = _t1628
+                if !isnothing(deconstruct_result910)
+                    unwrapped911 = deconstruct_result910
+                    pretty_constraint(pp, unwrapped911)
                 else
                     _dollar_dollar = msg
                     if _has_proto_field(_dollar_dollar, Symbol("data"))
-                        _t1619 = _get_oneof_field(_dollar_dollar, :data)
+                        _t1629 = _get_oneof_field(_dollar_dollar, :data)
                     else
-                        _t1619 = nothing
+                        _t1629 = nothing
                     end
-                    deconstruct_result903 = _t1619
-                    if !isnothing(deconstruct_result903)
-                        unwrapped904 = deconstruct_result903
-                        pretty_data(pp, unwrapped904)
+                    deconstruct_result908 = _t1629
+                    if !isnothing(deconstruct_result908)
+                        unwrapped909 = deconstruct_result908
+                        pretty_data(pp, unwrapped909)
                     else
                         throw(ParseError("No matching rule for declaration"))
                     end
@@ -1261,32 +1292,32 @@ function pretty_declaration(pp::PrettyPrinter, msg::Proto.Declaration)
 end
 
 function pretty_def(pp::PrettyPrinter, msg::Proto.Def)
-    flat918 = try_flat(pp, msg, pretty_def)
-    if !isnothing(flat918)
-        write(pp, flat918)
+    flat923 = try_flat(pp, msg, pretty_def)
+    if !isnothing(flat923)
+        write(pp, flat923)
         return nothing
     else
         _dollar_dollar = msg
         if !isempty(_dollar_dollar.attrs)
-            _t1620 = _dollar_dollar.attrs
+            _t1630 = _dollar_dollar.attrs
         else
-            _t1620 = nothing
+            _t1630 = nothing
         end
-        fields912 = (_dollar_dollar.name, _dollar_dollar.body, _t1620,)
-        unwrapped_fields913 = fields912
+        fields917 = (_dollar_dollar.name, _dollar_dollar.body, _t1630,)
+        unwrapped_fields918 = fields917
         write(pp, "(def")
         indent_sexp!(pp)
         newline(pp)
-        field914 = unwrapped_fields913[1]
-        pretty_relation_id(pp, field914)
+        field919 = unwrapped_fields918[1]
+        pretty_relation_id(pp, field919)
         newline(pp)
-        field915 = unwrapped_fields913[2]
-        pretty_abstraction(pp, field915)
-        field916 = unwrapped_fields913[3]
-        if !isnothing(field916)
+        field920 = unwrapped_fields918[2]
+        pretty_abstraction(pp, field920)
+        field921 = unwrapped_fields918[3]
+        if !isnothing(field921)
             newline(pp)
-            opt_val917 = field916
-            pretty_attrs(pp, opt_val917)
+            opt_val922 = field921
+            pretty_attrs(pp, opt_val922)
         end
         dedent!(pp)
         write(pp, ")")
@@ -1295,30 +1326,30 @@ function pretty_def(pp::PrettyPrinter, msg::Proto.Def)
 end
 
 function pretty_relation_id(pp::PrettyPrinter, msg::Proto.RelationId)
-    flat923 = try_flat(pp, msg, pretty_relation_id)
-    if !isnothing(flat923)
-        write(pp, flat923)
+    flat928 = try_flat(pp, msg, pretty_relation_id)
+    if !isnothing(flat928)
+        write(pp, flat928)
         return nothing
     else
         _dollar_dollar = msg
         if !isnothing(relation_id_to_string(pp, _dollar_dollar))
-            _t1622 = deconstruct_relation_id_string(pp, _dollar_dollar)
-            _t1621 = _t1622
+            _t1632 = deconstruct_relation_id_string(pp, _dollar_dollar)
+            _t1631 = _t1632
         else
-            _t1621 = nothing
+            _t1631 = nothing
         end
-        deconstruct_result921 = _t1621
-        if !isnothing(deconstruct_result921)
-            unwrapped922 = deconstruct_result921
+        deconstruct_result926 = _t1631
+        if !isnothing(deconstruct_result926)
+            unwrapped927 = deconstruct_result926
             write(pp, ":")
-            write(pp, unwrapped922)
+            write(pp, unwrapped927)
         else
             _dollar_dollar = msg
-            _t1623 = deconstruct_relation_id_uint128(pp, _dollar_dollar)
-            deconstruct_result919 = _t1623
-            if !isnothing(deconstruct_result919)
-                unwrapped920 = deconstruct_result919
-                write(pp, format_uint128(DEFAULT_CONSTANT_FORMATTER, pp, unwrapped920))
+            _t1633 = deconstruct_relation_id_uint128(pp, _dollar_dollar)
+            deconstruct_result924 = _t1633
+            if !isnothing(deconstruct_result924)
+                unwrapped925 = deconstruct_result924
+                write(pp, format_uint128(DEFAULT_CONSTANT_FORMATTER, pp, unwrapped925))
             else
                 throw(ParseError("No matching rule for relation_id"))
             end
@@ -1328,22 +1359,22 @@ function pretty_relation_id(pp::PrettyPrinter, msg::Proto.RelationId)
 end
 
 function pretty_abstraction(pp::PrettyPrinter, msg::Proto.Abstraction)
-    flat928 = try_flat(pp, msg, pretty_abstraction)
-    if !isnothing(flat928)
-        write(pp, flat928)
+    flat933 = try_flat(pp, msg, pretty_abstraction)
+    if !isnothing(flat933)
+        write(pp, flat933)
         return nothing
     else
         _dollar_dollar = msg
-        _t1624 = deconstruct_bindings(pp, _dollar_dollar)
-        fields924 = (_t1624, _dollar_dollar.value,)
-        unwrapped_fields925 = fields924
+        _t1634 = deconstruct_bindings(pp, _dollar_dollar)
+        fields929 = (_t1634, _dollar_dollar.value,)
+        unwrapped_fields930 = fields929
         write(pp, "(")
         indent!(pp)
-        field926 = unwrapped_fields925[1]
-        pretty_bindings(pp, field926)
+        field931 = unwrapped_fields930[1]
+        pretty_bindings(pp, field931)
         newline(pp)
-        field927 = unwrapped_fields925[2]
-        pretty_formula(pp, field927)
+        field932 = unwrapped_fields930[2]
+        pretty_formula(pp, field932)
         dedent!(pp)
         write(pp, ")")
     end
@@ -1351,34 +1382,34 @@ function pretty_abstraction(pp::PrettyPrinter, msg::Proto.Abstraction)
 end
 
 function pretty_bindings(pp::PrettyPrinter, msg::Tuple{Vector{Proto.Binding}, Vector{Proto.Binding}})
-    flat936 = try_flat(pp, msg, pretty_bindings)
-    if !isnothing(flat936)
-        write(pp, flat936)
+    flat941 = try_flat(pp, msg, pretty_bindings)
+    if !isnothing(flat941)
+        write(pp, flat941)
         return nothing
     else
         _dollar_dollar = msg
         if !isempty(_dollar_dollar[2])
-            _t1625 = _dollar_dollar[2]
+            _t1635 = _dollar_dollar[2]
         else
-            _t1625 = nothing
+            _t1635 = nothing
         end
-        fields929 = (_dollar_dollar[1], _t1625,)
-        unwrapped_fields930 = fields929
+        fields934 = (_dollar_dollar[1], _t1635,)
+        unwrapped_fields935 = fields934
         write(pp, "[")
         indent!(pp)
-        field931 = unwrapped_fields930[1]
-        for (i1626, elem932) in enumerate(field931)
-            i933 = i1626 - 1
-            if (i933 > 0)
+        field936 = unwrapped_fields935[1]
+        for (i1636, elem937) in enumerate(field936)
+            i938 = i1636 - 1
+            if (i938 > 0)
                 newline(pp)
             end
-            pretty_binding(pp, elem932)
+            pretty_binding(pp, elem937)
         end
-        field934 = unwrapped_fields930[2]
-        if !isnothing(field934)
+        field939 = unwrapped_fields935[2]
+        if !isnothing(field939)
             newline(pp)
-            opt_val935 = field934
-            pretty_value_bindings(pp, opt_val935)
+            opt_val940 = field939
+            pretty_value_bindings(pp, opt_val940)
         end
         dedent!(pp)
         write(pp, "]")
@@ -1387,182 +1418,182 @@ function pretty_bindings(pp::PrettyPrinter, msg::Tuple{Vector{Proto.Binding}, Ve
 end
 
 function pretty_binding(pp::PrettyPrinter, msg::Proto.Binding)
-    flat941 = try_flat(pp, msg, pretty_binding)
-    if !isnothing(flat941)
-        write(pp, flat941)
+    flat946 = try_flat(pp, msg, pretty_binding)
+    if !isnothing(flat946)
+        write(pp, flat946)
         return nothing
     else
         _dollar_dollar = msg
-        fields937 = (_dollar_dollar.var.name, _dollar_dollar.var"#type",)
-        unwrapped_fields938 = fields937
-        field939 = unwrapped_fields938[1]
-        write(pp, field939)
+        fields942 = (_dollar_dollar.var.name, _dollar_dollar.var"#type",)
+        unwrapped_fields943 = fields942
+        field944 = unwrapped_fields943[1]
+        write(pp, field944)
         write(pp, "::")
-        field940 = unwrapped_fields938[2]
-        pretty_type(pp, field940)
+        field945 = unwrapped_fields943[2]
+        pretty_type(pp, field945)
     end
     return nothing
 end
 
 function pretty_type(pp::PrettyPrinter, msg::Proto.var"#Type")
-    flat970 = try_flat(pp, msg, pretty_type)
-    if !isnothing(flat970)
-        write(pp, flat970)
+    flat975 = try_flat(pp, msg, pretty_type)
+    if !isnothing(flat975)
+        write(pp, flat975)
         return nothing
     else
         _dollar_dollar = msg
         if _has_proto_field(_dollar_dollar, Symbol("unspecified_type"))
-            _t1627 = _get_oneof_field(_dollar_dollar, :unspecified_type)
+            _t1637 = _get_oneof_field(_dollar_dollar, :unspecified_type)
         else
-            _t1627 = nothing
+            _t1637 = nothing
         end
-        deconstruct_result968 = _t1627
-        if !isnothing(deconstruct_result968)
-            unwrapped969 = deconstruct_result968
-            pretty_unspecified_type(pp, unwrapped969)
+        deconstruct_result973 = _t1637
+        if !isnothing(deconstruct_result973)
+            unwrapped974 = deconstruct_result973
+            pretty_unspecified_type(pp, unwrapped974)
         else
             _dollar_dollar = msg
             if _has_proto_field(_dollar_dollar, Symbol("string_type"))
-                _t1628 = _get_oneof_field(_dollar_dollar, :string_type)
+                _t1638 = _get_oneof_field(_dollar_dollar, :string_type)
             else
-                _t1628 = nothing
+                _t1638 = nothing
             end
-            deconstruct_result966 = _t1628
-            if !isnothing(deconstruct_result966)
-                unwrapped967 = deconstruct_result966
-                pretty_string_type(pp, unwrapped967)
+            deconstruct_result971 = _t1638
+            if !isnothing(deconstruct_result971)
+                unwrapped972 = deconstruct_result971
+                pretty_string_type(pp, unwrapped972)
             else
                 _dollar_dollar = msg
                 if _has_proto_field(_dollar_dollar, Symbol("int_type"))
-                    _t1629 = _get_oneof_field(_dollar_dollar, :int_type)
+                    _t1639 = _get_oneof_field(_dollar_dollar, :int_type)
                 else
-                    _t1629 = nothing
+                    _t1639 = nothing
                 end
-                deconstruct_result964 = _t1629
-                if !isnothing(deconstruct_result964)
-                    unwrapped965 = deconstruct_result964
-                    pretty_int_type(pp, unwrapped965)
+                deconstruct_result969 = _t1639
+                if !isnothing(deconstruct_result969)
+                    unwrapped970 = deconstruct_result969
+                    pretty_int_type(pp, unwrapped970)
                 else
                     _dollar_dollar = msg
                     if _has_proto_field(_dollar_dollar, Symbol("float_type"))
-                        _t1630 = _get_oneof_field(_dollar_dollar, :float_type)
+                        _t1640 = _get_oneof_field(_dollar_dollar, :float_type)
                     else
-                        _t1630 = nothing
+                        _t1640 = nothing
                     end
-                    deconstruct_result962 = _t1630
-                    if !isnothing(deconstruct_result962)
-                        unwrapped963 = deconstruct_result962
-                        pretty_float_type(pp, unwrapped963)
+                    deconstruct_result967 = _t1640
+                    if !isnothing(deconstruct_result967)
+                        unwrapped968 = deconstruct_result967
+                        pretty_float_type(pp, unwrapped968)
                     else
                         _dollar_dollar = msg
                         if _has_proto_field(_dollar_dollar, Symbol("uint128_type"))
-                            _t1631 = _get_oneof_field(_dollar_dollar, :uint128_type)
+                            _t1641 = _get_oneof_field(_dollar_dollar, :uint128_type)
                         else
-                            _t1631 = nothing
+                            _t1641 = nothing
                         end
-                        deconstruct_result960 = _t1631
-                        if !isnothing(deconstruct_result960)
-                            unwrapped961 = deconstruct_result960
-                            pretty_uint128_type(pp, unwrapped961)
+                        deconstruct_result965 = _t1641
+                        if !isnothing(deconstruct_result965)
+                            unwrapped966 = deconstruct_result965
+                            pretty_uint128_type(pp, unwrapped966)
                         else
                             _dollar_dollar = msg
                             if _has_proto_field(_dollar_dollar, Symbol("int128_type"))
-                                _t1632 = _get_oneof_field(_dollar_dollar, :int128_type)
+                                _t1642 = _get_oneof_field(_dollar_dollar, :int128_type)
                             else
-                                _t1632 = nothing
+                                _t1642 = nothing
                             end
-                            deconstruct_result958 = _t1632
-                            if !isnothing(deconstruct_result958)
-                                unwrapped959 = deconstruct_result958
-                                pretty_int128_type(pp, unwrapped959)
+                            deconstruct_result963 = _t1642
+                            if !isnothing(deconstruct_result963)
+                                unwrapped964 = deconstruct_result963
+                                pretty_int128_type(pp, unwrapped964)
                             else
                                 _dollar_dollar = msg
                                 if _has_proto_field(_dollar_dollar, Symbol("date_type"))
-                                    _t1633 = _get_oneof_field(_dollar_dollar, :date_type)
+                                    _t1643 = _get_oneof_field(_dollar_dollar, :date_type)
                                 else
-                                    _t1633 = nothing
+                                    _t1643 = nothing
                                 end
-                                deconstruct_result956 = _t1633
-                                if !isnothing(deconstruct_result956)
-                                    unwrapped957 = deconstruct_result956
-                                    pretty_date_type(pp, unwrapped957)
+                                deconstruct_result961 = _t1643
+                                if !isnothing(deconstruct_result961)
+                                    unwrapped962 = deconstruct_result961
+                                    pretty_date_type(pp, unwrapped962)
                                 else
                                     _dollar_dollar = msg
                                     if _has_proto_field(_dollar_dollar, Symbol("datetime_type"))
-                                        _t1634 = _get_oneof_field(_dollar_dollar, :datetime_type)
+                                        _t1644 = _get_oneof_field(_dollar_dollar, :datetime_type)
                                     else
-                                        _t1634 = nothing
+                                        _t1644 = nothing
                                     end
-                                    deconstruct_result954 = _t1634
-                                    if !isnothing(deconstruct_result954)
-                                        unwrapped955 = deconstruct_result954
-                                        pretty_datetime_type(pp, unwrapped955)
+                                    deconstruct_result959 = _t1644
+                                    if !isnothing(deconstruct_result959)
+                                        unwrapped960 = deconstruct_result959
+                                        pretty_datetime_type(pp, unwrapped960)
                                     else
                                         _dollar_dollar = msg
                                         if _has_proto_field(_dollar_dollar, Symbol("missing_type"))
-                                            _t1635 = _get_oneof_field(_dollar_dollar, :missing_type)
+                                            _t1645 = _get_oneof_field(_dollar_dollar, :missing_type)
                                         else
-                                            _t1635 = nothing
+                                            _t1645 = nothing
                                         end
-                                        deconstruct_result952 = _t1635
-                                        if !isnothing(deconstruct_result952)
-                                            unwrapped953 = deconstruct_result952
-                                            pretty_missing_type(pp, unwrapped953)
+                                        deconstruct_result957 = _t1645
+                                        if !isnothing(deconstruct_result957)
+                                            unwrapped958 = deconstruct_result957
+                                            pretty_missing_type(pp, unwrapped958)
                                         else
                                             _dollar_dollar = msg
                                             if _has_proto_field(_dollar_dollar, Symbol("decimal_type"))
-                                                _t1636 = _get_oneof_field(_dollar_dollar, :decimal_type)
+                                                _t1646 = _get_oneof_field(_dollar_dollar, :decimal_type)
                                             else
-                                                _t1636 = nothing
+                                                _t1646 = nothing
                                             end
-                                            deconstruct_result950 = _t1636
-                                            if !isnothing(deconstruct_result950)
-                                                unwrapped951 = deconstruct_result950
-                                                pretty_decimal_type(pp, unwrapped951)
+                                            deconstruct_result955 = _t1646
+                                            if !isnothing(deconstruct_result955)
+                                                unwrapped956 = deconstruct_result955
+                                                pretty_decimal_type(pp, unwrapped956)
                                             else
                                                 _dollar_dollar = msg
                                                 if _has_proto_field(_dollar_dollar, Symbol("boolean_type"))
-                                                    _t1637 = _get_oneof_field(_dollar_dollar, :boolean_type)
+                                                    _t1647 = _get_oneof_field(_dollar_dollar, :boolean_type)
                                                 else
-                                                    _t1637 = nothing
+                                                    _t1647 = nothing
                                                 end
-                                                deconstruct_result948 = _t1637
-                                                if !isnothing(deconstruct_result948)
-                                                    unwrapped949 = deconstruct_result948
-                                                    pretty_boolean_type(pp, unwrapped949)
+                                                deconstruct_result953 = _t1647
+                                                if !isnothing(deconstruct_result953)
+                                                    unwrapped954 = deconstruct_result953
+                                                    pretty_boolean_type(pp, unwrapped954)
                                                 else
                                                     _dollar_dollar = msg
                                                     if _has_proto_field(_dollar_dollar, Symbol("int32_type"))
-                                                        _t1638 = _get_oneof_field(_dollar_dollar, :int32_type)
+                                                        _t1648 = _get_oneof_field(_dollar_dollar, :int32_type)
                                                     else
-                                                        _t1638 = nothing
+                                                        _t1648 = nothing
                                                     end
-                                                    deconstruct_result946 = _t1638
-                                                    if !isnothing(deconstruct_result946)
-                                                        unwrapped947 = deconstruct_result946
-                                                        pretty_int32_type(pp, unwrapped947)
+                                                    deconstruct_result951 = _t1648
+                                                    if !isnothing(deconstruct_result951)
+                                                        unwrapped952 = deconstruct_result951
+                                                        pretty_int32_type(pp, unwrapped952)
                                                     else
                                                         _dollar_dollar = msg
                                                         if _has_proto_field(_dollar_dollar, Symbol("float32_type"))
-                                                            _t1639 = _get_oneof_field(_dollar_dollar, :float32_type)
+                                                            _t1649 = _get_oneof_field(_dollar_dollar, :float32_type)
                                                         else
-                                                            _t1639 = nothing
+                                                            _t1649 = nothing
                                                         end
-                                                        deconstruct_result944 = _t1639
-                                                        if !isnothing(deconstruct_result944)
-                                                            unwrapped945 = deconstruct_result944
-                                                            pretty_float32_type(pp, unwrapped945)
+                                                        deconstruct_result949 = _t1649
+                                                        if !isnothing(deconstruct_result949)
+                                                            unwrapped950 = deconstruct_result949
+                                                            pretty_float32_type(pp, unwrapped950)
                                                         else
                                                             _dollar_dollar = msg
                                                             if _has_proto_field(_dollar_dollar, Symbol("uint32_type"))
-                                                                _t1640 = _get_oneof_field(_dollar_dollar, :uint32_type)
+                                                                _t1650 = _get_oneof_field(_dollar_dollar, :uint32_type)
                                                             else
-                                                                _t1640 = nothing
+                                                                _t1650 = nothing
                                                             end
-                                                            deconstruct_result942 = _t1640
-                                                            if !isnothing(deconstruct_result942)
-                                                                unwrapped943 = deconstruct_result942
-                                                                pretty_uint32_type(pp, unwrapped943)
+                                                            deconstruct_result947 = _t1650
+                                                            if !isnothing(deconstruct_result947)
+                                                                unwrapped948 = deconstruct_result947
+                                                                pretty_uint32_type(pp, unwrapped948)
                                                             else
                                                                 throw(ParseError("No matching rule for type"))
                                                             end
@@ -1584,76 +1615,76 @@ function pretty_type(pp::PrettyPrinter, msg::Proto.var"#Type")
 end
 
 function pretty_unspecified_type(pp::PrettyPrinter, msg::Proto.UnspecifiedType)
-    fields971 = msg
+    fields976 = msg
     write(pp, "UNKNOWN")
     return nothing
 end
 
 function pretty_string_type(pp::PrettyPrinter, msg::Proto.StringType)
-    fields972 = msg
+    fields977 = msg
     write(pp, "STRING")
     return nothing
 end
 
 function pretty_int_type(pp::PrettyPrinter, msg::Proto.IntType)
-    fields973 = msg
+    fields978 = msg
     write(pp, "INT")
     return nothing
 end
 
 function pretty_float_type(pp::PrettyPrinter, msg::Proto.FloatType)
-    fields974 = msg
+    fields979 = msg
     write(pp, "FLOAT")
     return nothing
 end
 
 function pretty_uint128_type(pp::PrettyPrinter, msg::Proto.UInt128Type)
-    fields975 = msg
+    fields980 = msg
     write(pp, "UINT128")
     return nothing
 end
 
 function pretty_int128_type(pp::PrettyPrinter, msg::Proto.Int128Type)
-    fields976 = msg
+    fields981 = msg
     write(pp, "INT128")
     return nothing
 end
 
 function pretty_date_type(pp::PrettyPrinter, msg::Proto.DateType)
-    fields977 = msg
+    fields982 = msg
     write(pp, "DATE")
     return nothing
 end
 
 function pretty_datetime_type(pp::PrettyPrinter, msg::Proto.DateTimeType)
-    fields978 = msg
+    fields983 = msg
     write(pp, "DATETIME")
     return nothing
 end
 
 function pretty_missing_type(pp::PrettyPrinter, msg::Proto.MissingType)
-    fields979 = msg
+    fields984 = msg
     write(pp, "MISSING")
     return nothing
 end
 
 function pretty_decimal_type(pp::PrettyPrinter, msg::Proto.DecimalType)
-    flat984 = try_flat(pp, msg, pretty_decimal_type)
-    if !isnothing(flat984)
-        write(pp, flat984)
+    flat989 = try_flat(pp, msg, pretty_decimal_type)
+    if !isnothing(flat989)
+        write(pp, flat989)
         return nothing
     else
         _dollar_dollar = msg
-        fields980 = (Int64(_dollar_dollar.precision), Int64(_dollar_dollar.scale),)
-        unwrapped_fields981 = fields980
+        fields985 = (Int64(_dollar_dollar.precision), Int64(_dollar_dollar.scale),)
+        unwrapped_fields986 = fields985
         write(pp, "(DECIMAL")
         indent_sexp!(pp)
         newline(pp)
-        field982 = unwrapped_fields981[1]
-        write(pp, string(field982))
+        field987 = unwrapped_fields986[1]
+        write(pp, string(field987))
         newline(pp)
-        field983 = unwrapped_fields981[2]
-        write(pp, string(field983))
+        field988 = unwrapped_fields986[2]
+        write(pp, string(field988))
         dedent!(pp)
         write(pp, ")")
     end
@@ -1661,45 +1692,45 @@ function pretty_decimal_type(pp::PrettyPrinter, msg::Proto.DecimalType)
 end
 
 function pretty_boolean_type(pp::PrettyPrinter, msg::Proto.BooleanType)
-    fields985 = msg
+    fields990 = msg
     write(pp, "BOOLEAN")
     return nothing
 end
 
 function pretty_int32_type(pp::PrettyPrinter, msg::Proto.Int32Type)
-    fields986 = msg
+    fields991 = msg
     write(pp, "INT32")
     return nothing
 end
 
 function pretty_float32_type(pp::PrettyPrinter, msg::Proto.Float32Type)
-    fields987 = msg
+    fields992 = msg
     write(pp, "FLOAT32")
     return nothing
 end
 
 function pretty_uint32_type(pp::PrettyPrinter, msg::Proto.UInt32Type)
-    fields988 = msg
+    fields993 = msg
     write(pp, "UINT32")
     return nothing
 end
 
 function pretty_value_bindings(pp::PrettyPrinter, msg::Vector{Proto.Binding})
-    flat992 = try_flat(pp, msg, pretty_value_bindings)
-    if !isnothing(flat992)
-        write(pp, flat992)
+    flat997 = try_flat(pp, msg, pretty_value_bindings)
+    if !isnothing(flat997)
+        write(pp, flat997)
         return nothing
     else
-        fields989 = msg
+        fields994 = msg
         write(pp, "|")
-        if !isempty(fields989)
+        if !isempty(fields994)
             write(pp, " ")
-            for (i1641, elem990) in enumerate(fields989)
-                i991 = i1641 - 1
-                if (i991 > 0)
+            for (i1651, elem995) in enumerate(fields994)
+                i996 = i1651 - 1
+                if (i996 > 0)
                     newline(pp)
                 end
-                pretty_binding(pp, elem990)
+                pretty_binding(pp, elem995)
             end
         end
     end
@@ -1707,153 +1738,153 @@ function pretty_value_bindings(pp::PrettyPrinter, msg::Vector{Proto.Binding})
 end
 
 function pretty_formula(pp::PrettyPrinter, msg::Proto.Formula)
-    flat1019 = try_flat(pp, msg, pretty_formula)
-    if !isnothing(flat1019)
-        write(pp, flat1019)
+    flat1024 = try_flat(pp, msg, pretty_formula)
+    if !isnothing(flat1024)
+        write(pp, flat1024)
         return nothing
     else
         _dollar_dollar = msg
         if (_has_proto_field(_dollar_dollar, Symbol("conjunction")) && isempty(_get_oneof_field(_dollar_dollar, :conjunction).args))
-            _t1642 = _get_oneof_field(_dollar_dollar, :conjunction)
+            _t1652 = _get_oneof_field(_dollar_dollar, :conjunction)
         else
-            _t1642 = nothing
+            _t1652 = nothing
         end
-        deconstruct_result1017 = _t1642
-        if !isnothing(deconstruct_result1017)
-            unwrapped1018 = deconstruct_result1017
-            pretty_true(pp, unwrapped1018)
+        deconstruct_result1022 = _t1652
+        if !isnothing(deconstruct_result1022)
+            unwrapped1023 = deconstruct_result1022
+            pretty_true(pp, unwrapped1023)
         else
             _dollar_dollar = msg
             if (_has_proto_field(_dollar_dollar, Symbol("disjunction")) && isempty(_get_oneof_field(_dollar_dollar, :disjunction).args))
-                _t1643 = _get_oneof_field(_dollar_dollar, :disjunction)
+                _t1653 = _get_oneof_field(_dollar_dollar, :disjunction)
             else
-                _t1643 = nothing
+                _t1653 = nothing
             end
-            deconstruct_result1015 = _t1643
-            if !isnothing(deconstruct_result1015)
-                unwrapped1016 = deconstruct_result1015
-                pretty_false(pp, unwrapped1016)
+            deconstruct_result1020 = _t1653
+            if !isnothing(deconstruct_result1020)
+                unwrapped1021 = deconstruct_result1020
+                pretty_false(pp, unwrapped1021)
             else
                 _dollar_dollar = msg
                 if _has_proto_field(_dollar_dollar, Symbol("exists"))
-                    _t1644 = _get_oneof_field(_dollar_dollar, :exists)
+                    _t1654 = _get_oneof_field(_dollar_dollar, :exists)
                 else
-                    _t1644 = nothing
+                    _t1654 = nothing
                 end
-                deconstruct_result1013 = _t1644
-                if !isnothing(deconstruct_result1013)
-                    unwrapped1014 = deconstruct_result1013
-                    pretty_exists(pp, unwrapped1014)
+                deconstruct_result1018 = _t1654
+                if !isnothing(deconstruct_result1018)
+                    unwrapped1019 = deconstruct_result1018
+                    pretty_exists(pp, unwrapped1019)
                 else
                     _dollar_dollar = msg
                     if _has_proto_field(_dollar_dollar, Symbol("reduce"))
-                        _t1645 = _get_oneof_field(_dollar_dollar, :reduce)
+                        _t1655 = _get_oneof_field(_dollar_dollar, :reduce)
                     else
-                        _t1645 = nothing
+                        _t1655 = nothing
                     end
-                    deconstruct_result1011 = _t1645
-                    if !isnothing(deconstruct_result1011)
-                        unwrapped1012 = deconstruct_result1011
-                        pretty_reduce(pp, unwrapped1012)
+                    deconstruct_result1016 = _t1655
+                    if !isnothing(deconstruct_result1016)
+                        unwrapped1017 = deconstruct_result1016
+                        pretty_reduce(pp, unwrapped1017)
                     else
                         _dollar_dollar = msg
                         if (_has_proto_field(_dollar_dollar, Symbol("conjunction")) && !isempty(_get_oneof_field(_dollar_dollar, :conjunction).args))
-                            _t1646 = _get_oneof_field(_dollar_dollar, :conjunction)
+                            _t1656 = _get_oneof_field(_dollar_dollar, :conjunction)
                         else
-                            _t1646 = nothing
+                            _t1656 = nothing
                         end
-                        deconstruct_result1009 = _t1646
-                        if !isnothing(deconstruct_result1009)
-                            unwrapped1010 = deconstruct_result1009
-                            pretty_conjunction(pp, unwrapped1010)
+                        deconstruct_result1014 = _t1656
+                        if !isnothing(deconstruct_result1014)
+                            unwrapped1015 = deconstruct_result1014
+                            pretty_conjunction(pp, unwrapped1015)
                         else
                             _dollar_dollar = msg
                             if (_has_proto_field(_dollar_dollar, Symbol("disjunction")) && !isempty(_get_oneof_field(_dollar_dollar, :disjunction).args))
-                                _t1647 = _get_oneof_field(_dollar_dollar, :disjunction)
+                                _t1657 = _get_oneof_field(_dollar_dollar, :disjunction)
                             else
-                                _t1647 = nothing
+                                _t1657 = nothing
                             end
-                            deconstruct_result1007 = _t1647
-                            if !isnothing(deconstruct_result1007)
-                                unwrapped1008 = deconstruct_result1007
-                                pretty_disjunction(pp, unwrapped1008)
+                            deconstruct_result1012 = _t1657
+                            if !isnothing(deconstruct_result1012)
+                                unwrapped1013 = deconstruct_result1012
+                                pretty_disjunction(pp, unwrapped1013)
                             else
                                 _dollar_dollar = msg
                                 if _has_proto_field(_dollar_dollar, Symbol("not"))
-                                    _t1648 = _get_oneof_field(_dollar_dollar, :not)
+                                    _t1658 = _get_oneof_field(_dollar_dollar, :not)
                                 else
-                                    _t1648 = nothing
+                                    _t1658 = nothing
                                 end
-                                deconstruct_result1005 = _t1648
-                                if !isnothing(deconstruct_result1005)
-                                    unwrapped1006 = deconstruct_result1005
-                                    pretty_not(pp, unwrapped1006)
+                                deconstruct_result1010 = _t1658
+                                if !isnothing(deconstruct_result1010)
+                                    unwrapped1011 = deconstruct_result1010
+                                    pretty_not(pp, unwrapped1011)
                                 else
                                     _dollar_dollar = msg
                                     if _has_proto_field(_dollar_dollar, Symbol("ffi"))
-                                        _t1649 = _get_oneof_field(_dollar_dollar, :ffi)
+                                        _t1659 = _get_oneof_field(_dollar_dollar, :ffi)
                                     else
-                                        _t1649 = nothing
+                                        _t1659 = nothing
                                     end
-                                    deconstruct_result1003 = _t1649
-                                    if !isnothing(deconstruct_result1003)
-                                        unwrapped1004 = deconstruct_result1003
-                                        pretty_ffi(pp, unwrapped1004)
+                                    deconstruct_result1008 = _t1659
+                                    if !isnothing(deconstruct_result1008)
+                                        unwrapped1009 = deconstruct_result1008
+                                        pretty_ffi(pp, unwrapped1009)
                                     else
                                         _dollar_dollar = msg
                                         if _has_proto_field(_dollar_dollar, Symbol("atom"))
-                                            _t1650 = _get_oneof_field(_dollar_dollar, :atom)
+                                            _t1660 = _get_oneof_field(_dollar_dollar, :atom)
                                         else
-                                            _t1650 = nothing
+                                            _t1660 = nothing
                                         end
-                                        deconstruct_result1001 = _t1650
-                                        if !isnothing(deconstruct_result1001)
-                                            unwrapped1002 = deconstruct_result1001
-                                            pretty_atom(pp, unwrapped1002)
+                                        deconstruct_result1006 = _t1660
+                                        if !isnothing(deconstruct_result1006)
+                                            unwrapped1007 = deconstruct_result1006
+                                            pretty_atom(pp, unwrapped1007)
                                         else
                                             _dollar_dollar = msg
                                             if _has_proto_field(_dollar_dollar, Symbol("pragma"))
-                                                _t1651 = _get_oneof_field(_dollar_dollar, :pragma)
+                                                _t1661 = _get_oneof_field(_dollar_dollar, :pragma)
                                             else
-                                                _t1651 = nothing
+                                                _t1661 = nothing
                                             end
-                                            deconstruct_result999 = _t1651
-                                            if !isnothing(deconstruct_result999)
-                                                unwrapped1000 = deconstruct_result999
-                                                pretty_pragma(pp, unwrapped1000)
+                                            deconstruct_result1004 = _t1661
+                                            if !isnothing(deconstruct_result1004)
+                                                unwrapped1005 = deconstruct_result1004
+                                                pretty_pragma(pp, unwrapped1005)
                                             else
                                                 _dollar_dollar = msg
                                                 if _has_proto_field(_dollar_dollar, Symbol("primitive"))
-                                                    _t1652 = _get_oneof_field(_dollar_dollar, :primitive)
+                                                    _t1662 = _get_oneof_field(_dollar_dollar, :primitive)
                                                 else
-                                                    _t1652 = nothing
+                                                    _t1662 = nothing
                                                 end
-                                                deconstruct_result997 = _t1652
-                                                if !isnothing(deconstruct_result997)
-                                                    unwrapped998 = deconstruct_result997
-                                                    pretty_primitive(pp, unwrapped998)
+                                                deconstruct_result1002 = _t1662
+                                                if !isnothing(deconstruct_result1002)
+                                                    unwrapped1003 = deconstruct_result1002
+                                                    pretty_primitive(pp, unwrapped1003)
                                                 else
                                                     _dollar_dollar = msg
                                                     if _has_proto_field(_dollar_dollar, Symbol("rel_atom"))
-                                                        _t1653 = _get_oneof_field(_dollar_dollar, :rel_atom)
+                                                        _t1663 = _get_oneof_field(_dollar_dollar, :rel_atom)
                                                     else
-                                                        _t1653 = nothing
+                                                        _t1663 = nothing
                                                     end
-                                                    deconstruct_result995 = _t1653
-                                                    if !isnothing(deconstruct_result995)
-                                                        unwrapped996 = deconstruct_result995
-                                                        pretty_rel_atom(pp, unwrapped996)
+                                                    deconstruct_result1000 = _t1663
+                                                    if !isnothing(deconstruct_result1000)
+                                                        unwrapped1001 = deconstruct_result1000
+                                                        pretty_rel_atom(pp, unwrapped1001)
                                                     else
                                                         _dollar_dollar = msg
                                                         if _has_proto_field(_dollar_dollar, Symbol("cast"))
-                                                            _t1654 = _get_oneof_field(_dollar_dollar, :cast)
+                                                            _t1664 = _get_oneof_field(_dollar_dollar, :cast)
                                                         else
-                                                            _t1654 = nothing
+                                                            _t1664 = nothing
                                                         end
-                                                        deconstruct_result993 = _t1654
-                                                        if !isnothing(deconstruct_result993)
-                                                            unwrapped994 = deconstruct_result993
-                                                            pretty_cast(pp, unwrapped994)
+                                                        deconstruct_result998 = _t1664
+                                                        if !isnothing(deconstruct_result998)
+                                                            unwrapped999 = deconstruct_result998
+                                                            pretty_cast(pp, unwrapped999)
                                                         else
                                                             throw(ParseError("No matching rule for formula"))
                                                         end
@@ -1874,35 +1905,35 @@ function pretty_formula(pp::PrettyPrinter, msg::Proto.Formula)
 end
 
 function pretty_true(pp::PrettyPrinter, msg::Proto.Conjunction)
-    fields1020 = msg
+    fields1025 = msg
     write(pp, "(true)")
     return nothing
 end
 
 function pretty_false(pp::PrettyPrinter, msg::Proto.Disjunction)
-    fields1021 = msg
+    fields1026 = msg
     write(pp, "(false)")
     return nothing
 end
 
 function pretty_exists(pp::PrettyPrinter, msg::Proto.Exists)
-    flat1026 = try_flat(pp, msg, pretty_exists)
-    if !isnothing(flat1026)
-        write(pp, flat1026)
+    flat1031 = try_flat(pp, msg, pretty_exists)
+    if !isnothing(flat1031)
+        write(pp, flat1031)
         return nothing
     else
         _dollar_dollar = msg
-        _t1655 = deconstruct_bindings(pp, _dollar_dollar.body)
-        fields1022 = (_t1655, _dollar_dollar.body.value,)
-        unwrapped_fields1023 = fields1022
+        _t1665 = deconstruct_bindings(pp, _dollar_dollar.body)
+        fields1027 = (_t1665, _dollar_dollar.body.value,)
+        unwrapped_fields1028 = fields1027
         write(pp, "(exists")
         indent_sexp!(pp)
         newline(pp)
-        field1024 = unwrapped_fields1023[1]
-        pretty_bindings(pp, field1024)
+        field1029 = unwrapped_fields1028[1]
+        pretty_bindings(pp, field1029)
         newline(pp)
-        field1025 = unwrapped_fields1023[2]
-        pretty_formula(pp, field1025)
+        field1030 = unwrapped_fields1028[2]
+        pretty_formula(pp, field1030)
         dedent!(pp)
         write(pp, ")")
     end
@@ -1910,25 +1941,25 @@ function pretty_exists(pp::PrettyPrinter, msg::Proto.Exists)
 end
 
 function pretty_reduce(pp::PrettyPrinter, msg::Proto.Reduce)
-    flat1032 = try_flat(pp, msg, pretty_reduce)
-    if !isnothing(flat1032)
-        write(pp, flat1032)
+    flat1037 = try_flat(pp, msg, pretty_reduce)
+    if !isnothing(flat1037)
+        write(pp, flat1037)
         return nothing
     else
         _dollar_dollar = msg
-        fields1027 = (_dollar_dollar.op, _dollar_dollar.body, _dollar_dollar.terms,)
-        unwrapped_fields1028 = fields1027
+        fields1032 = (_dollar_dollar.op, _dollar_dollar.body, _dollar_dollar.terms,)
+        unwrapped_fields1033 = fields1032
         write(pp, "(reduce")
         indent_sexp!(pp)
         newline(pp)
-        field1029 = unwrapped_fields1028[1]
-        pretty_abstraction(pp, field1029)
+        field1034 = unwrapped_fields1033[1]
+        pretty_abstraction(pp, field1034)
         newline(pp)
-        field1030 = unwrapped_fields1028[2]
-        pretty_abstraction(pp, field1030)
+        field1035 = unwrapped_fields1033[2]
+        pretty_abstraction(pp, field1035)
         newline(pp)
-        field1031 = unwrapped_fields1028[3]
-        pretty_terms(pp, field1031)
+        field1036 = unwrapped_fields1033[3]
+        pretty_terms(pp, field1036)
         dedent!(pp)
         write(pp, ")")
     end
@@ -1936,22 +1967,22 @@ function pretty_reduce(pp::PrettyPrinter, msg::Proto.Reduce)
 end
 
 function pretty_terms(pp::PrettyPrinter, msg::Vector{Proto.Term})
-    flat1036 = try_flat(pp, msg, pretty_terms)
-    if !isnothing(flat1036)
-        write(pp, flat1036)
+    flat1041 = try_flat(pp, msg, pretty_terms)
+    if !isnothing(flat1041)
+        write(pp, flat1041)
         return nothing
     else
-        fields1033 = msg
+        fields1038 = msg
         write(pp, "(terms")
         indent_sexp!(pp)
-        if !isempty(fields1033)
+        if !isempty(fields1038)
             newline(pp)
-            for (i1656, elem1034) in enumerate(fields1033)
-                i1035 = i1656 - 1
-                if (i1035 > 0)
+            for (i1666, elem1039) in enumerate(fields1038)
+                i1040 = i1666 - 1
+                if (i1040 > 0)
                     newline(pp)
                 end
-                pretty_term(pp, elem1034)
+                pretty_term(pp, elem1039)
             end
         end
         dedent!(pp)
@@ -1961,32 +1992,32 @@ function pretty_terms(pp::PrettyPrinter, msg::Vector{Proto.Term})
 end
 
 function pretty_term(pp::PrettyPrinter, msg::Proto.Term)
-    flat1041 = try_flat(pp, msg, pretty_term)
-    if !isnothing(flat1041)
-        write(pp, flat1041)
+    flat1046 = try_flat(pp, msg, pretty_term)
+    if !isnothing(flat1046)
+        write(pp, flat1046)
         return nothing
     else
         _dollar_dollar = msg
         if _has_proto_field(_dollar_dollar, Symbol("var"))
-            _t1657 = _get_oneof_field(_dollar_dollar, :var)
+            _t1667 = _get_oneof_field(_dollar_dollar, :var)
         else
-            _t1657 = nothing
+            _t1667 = nothing
         end
-        deconstruct_result1039 = _t1657
-        if !isnothing(deconstruct_result1039)
-            unwrapped1040 = deconstruct_result1039
-            pretty_var(pp, unwrapped1040)
+        deconstruct_result1044 = _t1667
+        if !isnothing(deconstruct_result1044)
+            unwrapped1045 = deconstruct_result1044
+            pretty_var(pp, unwrapped1045)
         else
             _dollar_dollar = msg
             if _has_proto_field(_dollar_dollar, Symbol("constant"))
-                _t1658 = _get_oneof_field(_dollar_dollar, :constant)
+                _t1668 = _get_oneof_field(_dollar_dollar, :constant)
             else
-                _t1658 = nothing
+                _t1668 = nothing
             end
-            deconstruct_result1037 = _t1658
-            if !isnothing(deconstruct_result1037)
-                unwrapped1038 = deconstruct_result1037
-                pretty_value(pp, unwrapped1038)
+            deconstruct_result1042 = _t1668
+            if !isnothing(deconstruct_result1042)
+                unwrapped1043 = deconstruct_result1042
+                pretty_value(pp, unwrapped1043)
             else
                 throw(ParseError("No matching rule for term"))
             end
@@ -1996,158 +2027,158 @@ function pretty_term(pp::PrettyPrinter, msg::Proto.Term)
 end
 
 function pretty_var(pp::PrettyPrinter, msg::Proto.Var)
-    flat1044 = try_flat(pp, msg, pretty_var)
-    if !isnothing(flat1044)
-        write(pp, flat1044)
+    flat1049 = try_flat(pp, msg, pretty_var)
+    if !isnothing(flat1049)
+        write(pp, flat1049)
         return nothing
     else
         _dollar_dollar = msg
-        fields1042 = _dollar_dollar.name
-        unwrapped_fields1043 = fields1042
-        write(pp, unwrapped_fields1043)
+        fields1047 = _dollar_dollar.name
+        unwrapped_fields1048 = fields1047
+        write(pp, unwrapped_fields1048)
     end
     return nothing
 end
 
 function pretty_value(pp::PrettyPrinter, msg::Proto.Value)
-    flat1070 = try_flat(pp, msg, pretty_value)
-    if !isnothing(flat1070)
-        write(pp, flat1070)
+    flat1075 = try_flat(pp, msg, pretty_value)
+    if !isnothing(flat1075)
+        write(pp, flat1075)
         return nothing
     else
         _dollar_dollar = msg
         if _has_proto_field(_dollar_dollar, Symbol("date_value"))
-            _t1659 = _get_oneof_field(_dollar_dollar, :date_value)
+            _t1669 = _get_oneof_field(_dollar_dollar, :date_value)
         else
-            _t1659 = nothing
+            _t1669 = nothing
         end
-        deconstruct_result1068 = _t1659
-        if !isnothing(deconstruct_result1068)
-            unwrapped1069 = deconstruct_result1068
-            pretty_date(pp, unwrapped1069)
+        deconstruct_result1073 = _t1669
+        if !isnothing(deconstruct_result1073)
+            unwrapped1074 = deconstruct_result1073
+            pretty_date(pp, unwrapped1074)
         else
             _dollar_dollar = msg
             if _has_proto_field(_dollar_dollar, Symbol("datetime_value"))
-                _t1660 = _get_oneof_field(_dollar_dollar, :datetime_value)
+                _t1670 = _get_oneof_field(_dollar_dollar, :datetime_value)
             else
-                _t1660 = nothing
+                _t1670 = nothing
             end
-            deconstruct_result1066 = _t1660
-            if !isnothing(deconstruct_result1066)
-                unwrapped1067 = deconstruct_result1066
-                pretty_datetime(pp, unwrapped1067)
+            deconstruct_result1071 = _t1670
+            if !isnothing(deconstruct_result1071)
+                unwrapped1072 = deconstruct_result1071
+                pretty_datetime(pp, unwrapped1072)
             else
                 _dollar_dollar = msg
                 if _has_proto_field(_dollar_dollar, Symbol("string_value"))
-                    _t1661 = _get_oneof_field(_dollar_dollar, :string_value)
+                    _t1671 = _get_oneof_field(_dollar_dollar, :string_value)
                 else
-                    _t1661 = nothing
+                    _t1671 = nothing
                 end
-                deconstruct_result1064 = _t1661
-                if !isnothing(deconstruct_result1064)
-                    unwrapped1065 = deconstruct_result1064
-                    write(pp, format_string(pp, unwrapped1065))
+                deconstruct_result1069 = _t1671
+                if !isnothing(deconstruct_result1069)
+                    unwrapped1070 = deconstruct_result1069
+                    write(pp, format_string(pp, unwrapped1070))
                 else
                     _dollar_dollar = msg
                     if _has_proto_field(_dollar_dollar, Symbol("int32_value"))
-                        _t1662 = _get_oneof_field(_dollar_dollar, :int32_value)
+                        _t1672 = _get_oneof_field(_dollar_dollar, :int32_value)
                     else
-                        _t1662 = nothing
+                        _t1672 = nothing
                     end
-                    deconstruct_result1062 = _t1662
-                    if !isnothing(deconstruct_result1062)
-                        unwrapped1063 = deconstruct_result1062
-                        write(pp, format_int32(pp, unwrapped1063))
+                    deconstruct_result1067 = _t1672
+                    if !isnothing(deconstruct_result1067)
+                        unwrapped1068 = deconstruct_result1067
+                        write(pp, format_int32(pp, unwrapped1068))
                     else
                         _dollar_dollar = msg
                         if _has_proto_field(_dollar_dollar, Symbol("int_value"))
-                            _t1663 = _get_oneof_field(_dollar_dollar, :int_value)
+                            _t1673 = _get_oneof_field(_dollar_dollar, :int_value)
                         else
-                            _t1663 = nothing
+                            _t1673 = nothing
                         end
-                        deconstruct_result1060 = _t1663
-                        if !isnothing(deconstruct_result1060)
-                            unwrapped1061 = deconstruct_result1060
-                            write(pp, format_int(pp, unwrapped1061))
+                        deconstruct_result1065 = _t1673
+                        if !isnothing(deconstruct_result1065)
+                            unwrapped1066 = deconstruct_result1065
+                            write(pp, format_int(pp, unwrapped1066))
                         else
                             _dollar_dollar = msg
                             if _has_proto_field(_dollar_dollar, Symbol("float32_value"))
-                                _t1664 = _get_oneof_field(_dollar_dollar, :float32_value)
+                                _t1674 = _get_oneof_field(_dollar_dollar, :float32_value)
                             else
-                                _t1664 = nothing
+                                _t1674 = nothing
                             end
-                            deconstruct_result1058 = _t1664
-                            if !isnothing(deconstruct_result1058)
-                                unwrapped1059 = deconstruct_result1058
-                                write(pp, format_float32(pp, unwrapped1059))
+                            deconstruct_result1063 = _t1674
+                            if !isnothing(deconstruct_result1063)
+                                unwrapped1064 = deconstruct_result1063
+                                write(pp, format_float32(pp, unwrapped1064))
                             else
                                 _dollar_dollar = msg
                                 if _has_proto_field(_dollar_dollar, Symbol("float_value"))
-                                    _t1665 = _get_oneof_field(_dollar_dollar, :float_value)
+                                    _t1675 = _get_oneof_field(_dollar_dollar, :float_value)
                                 else
-                                    _t1665 = nothing
+                                    _t1675 = nothing
                                 end
-                                deconstruct_result1056 = _t1665
-                                if !isnothing(deconstruct_result1056)
-                                    unwrapped1057 = deconstruct_result1056
-                                    write(pp, format_float(pp, unwrapped1057))
+                                deconstruct_result1061 = _t1675
+                                if !isnothing(deconstruct_result1061)
+                                    unwrapped1062 = deconstruct_result1061
+                                    write(pp, format_float(pp, unwrapped1062))
                                 else
                                     _dollar_dollar = msg
                                     if _has_proto_field(_dollar_dollar, Symbol("uint32_value"))
-                                        _t1666 = _get_oneof_field(_dollar_dollar, :uint32_value)
+                                        _t1676 = _get_oneof_field(_dollar_dollar, :uint32_value)
                                     else
-                                        _t1666 = nothing
+                                        _t1676 = nothing
                                     end
-                                    deconstruct_result1054 = _t1666
-                                    if !isnothing(deconstruct_result1054)
-                                        unwrapped1055 = deconstruct_result1054
-                                        write(pp, format_uint32(pp, unwrapped1055))
+                                    deconstruct_result1059 = _t1676
+                                    if !isnothing(deconstruct_result1059)
+                                        unwrapped1060 = deconstruct_result1059
+                                        write(pp, format_uint32(pp, unwrapped1060))
                                     else
                                         _dollar_dollar = msg
                                         if _has_proto_field(_dollar_dollar, Symbol("uint128_value"))
-                                            _t1667 = _get_oneof_field(_dollar_dollar, :uint128_value)
+                                            _t1677 = _get_oneof_field(_dollar_dollar, :uint128_value)
                                         else
-                                            _t1667 = nothing
+                                            _t1677 = nothing
                                         end
-                                        deconstruct_result1052 = _t1667
-                                        if !isnothing(deconstruct_result1052)
-                                            unwrapped1053 = deconstruct_result1052
-                                            write(pp, format_uint128(pp, unwrapped1053))
+                                        deconstruct_result1057 = _t1677
+                                        if !isnothing(deconstruct_result1057)
+                                            unwrapped1058 = deconstruct_result1057
+                                            write(pp, format_uint128(pp, unwrapped1058))
                                         else
                                             _dollar_dollar = msg
                                             if _has_proto_field(_dollar_dollar, Symbol("int128_value"))
-                                                _t1668 = _get_oneof_field(_dollar_dollar, :int128_value)
+                                                _t1678 = _get_oneof_field(_dollar_dollar, :int128_value)
                                             else
-                                                _t1668 = nothing
+                                                _t1678 = nothing
                                             end
-                                            deconstruct_result1050 = _t1668
-                                            if !isnothing(deconstruct_result1050)
-                                                unwrapped1051 = deconstruct_result1050
-                                                write(pp, format_int128(pp, unwrapped1051))
+                                            deconstruct_result1055 = _t1678
+                                            if !isnothing(deconstruct_result1055)
+                                                unwrapped1056 = deconstruct_result1055
+                                                write(pp, format_int128(pp, unwrapped1056))
                                             else
                                                 _dollar_dollar = msg
                                                 if _has_proto_field(_dollar_dollar, Symbol("decimal_value"))
-                                                    _t1669 = _get_oneof_field(_dollar_dollar, :decimal_value)
+                                                    _t1679 = _get_oneof_field(_dollar_dollar, :decimal_value)
                                                 else
-                                                    _t1669 = nothing
+                                                    _t1679 = nothing
                                                 end
-                                                deconstruct_result1048 = _t1669
-                                                if !isnothing(deconstruct_result1048)
-                                                    unwrapped1049 = deconstruct_result1048
-                                                    write(pp, format_decimal(pp, unwrapped1049))
+                                                deconstruct_result1053 = _t1679
+                                                if !isnothing(deconstruct_result1053)
+                                                    unwrapped1054 = deconstruct_result1053
+                                                    write(pp, format_decimal(pp, unwrapped1054))
                                                 else
                                                     _dollar_dollar = msg
                                                     if _has_proto_field(_dollar_dollar, Symbol("boolean_value"))
-                                                        _t1670 = _get_oneof_field(_dollar_dollar, :boolean_value)
+                                                        _t1680 = _get_oneof_field(_dollar_dollar, :boolean_value)
                                                     else
-                                                        _t1670 = nothing
+                                                        _t1680 = nothing
                                                     end
-                                                    deconstruct_result1046 = _t1670
-                                                    if !isnothing(deconstruct_result1046)
-                                                        unwrapped1047 = deconstruct_result1046
-                                                        pretty_boolean_value(pp, unwrapped1047)
+                                                    deconstruct_result1051 = _t1680
+                                                    if !isnothing(deconstruct_result1051)
+                                                        unwrapped1052 = deconstruct_result1051
+                                                        pretty_boolean_value(pp, unwrapped1052)
                                                     else
-                                                        fields1045 = msg
+                                                        fields1050 = msg
                                                         write(pp, "missing")
                                                     end
                                                 end
@@ -2166,25 +2197,25 @@ function pretty_value(pp::PrettyPrinter, msg::Proto.Value)
 end
 
 function pretty_date(pp::PrettyPrinter, msg::Proto.DateValue)
-    flat1076 = try_flat(pp, msg, pretty_date)
-    if !isnothing(flat1076)
-        write(pp, flat1076)
+    flat1081 = try_flat(pp, msg, pretty_date)
+    if !isnothing(flat1081)
+        write(pp, flat1081)
         return nothing
     else
         _dollar_dollar = msg
-        fields1071 = (Int64(_dollar_dollar.year), Int64(_dollar_dollar.month), Int64(_dollar_dollar.day),)
-        unwrapped_fields1072 = fields1071
+        fields1076 = (Int64(_dollar_dollar.year), Int64(_dollar_dollar.month), Int64(_dollar_dollar.day),)
+        unwrapped_fields1077 = fields1076
         write(pp, "(date")
         indent_sexp!(pp)
         newline(pp)
-        field1073 = unwrapped_fields1072[1]
-        write(pp, format_int(pp, field1073))
+        field1078 = unwrapped_fields1077[1]
+        write(pp, format_int(pp, field1078))
         newline(pp)
-        field1074 = unwrapped_fields1072[2]
-        write(pp, format_int(pp, field1074))
+        field1079 = unwrapped_fields1077[2]
+        write(pp, format_int(pp, field1079))
         newline(pp)
-        field1075 = unwrapped_fields1072[3]
-        write(pp, format_int(pp, field1075))
+        field1080 = unwrapped_fields1077[3]
+        write(pp, format_int(pp, field1080))
         dedent!(pp)
         write(pp, ")")
     end
@@ -2192,39 +2223,39 @@ function pretty_date(pp::PrettyPrinter, msg::Proto.DateValue)
 end
 
 function pretty_datetime(pp::PrettyPrinter, msg::Proto.DateTimeValue)
-    flat1087 = try_flat(pp, msg, pretty_datetime)
-    if !isnothing(flat1087)
-        write(pp, flat1087)
+    flat1092 = try_flat(pp, msg, pretty_datetime)
+    if !isnothing(flat1092)
+        write(pp, flat1092)
         return nothing
     else
         _dollar_dollar = msg
-        fields1077 = (Int64(_dollar_dollar.year), Int64(_dollar_dollar.month), Int64(_dollar_dollar.day), Int64(_dollar_dollar.hour), Int64(_dollar_dollar.minute), Int64(_dollar_dollar.second), Int64(_dollar_dollar.microsecond),)
-        unwrapped_fields1078 = fields1077
+        fields1082 = (Int64(_dollar_dollar.year), Int64(_dollar_dollar.month), Int64(_dollar_dollar.day), Int64(_dollar_dollar.hour), Int64(_dollar_dollar.minute), Int64(_dollar_dollar.second), Int64(_dollar_dollar.microsecond),)
+        unwrapped_fields1083 = fields1082
         write(pp, "(datetime")
         indent_sexp!(pp)
         newline(pp)
-        field1079 = unwrapped_fields1078[1]
-        write(pp, format_int(pp, field1079))
-        newline(pp)
-        field1080 = unwrapped_fields1078[2]
-        write(pp, format_int(pp, field1080))
-        newline(pp)
-        field1081 = unwrapped_fields1078[3]
-        write(pp, format_int(pp, field1081))
-        newline(pp)
-        field1082 = unwrapped_fields1078[4]
-        write(pp, format_int(pp, field1082))
-        newline(pp)
-        field1083 = unwrapped_fields1078[5]
-        write(pp, format_int(pp, field1083))
-        newline(pp)
-        field1084 = unwrapped_fields1078[6]
+        field1084 = unwrapped_fields1083[1]
         write(pp, format_int(pp, field1084))
-        field1085 = unwrapped_fields1078[7]
-        if !isnothing(field1085)
+        newline(pp)
+        field1085 = unwrapped_fields1083[2]
+        write(pp, format_int(pp, field1085))
+        newline(pp)
+        field1086 = unwrapped_fields1083[3]
+        write(pp, format_int(pp, field1086))
+        newline(pp)
+        field1087 = unwrapped_fields1083[4]
+        write(pp, format_int(pp, field1087))
+        newline(pp)
+        field1088 = unwrapped_fields1083[5]
+        write(pp, format_int(pp, field1088))
+        newline(pp)
+        field1089 = unwrapped_fields1083[6]
+        write(pp, format_int(pp, field1089))
+        field1090 = unwrapped_fields1083[7]
+        if !isnothing(field1090)
             newline(pp)
-            opt_val1086 = field1085
-            write(pp, format_int(pp, opt_val1086))
+            opt_val1091 = field1090
+            write(pp, format_int(pp, opt_val1091))
         end
         dedent!(pp)
         write(pp, ")")
@@ -2233,34 +2264,7 @@ function pretty_datetime(pp::PrettyPrinter, msg::Proto.DateTimeValue)
 end
 
 function pretty_conjunction(pp::PrettyPrinter, msg::Proto.Conjunction)
-    flat1092 = try_flat(pp, msg, pretty_conjunction)
-    if !isnothing(flat1092)
-        write(pp, flat1092)
-        return nothing
-    else
-        _dollar_dollar = msg
-        fields1088 = _dollar_dollar.args
-        unwrapped_fields1089 = fields1088
-        write(pp, "(and")
-        indent_sexp!(pp)
-        if !isempty(unwrapped_fields1089)
-            newline(pp)
-            for (i1671, elem1090) in enumerate(unwrapped_fields1089)
-                i1091 = i1671 - 1
-                if (i1091 > 0)
-                    newline(pp)
-                end
-                pretty_formula(pp, elem1090)
-            end
-        end
-        dedent!(pp)
-        write(pp, ")")
-    end
-    return nothing
-end
-
-function pretty_disjunction(pp::PrettyPrinter, msg::Proto.Disjunction)
-    flat1097 = try_flat(pp, msg, pretty_disjunction)
+    flat1097 = try_flat(pp, msg, pretty_conjunction)
     if !isnothing(flat1097)
         write(pp, flat1097)
         return nothing
@@ -2268,12 +2272,12 @@ function pretty_disjunction(pp::PrettyPrinter, msg::Proto.Disjunction)
         _dollar_dollar = msg
         fields1093 = _dollar_dollar.args
         unwrapped_fields1094 = fields1093
-        write(pp, "(or")
+        write(pp, "(and")
         indent_sexp!(pp)
         if !isempty(unwrapped_fields1094)
             newline(pp)
-            for (i1672, elem1095) in enumerate(unwrapped_fields1094)
-                i1096 = i1672 - 1
+            for (i1681, elem1095) in enumerate(unwrapped_fields1094)
+                i1096 = i1681 - 1
                 if (i1096 > 0)
                     newline(pp)
                 end
@@ -2286,19 +2290,46 @@ function pretty_disjunction(pp::PrettyPrinter, msg::Proto.Disjunction)
     return nothing
 end
 
-function pretty_not(pp::PrettyPrinter, msg::Proto.Not)
-    flat1100 = try_flat(pp, msg, pretty_not)
-    if !isnothing(flat1100)
-        write(pp, flat1100)
+function pretty_disjunction(pp::PrettyPrinter, msg::Proto.Disjunction)
+    flat1102 = try_flat(pp, msg, pretty_disjunction)
+    if !isnothing(flat1102)
+        write(pp, flat1102)
         return nothing
     else
         _dollar_dollar = msg
-        fields1098 = _dollar_dollar.arg
+        fields1098 = _dollar_dollar.args
         unwrapped_fields1099 = fields1098
+        write(pp, "(or")
+        indent_sexp!(pp)
+        if !isempty(unwrapped_fields1099)
+            newline(pp)
+            for (i1682, elem1100) in enumerate(unwrapped_fields1099)
+                i1101 = i1682 - 1
+                if (i1101 > 0)
+                    newline(pp)
+                end
+                pretty_formula(pp, elem1100)
+            end
+        end
+        dedent!(pp)
+        write(pp, ")")
+    end
+    return nothing
+end
+
+function pretty_not(pp::PrettyPrinter, msg::Proto.Not)
+    flat1105 = try_flat(pp, msg, pretty_not)
+    if !isnothing(flat1105)
+        write(pp, flat1105)
+        return nothing
+    else
+        _dollar_dollar = msg
+        fields1103 = _dollar_dollar.arg
+        unwrapped_fields1104 = fields1103
         write(pp, "(not")
         indent_sexp!(pp)
         newline(pp)
-        pretty_formula(pp, unwrapped_fields1099)
+        pretty_formula(pp, unwrapped_fields1104)
         dedent!(pp)
         write(pp, ")")
     end
@@ -2306,25 +2337,25 @@ function pretty_not(pp::PrettyPrinter, msg::Proto.Not)
 end
 
 function pretty_ffi(pp::PrettyPrinter, msg::Proto.FFI)
-    flat1106 = try_flat(pp, msg, pretty_ffi)
-    if !isnothing(flat1106)
-        write(pp, flat1106)
+    flat1111 = try_flat(pp, msg, pretty_ffi)
+    if !isnothing(flat1111)
+        write(pp, flat1111)
         return nothing
     else
         _dollar_dollar = msg
-        fields1101 = (_dollar_dollar.name, _dollar_dollar.args, _dollar_dollar.terms,)
-        unwrapped_fields1102 = fields1101
+        fields1106 = (_dollar_dollar.name, _dollar_dollar.args, _dollar_dollar.terms,)
+        unwrapped_fields1107 = fields1106
         write(pp, "(ffi")
         indent_sexp!(pp)
         newline(pp)
-        field1103 = unwrapped_fields1102[1]
-        pretty_name(pp, field1103)
+        field1108 = unwrapped_fields1107[1]
+        pretty_name(pp, field1108)
         newline(pp)
-        field1104 = unwrapped_fields1102[2]
-        pretty_ffi_args(pp, field1104)
+        field1109 = unwrapped_fields1107[2]
+        pretty_ffi_args(pp, field1109)
         newline(pp)
-        field1105 = unwrapped_fields1102[3]
-        pretty_terms(pp, field1105)
+        field1110 = unwrapped_fields1107[3]
+        pretty_terms(pp, field1110)
         dedent!(pp)
         write(pp, ")")
     end
@@ -2332,35 +2363,35 @@ function pretty_ffi(pp::PrettyPrinter, msg::Proto.FFI)
 end
 
 function pretty_name(pp::PrettyPrinter, msg::String)
-    flat1108 = try_flat(pp, msg, pretty_name)
-    if !isnothing(flat1108)
-        write(pp, flat1108)
+    flat1113 = try_flat(pp, msg, pretty_name)
+    if !isnothing(flat1113)
+        write(pp, flat1113)
         return nothing
     else
-        fields1107 = msg
+        fields1112 = msg
         write(pp, ":")
-        write(pp, fields1107)
+        write(pp, fields1112)
     end
     return nothing
 end
 
 function pretty_ffi_args(pp::PrettyPrinter, msg::Vector{Proto.Abstraction})
-    flat1112 = try_flat(pp, msg, pretty_ffi_args)
-    if !isnothing(flat1112)
-        write(pp, flat1112)
+    flat1117 = try_flat(pp, msg, pretty_ffi_args)
+    if !isnothing(flat1117)
+        write(pp, flat1117)
         return nothing
     else
-        fields1109 = msg
+        fields1114 = msg
         write(pp, "(args")
         indent_sexp!(pp)
-        if !isempty(fields1109)
+        if !isempty(fields1114)
             newline(pp)
-            for (i1673, elem1110) in enumerate(fields1109)
-                i1111 = i1673 - 1
-                if (i1111 > 0)
+            for (i1683, elem1115) in enumerate(fields1114)
+                i1116 = i1683 - 1
+                if (i1116 > 0)
                     newline(pp)
                 end
-                pretty_abstraction(pp, elem1110)
+                pretty_abstraction(pp, elem1115)
             end
         end
         dedent!(pp)
@@ -2370,28 +2401,28 @@ function pretty_ffi_args(pp::PrettyPrinter, msg::Vector{Proto.Abstraction})
 end
 
 function pretty_atom(pp::PrettyPrinter, msg::Proto.Atom)
-    flat1119 = try_flat(pp, msg, pretty_atom)
-    if !isnothing(flat1119)
-        write(pp, flat1119)
+    flat1124 = try_flat(pp, msg, pretty_atom)
+    if !isnothing(flat1124)
+        write(pp, flat1124)
         return nothing
     else
         _dollar_dollar = msg
-        fields1113 = (_dollar_dollar.name, _dollar_dollar.terms,)
-        unwrapped_fields1114 = fields1113
+        fields1118 = (_dollar_dollar.name, _dollar_dollar.terms,)
+        unwrapped_fields1119 = fields1118
         write(pp, "(atom")
         indent_sexp!(pp)
         newline(pp)
-        field1115 = unwrapped_fields1114[1]
-        pretty_relation_id(pp, field1115)
-        field1116 = unwrapped_fields1114[2]
-        if !isempty(field1116)
+        field1120 = unwrapped_fields1119[1]
+        pretty_relation_id(pp, field1120)
+        field1121 = unwrapped_fields1119[2]
+        if !isempty(field1121)
             newline(pp)
-            for (i1674, elem1117) in enumerate(field1116)
-                i1118 = i1674 - 1
-                if (i1118 > 0)
+            for (i1684, elem1122) in enumerate(field1121)
+                i1123 = i1684 - 1
+                if (i1123 > 0)
                     newline(pp)
                 end
-                pretty_term(pp, elem1117)
+                pretty_term(pp, elem1122)
             end
         end
         dedent!(pp)
@@ -2401,28 +2432,28 @@ function pretty_atom(pp::PrettyPrinter, msg::Proto.Atom)
 end
 
 function pretty_pragma(pp::PrettyPrinter, msg::Proto.Pragma)
-    flat1126 = try_flat(pp, msg, pretty_pragma)
-    if !isnothing(flat1126)
-        write(pp, flat1126)
+    flat1131 = try_flat(pp, msg, pretty_pragma)
+    if !isnothing(flat1131)
+        write(pp, flat1131)
         return nothing
     else
         _dollar_dollar = msg
-        fields1120 = (_dollar_dollar.name, _dollar_dollar.terms,)
-        unwrapped_fields1121 = fields1120
+        fields1125 = (_dollar_dollar.name, _dollar_dollar.terms,)
+        unwrapped_fields1126 = fields1125
         write(pp, "(pragma")
         indent_sexp!(pp)
         newline(pp)
-        field1122 = unwrapped_fields1121[1]
-        pretty_name(pp, field1122)
-        field1123 = unwrapped_fields1121[2]
-        if !isempty(field1123)
+        field1127 = unwrapped_fields1126[1]
+        pretty_name(pp, field1127)
+        field1128 = unwrapped_fields1126[2]
+        if !isempty(field1128)
             newline(pp)
-            for (i1675, elem1124) in enumerate(field1123)
-                i1125 = i1675 - 1
-                if (i1125 > 0)
+            for (i1685, elem1129) in enumerate(field1128)
+                i1130 = i1685 - 1
+                if (i1130 > 0)
                     newline(pp)
                 end
-                pretty_term(pp, elem1124)
+                pretty_term(pp, elem1129)
             end
         end
         dedent!(pp)
@@ -2432,118 +2463,118 @@ function pretty_pragma(pp::PrettyPrinter, msg::Proto.Pragma)
 end
 
 function pretty_primitive(pp::PrettyPrinter, msg::Proto.Primitive)
-    flat1142 = try_flat(pp, msg, pretty_primitive)
-    if !isnothing(flat1142)
-        write(pp, flat1142)
+    flat1147 = try_flat(pp, msg, pretty_primitive)
+    if !isnothing(flat1147)
+        write(pp, flat1147)
         return nothing
     else
         _dollar_dollar = msg
         if _dollar_dollar.name == "rel_primitive_eq"
-            _t1676 = (_get_oneof_field(_dollar_dollar.terms[1], :term), _get_oneof_field(_dollar_dollar.terms[2], :term),)
+            _t1686 = (_get_oneof_field(_dollar_dollar.terms[1], :term), _get_oneof_field(_dollar_dollar.terms[2], :term),)
         else
-            _t1676 = nothing
+            _t1686 = nothing
         end
-        guard_result1141 = _t1676
-        if !isnothing(guard_result1141)
+        guard_result1146 = _t1686
+        if !isnothing(guard_result1146)
             pretty_eq(pp, msg)
         else
             _dollar_dollar = msg
             if _dollar_dollar.name == "rel_primitive_lt_monotype"
-                _t1677 = (_get_oneof_field(_dollar_dollar.terms[1], :term), _get_oneof_field(_dollar_dollar.terms[2], :term),)
+                _t1687 = (_get_oneof_field(_dollar_dollar.terms[1], :term), _get_oneof_field(_dollar_dollar.terms[2], :term),)
             else
-                _t1677 = nothing
+                _t1687 = nothing
             end
-            guard_result1140 = _t1677
-            if !isnothing(guard_result1140)
+            guard_result1145 = _t1687
+            if !isnothing(guard_result1145)
                 pretty_lt(pp, msg)
             else
                 _dollar_dollar = msg
                 if _dollar_dollar.name == "rel_primitive_lt_eq_monotype"
-                    _t1678 = (_get_oneof_field(_dollar_dollar.terms[1], :term), _get_oneof_field(_dollar_dollar.terms[2], :term),)
+                    _t1688 = (_get_oneof_field(_dollar_dollar.terms[1], :term), _get_oneof_field(_dollar_dollar.terms[2], :term),)
                 else
-                    _t1678 = nothing
+                    _t1688 = nothing
                 end
-                guard_result1139 = _t1678
-                if !isnothing(guard_result1139)
+                guard_result1144 = _t1688
+                if !isnothing(guard_result1144)
                     pretty_lt_eq(pp, msg)
                 else
                     _dollar_dollar = msg
                     if _dollar_dollar.name == "rel_primitive_gt_monotype"
-                        _t1679 = (_get_oneof_field(_dollar_dollar.terms[1], :term), _get_oneof_field(_dollar_dollar.terms[2], :term),)
+                        _t1689 = (_get_oneof_field(_dollar_dollar.terms[1], :term), _get_oneof_field(_dollar_dollar.terms[2], :term),)
                     else
-                        _t1679 = nothing
+                        _t1689 = nothing
                     end
-                    guard_result1138 = _t1679
-                    if !isnothing(guard_result1138)
+                    guard_result1143 = _t1689
+                    if !isnothing(guard_result1143)
                         pretty_gt(pp, msg)
                     else
                         _dollar_dollar = msg
                         if _dollar_dollar.name == "rel_primitive_gt_eq_monotype"
-                            _t1680 = (_get_oneof_field(_dollar_dollar.terms[1], :term), _get_oneof_field(_dollar_dollar.terms[2], :term),)
+                            _t1690 = (_get_oneof_field(_dollar_dollar.terms[1], :term), _get_oneof_field(_dollar_dollar.terms[2], :term),)
                         else
-                            _t1680 = nothing
+                            _t1690 = nothing
                         end
-                        guard_result1137 = _t1680
-                        if !isnothing(guard_result1137)
+                        guard_result1142 = _t1690
+                        if !isnothing(guard_result1142)
                             pretty_gt_eq(pp, msg)
                         else
                             _dollar_dollar = msg
                             if _dollar_dollar.name == "rel_primitive_add_monotype"
-                                _t1681 = (_get_oneof_field(_dollar_dollar.terms[1], :term), _get_oneof_field(_dollar_dollar.terms[2], :term), _get_oneof_field(_dollar_dollar.terms[3], :term),)
+                                _t1691 = (_get_oneof_field(_dollar_dollar.terms[1], :term), _get_oneof_field(_dollar_dollar.terms[2], :term), _get_oneof_field(_dollar_dollar.terms[3], :term),)
                             else
-                                _t1681 = nothing
+                                _t1691 = nothing
                             end
-                            guard_result1136 = _t1681
-                            if !isnothing(guard_result1136)
+                            guard_result1141 = _t1691
+                            if !isnothing(guard_result1141)
                                 pretty_add(pp, msg)
                             else
                                 _dollar_dollar = msg
                                 if _dollar_dollar.name == "rel_primitive_subtract_monotype"
-                                    _t1682 = (_get_oneof_field(_dollar_dollar.terms[1], :term), _get_oneof_field(_dollar_dollar.terms[2], :term), _get_oneof_field(_dollar_dollar.terms[3], :term),)
+                                    _t1692 = (_get_oneof_field(_dollar_dollar.terms[1], :term), _get_oneof_field(_dollar_dollar.terms[2], :term), _get_oneof_field(_dollar_dollar.terms[3], :term),)
                                 else
-                                    _t1682 = nothing
+                                    _t1692 = nothing
                                 end
-                                guard_result1135 = _t1682
-                                if !isnothing(guard_result1135)
+                                guard_result1140 = _t1692
+                                if !isnothing(guard_result1140)
                                     pretty_minus(pp, msg)
                                 else
                                     _dollar_dollar = msg
                                     if _dollar_dollar.name == "rel_primitive_multiply_monotype"
-                                        _t1683 = (_get_oneof_field(_dollar_dollar.terms[1], :term), _get_oneof_field(_dollar_dollar.terms[2], :term), _get_oneof_field(_dollar_dollar.terms[3], :term),)
+                                        _t1693 = (_get_oneof_field(_dollar_dollar.terms[1], :term), _get_oneof_field(_dollar_dollar.terms[2], :term), _get_oneof_field(_dollar_dollar.terms[3], :term),)
                                     else
-                                        _t1683 = nothing
+                                        _t1693 = nothing
                                     end
-                                    guard_result1134 = _t1683
-                                    if !isnothing(guard_result1134)
+                                    guard_result1139 = _t1693
+                                    if !isnothing(guard_result1139)
                                         pretty_multiply(pp, msg)
                                     else
                                         _dollar_dollar = msg
                                         if _dollar_dollar.name == "rel_primitive_divide_monotype"
-                                            _t1684 = (_get_oneof_field(_dollar_dollar.terms[1], :term), _get_oneof_field(_dollar_dollar.terms[2], :term), _get_oneof_field(_dollar_dollar.terms[3], :term),)
+                                            _t1694 = (_get_oneof_field(_dollar_dollar.terms[1], :term), _get_oneof_field(_dollar_dollar.terms[2], :term), _get_oneof_field(_dollar_dollar.terms[3], :term),)
                                         else
-                                            _t1684 = nothing
+                                            _t1694 = nothing
                                         end
-                                        guard_result1133 = _t1684
-                                        if !isnothing(guard_result1133)
+                                        guard_result1138 = _t1694
+                                        if !isnothing(guard_result1138)
                                             pretty_divide(pp, msg)
                                         else
                                             _dollar_dollar = msg
-                                            fields1127 = (_dollar_dollar.name, _dollar_dollar.terms,)
-                                            unwrapped_fields1128 = fields1127
+                                            fields1132 = (_dollar_dollar.name, _dollar_dollar.terms,)
+                                            unwrapped_fields1133 = fields1132
                                             write(pp, "(primitive")
                                             indent_sexp!(pp)
                                             newline(pp)
-                                            field1129 = unwrapped_fields1128[1]
-                                            pretty_name(pp, field1129)
-                                            field1130 = unwrapped_fields1128[2]
-                                            if !isempty(field1130)
+                                            field1134 = unwrapped_fields1133[1]
+                                            pretty_name(pp, field1134)
+                                            field1135 = unwrapped_fields1133[2]
+                                            if !isempty(field1135)
                                                 newline(pp)
-                                                for (i1685, elem1131) in enumerate(field1130)
-                                                    i1132 = i1685 - 1
-                                                    if (i1132 > 0)
+                                                for (i1695, elem1136) in enumerate(field1135)
+                                                    i1137 = i1695 - 1
+                                                    if (i1137 > 0)
                                                         newline(pp)
                                                     end
-                                                    pretty_rel_term(pp, elem1131)
+                                                    pretty_rel_term(pp, elem1136)
                                                 end
                                             end
                                             dedent!(pp)
@@ -2562,48 +2593,20 @@ function pretty_primitive(pp::PrettyPrinter, msg::Proto.Primitive)
 end
 
 function pretty_eq(pp::PrettyPrinter, msg::Proto.Primitive)
-    flat1147 = try_flat(pp, msg, pretty_eq)
-    if !isnothing(flat1147)
-        write(pp, flat1147)
-        return nothing
-    else
-        _dollar_dollar = msg
-        if _dollar_dollar.name == "rel_primitive_eq"
-            _t1686 = (_get_oneof_field(_dollar_dollar.terms[1], :term), _get_oneof_field(_dollar_dollar.terms[2], :term),)
-        else
-            _t1686 = nothing
-        end
-        fields1143 = _t1686
-        unwrapped_fields1144 = fields1143
-        write(pp, "(=")
-        indent_sexp!(pp)
-        newline(pp)
-        field1145 = unwrapped_fields1144[1]
-        pretty_term(pp, field1145)
-        newline(pp)
-        field1146 = unwrapped_fields1144[2]
-        pretty_term(pp, field1146)
-        dedent!(pp)
-        write(pp, ")")
-    end
-    return nothing
-end
-
-function pretty_lt(pp::PrettyPrinter, msg::Proto.Primitive)
-    flat1152 = try_flat(pp, msg, pretty_lt)
+    flat1152 = try_flat(pp, msg, pretty_eq)
     if !isnothing(flat1152)
         write(pp, flat1152)
         return nothing
     else
         _dollar_dollar = msg
-        if _dollar_dollar.name == "rel_primitive_lt_monotype"
-            _t1687 = (_get_oneof_field(_dollar_dollar.terms[1], :term), _get_oneof_field(_dollar_dollar.terms[2], :term),)
+        if _dollar_dollar.name == "rel_primitive_eq"
+            _t1696 = (_get_oneof_field(_dollar_dollar.terms[1], :term), _get_oneof_field(_dollar_dollar.terms[2], :term),)
         else
-            _t1687 = nothing
+            _t1696 = nothing
         end
-        fields1148 = _t1687
+        fields1148 = _t1696
         unwrapped_fields1149 = fields1148
-        write(pp, "(<")
+        write(pp, "(=")
         indent_sexp!(pp)
         newline(pp)
         field1150 = unwrapped_fields1149[1]
@@ -2617,21 +2620,21 @@ function pretty_lt(pp::PrettyPrinter, msg::Proto.Primitive)
     return nothing
 end
 
-function pretty_lt_eq(pp::PrettyPrinter, msg::Proto.Primitive)
-    flat1157 = try_flat(pp, msg, pretty_lt_eq)
+function pretty_lt(pp::PrettyPrinter, msg::Proto.Primitive)
+    flat1157 = try_flat(pp, msg, pretty_lt)
     if !isnothing(flat1157)
         write(pp, flat1157)
         return nothing
     else
         _dollar_dollar = msg
-        if _dollar_dollar.name == "rel_primitive_lt_eq_monotype"
-            _t1688 = (_get_oneof_field(_dollar_dollar.terms[1], :term), _get_oneof_field(_dollar_dollar.terms[2], :term),)
+        if _dollar_dollar.name == "rel_primitive_lt_monotype"
+            _t1697 = (_get_oneof_field(_dollar_dollar.terms[1], :term), _get_oneof_field(_dollar_dollar.terms[2], :term),)
         else
-            _t1688 = nothing
+            _t1697 = nothing
         end
-        fields1153 = _t1688
+        fields1153 = _t1697
         unwrapped_fields1154 = fields1153
-        write(pp, "(<=")
+        write(pp, "(<")
         indent_sexp!(pp)
         newline(pp)
         field1155 = unwrapped_fields1154[1]
@@ -2645,21 +2648,21 @@ function pretty_lt_eq(pp::PrettyPrinter, msg::Proto.Primitive)
     return nothing
 end
 
-function pretty_gt(pp::PrettyPrinter, msg::Proto.Primitive)
-    flat1162 = try_flat(pp, msg, pretty_gt)
+function pretty_lt_eq(pp::PrettyPrinter, msg::Proto.Primitive)
+    flat1162 = try_flat(pp, msg, pretty_lt_eq)
     if !isnothing(flat1162)
         write(pp, flat1162)
         return nothing
     else
         _dollar_dollar = msg
-        if _dollar_dollar.name == "rel_primitive_gt_monotype"
-            _t1689 = (_get_oneof_field(_dollar_dollar.terms[1], :term), _get_oneof_field(_dollar_dollar.terms[2], :term),)
+        if _dollar_dollar.name == "rel_primitive_lt_eq_monotype"
+            _t1698 = (_get_oneof_field(_dollar_dollar.terms[1], :term), _get_oneof_field(_dollar_dollar.terms[2], :term),)
         else
-            _t1689 = nothing
+            _t1698 = nothing
         end
-        fields1158 = _t1689
+        fields1158 = _t1698
         unwrapped_fields1159 = fields1158
-        write(pp, "(>")
+        write(pp, "(<=")
         indent_sexp!(pp)
         newline(pp)
         field1160 = unwrapped_fields1159[1]
@@ -2673,21 +2676,21 @@ function pretty_gt(pp::PrettyPrinter, msg::Proto.Primitive)
     return nothing
 end
 
-function pretty_gt_eq(pp::PrettyPrinter, msg::Proto.Primitive)
-    flat1167 = try_flat(pp, msg, pretty_gt_eq)
+function pretty_gt(pp::PrettyPrinter, msg::Proto.Primitive)
+    flat1167 = try_flat(pp, msg, pretty_gt)
     if !isnothing(flat1167)
         write(pp, flat1167)
         return nothing
     else
         _dollar_dollar = msg
-        if _dollar_dollar.name == "rel_primitive_gt_eq_monotype"
-            _t1690 = (_get_oneof_field(_dollar_dollar.terms[1], :term), _get_oneof_field(_dollar_dollar.terms[2], :term),)
+        if _dollar_dollar.name == "rel_primitive_gt_monotype"
+            _t1699 = (_get_oneof_field(_dollar_dollar.terms[1], :term), _get_oneof_field(_dollar_dollar.terms[2], :term),)
         else
-            _t1690 = nothing
+            _t1699 = nothing
         end
-        fields1163 = _t1690
+        fields1163 = _t1699
         unwrapped_fields1164 = fields1163
-        write(pp, "(>=")
+        write(pp, "(>")
         indent_sexp!(pp)
         newline(pp)
         field1165 = unwrapped_fields1164[1]
@@ -2701,21 +2704,21 @@ function pretty_gt_eq(pp::PrettyPrinter, msg::Proto.Primitive)
     return nothing
 end
 
-function pretty_add(pp::PrettyPrinter, msg::Proto.Primitive)
-    flat1173 = try_flat(pp, msg, pretty_add)
-    if !isnothing(flat1173)
-        write(pp, flat1173)
+function pretty_gt_eq(pp::PrettyPrinter, msg::Proto.Primitive)
+    flat1172 = try_flat(pp, msg, pretty_gt_eq)
+    if !isnothing(flat1172)
+        write(pp, flat1172)
         return nothing
     else
         _dollar_dollar = msg
-        if _dollar_dollar.name == "rel_primitive_add_monotype"
-            _t1691 = (_get_oneof_field(_dollar_dollar.terms[1], :term), _get_oneof_field(_dollar_dollar.terms[2], :term), _get_oneof_field(_dollar_dollar.terms[3], :term),)
+        if _dollar_dollar.name == "rel_primitive_gt_eq_monotype"
+            _t1700 = (_get_oneof_field(_dollar_dollar.terms[1], :term), _get_oneof_field(_dollar_dollar.terms[2], :term),)
         else
-            _t1691 = nothing
+            _t1700 = nothing
         end
-        fields1168 = _t1691
+        fields1168 = _t1700
         unwrapped_fields1169 = fields1168
-        write(pp, "(+")
+        write(pp, "(>=")
         indent_sexp!(pp)
         newline(pp)
         field1170 = unwrapped_fields1169[1]
@@ -2723,9 +2726,37 @@ function pretty_add(pp::PrettyPrinter, msg::Proto.Primitive)
         newline(pp)
         field1171 = unwrapped_fields1169[2]
         pretty_term(pp, field1171)
+        dedent!(pp)
+        write(pp, ")")
+    end
+    return nothing
+end
+
+function pretty_add(pp::PrettyPrinter, msg::Proto.Primitive)
+    flat1178 = try_flat(pp, msg, pretty_add)
+    if !isnothing(flat1178)
+        write(pp, flat1178)
+        return nothing
+    else
+        _dollar_dollar = msg
+        if _dollar_dollar.name == "rel_primitive_add_monotype"
+            _t1701 = (_get_oneof_field(_dollar_dollar.terms[1], :term), _get_oneof_field(_dollar_dollar.terms[2], :term), _get_oneof_field(_dollar_dollar.terms[3], :term),)
+        else
+            _t1701 = nothing
+        end
+        fields1173 = _t1701
+        unwrapped_fields1174 = fields1173
+        write(pp, "(+")
+        indent_sexp!(pp)
         newline(pp)
-        field1172 = unwrapped_fields1169[3]
-        pretty_term(pp, field1172)
+        field1175 = unwrapped_fields1174[1]
+        pretty_term(pp, field1175)
+        newline(pp)
+        field1176 = unwrapped_fields1174[2]
+        pretty_term(pp, field1176)
+        newline(pp)
+        field1177 = unwrapped_fields1174[3]
+        pretty_term(pp, field1177)
         dedent!(pp)
         write(pp, ")")
     end
@@ -2733,30 +2764,30 @@ function pretty_add(pp::PrettyPrinter, msg::Proto.Primitive)
 end
 
 function pretty_minus(pp::PrettyPrinter, msg::Proto.Primitive)
-    flat1179 = try_flat(pp, msg, pretty_minus)
-    if !isnothing(flat1179)
-        write(pp, flat1179)
+    flat1184 = try_flat(pp, msg, pretty_minus)
+    if !isnothing(flat1184)
+        write(pp, flat1184)
         return nothing
     else
         _dollar_dollar = msg
         if _dollar_dollar.name == "rel_primitive_subtract_monotype"
-            _t1692 = (_get_oneof_field(_dollar_dollar.terms[1], :term), _get_oneof_field(_dollar_dollar.terms[2], :term), _get_oneof_field(_dollar_dollar.terms[3], :term),)
+            _t1702 = (_get_oneof_field(_dollar_dollar.terms[1], :term), _get_oneof_field(_dollar_dollar.terms[2], :term), _get_oneof_field(_dollar_dollar.terms[3], :term),)
         else
-            _t1692 = nothing
+            _t1702 = nothing
         end
-        fields1174 = _t1692
-        unwrapped_fields1175 = fields1174
+        fields1179 = _t1702
+        unwrapped_fields1180 = fields1179
         write(pp, "(-")
         indent_sexp!(pp)
         newline(pp)
-        field1176 = unwrapped_fields1175[1]
-        pretty_term(pp, field1176)
+        field1181 = unwrapped_fields1180[1]
+        pretty_term(pp, field1181)
         newline(pp)
-        field1177 = unwrapped_fields1175[2]
-        pretty_term(pp, field1177)
+        field1182 = unwrapped_fields1180[2]
+        pretty_term(pp, field1182)
         newline(pp)
-        field1178 = unwrapped_fields1175[3]
-        pretty_term(pp, field1178)
+        field1183 = unwrapped_fields1180[3]
+        pretty_term(pp, field1183)
         dedent!(pp)
         write(pp, ")")
     end
@@ -2764,30 +2795,30 @@ function pretty_minus(pp::PrettyPrinter, msg::Proto.Primitive)
 end
 
 function pretty_multiply(pp::PrettyPrinter, msg::Proto.Primitive)
-    flat1185 = try_flat(pp, msg, pretty_multiply)
-    if !isnothing(flat1185)
-        write(pp, flat1185)
+    flat1190 = try_flat(pp, msg, pretty_multiply)
+    if !isnothing(flat1190)
+        write(pp, flat1190)
         return nothing
     else
         _dollar_dollar = msg
         if _dollar_dollar.name == "rel_primitive_multiply_monotype"
-            _t1693 = (_get_oneof_field(_dollar_dollar.terms[1], :term), _get_oneof_field(_dollar_dollar.terms[2], :term), _get_oneof_field(_dollar_dollar.terms[3], :term),)
+            _t1703 = (_get_oneof_field(_dollar_dollar.terms[1], :term), _get_oneof_field(_dollar_dollar.terms[2], :term), _get_oneof_field(_dollar_dollar.terms[3], :term),)
         else
-            _t1693 = nothing
+            _t1703 = nothing
         end
-        fields1180 = _t1693
-        unwrapped_fields1181 = fields1180
+        fields1185 = _t1703
+        unwrapped_fields1186 = fields1185
         write(pp, "(*")
         indent_sexp!(pp)
         newline(pp)
-        field1182 = unwrapped_fields1181[1]
-        pretty_term(pp, field1182)
+        field1187 = unwrapped_fields1186[1]
+        pretty_term(pp, field1187)
         newline(pp)
-        field1183 = unwrapped_fields1181[2]
-        pretty_term(pp, field1183)
+        field1188 = unwrapped_fields1186[2]
+        pretty_term(pp, field1188)
         newline(pp)
-        field1184 = unwrapped_fields1181[3]
-        pretty_term(pp, field1184)
+        field1189 = unwrapped_fields1186[3]
+        pretty_term(pp, field1189)
         dedent!(pp)
         write(pp, ")")
     end
@@ -2795,30 +2826,30 @@ function pretty_multiply(pp::PrettyPrinter, msg::Proto.Primitive)
 end
 
 function pretty_divide(pp::PrettyPrinter, msg::Proto.Primitive)
-    flat1191 = try_flat(pp, msg, pretty_divide)
-    if !isnothing(flat1191)
-        write(pp, flat1191)
+    flat1196 = try_flat(pp, msg, pretty_divide)
+    if !isnothing(flat1196)
+        write(pp, flat1196)
         return nothing
     else
         _dollar_dollar = msg
         if _dollar_dollar.name == "rel_primitive_divide_monotype"
-            _t1694 = (_get_oneof_field(_dollar_dollar.terms[1], :term), _get_oneof_field(_dollar_dollar.terms[2], :term), _get_oneof_field(_dollar_dollar.terms[3], :term),)
+            _t1704 = (_get_oneof_field(_dollar_dollar.terms[1], :term), _get_oneof_field(_dollar_dollar.terms[2], :term), _get_oneof_field(_dollar_dollar.terms[3], :term),)
         else
-            _t1694 = nothing
+            _t1704 = nothing
         end
-        fields1186 = _t1694
-        unwrapped_fields1187 = fields1186
+        fields1191 = _t1704
+        unwrapped_fields1192 = fields1191
         write(pp, "(/")
         indent_sexp!(pp)
         newline(pp)
-        field1188 = unwrapped_fields1187[1]
-        pretty_term(pp, field1188)
+        field1193 = unwrapped_fields1192[1]
+        pretty_term(pp, field1193)
         newline(pp)
-        field1189 = unwrapped_fields1187[2]
-        pretty_term(pp, field1189)
+        field1194 = unwrapped_fields1192[2]
+        pretty_term(pp, field1194)
         newline(pp)
-        field1190 = unwrapped_fields1187[3]
-        pretty_term(pp, field1190)
+        field1195 = unwrapped_fields1192[3]
+        pretty_term(pp, field1195)
         dedent!(pp)
         write(pp, ")")
     end
@@ -2826,32 +2857,32 @@ function pretty_divide(pp::PrettyPrinter, msg::Proto.Primitive)
 end
 
 function pretty_rel_term(pp::PrettyPrinter, msg::Proto.RelTerm)
-    flat1196 = try_flat(pp, msg, pretty_rel_term)
-    if !isnothing(flat1196)
-        write(pp, flat1196)
+    flat1201 = try_flat(pp, msg, pretty_rel_term)
+    if !isnothing(flat1201)
+        write(pp, flat1201)
         return nothing
     else
         _dollar_dollar = msg
         if _has_proto_field(_dollar_dollar, Symbol("specialized_value"))
-            _t1695 = _get_oneof_field(_dollar_dollar, :specialized_value)
+            _t1705 = _get_oneof_field(_dollar_dollar, :specialized_value)
         else
-            _t1695 = nothing
+            _t1705 = nothing
         end
-        deconstruct_result1194 = _t1695
-        if !isnothing(deconstruct_result1194)
-            unwrapped1195 = deconstruct_result1194
-            pretty_specialized_value(pp, unwrapped1195)
+        deconstruct_result1199 = _t1705
+        if !isnothing(deconstruct_result1199)
+            unwrapped1200 = deconstruct_result1199
+            pretty_specialized_value(pp, unwrapped1200)
         else
             _dollar_dollar = msg
             if _has_proto_field(_dollar_dollar, Symbol("term"))
-                _t1696 = _get_oneof_field(_dollar_dollar, :term)
+                _t1706 = _get_oneof_field(_dollar_dollar, :term)
             else
-                _t1696 = nothing
+                _t1706 = nothing
             end
-            deconstruct_result1192 = _t1696
-            if !isnothing(deconstruct_result1192)
-                unwrapped1193 = deconstruct_result1192
-                pretty_term(pp, unwrapped1193)
+            deconstruct_result1197 = _t1706
+            if !isnothing(deconstruct_result1197)
+                unwrapped1198 = deconstruct_result1197
+                pretty_term(pp, unwrapped1198)
             else
                 throw(ParseError("No matching rule for rel_term"))
             end
@@ -2861,41 +2892,41 @@ function pretty_rel_term(pp::PrettyPrinter, msg::Proto.RelTerm)
 end
 
 function pretty_specialized_value(pp::PrettyPrinter, msg::Proto.Value)
-    flat1198 = try_flat(pp, msg, pretty_specialized_value)
-    if !isnothing(flat1198)
-        write(pp, flat1198)
+    flat1203 = try_flat(pp, msg, pretty_specialized_value)
+    if !isnothing(flat1203)
+        write(pp, flat1203)
         return nothing
     else
-        fields1197 = msg
+        fields1202 = msg
         write(pp, "#")
-        pretty_raw_value(pp, fields1197)
+        pretty_raw_value(pp, fields1202)
     end
     return nothing
 end
 
 function pretty_rel_atom(pp::PrettyPrinter, msg::Proto.RelAtom)
-    flat1205 = try_flat(pp, msg, pretty_rel_atom)
-    if !isnothing(flat1205)
-        write(pp, flat1205)
+    flat1210 = try_flat(pp, msg, pretty_rel_atom)
+    if !isnothing(flat1210)
+        write(pp, flat1210)
         return nothing
     else
         _dollar_dollar = msg
-        fields1199 = (_dollar_dollar.name, _dollar_dollar.terms,)
-        unwrapped_fields1200 = fields1199
+        fields1204 = (_dollar_dollar.name, _dollar_dollar.terms,)
+        unwrapped_fields1205 = fields1204
         write(pp, "(relatom")
         indent_sexp!(pp)
         newline(pp)
-        field1201 = unwrapped_fields1200[1]
-        pretty_name(pp, field1201)
-        field1202 = unwrapped_fields1200[2]
-        if !isempty(field1202)
+        field1206 = unwrapped_fields1205[1]
+        pretty_name(pp, field1206)
+        field1207 = unwrapped_fields1205[2]
+        if !isempty(field1207)
             newline(pp)
-            for (i1697, elem1203) in enumerate(field1202)
-                i1204 = i1697 - 1
-                if (i1204 > 0)
+            for (i1707, elem1208) in enumerate(field1207)
+                i1209 = i1707 - 1
+                if (i1209 > 0)
                     newline(pp)
                 end
-                pretty_rel_term(pp, elem1203)
+                pretty_rel_term(pp, elem1208)
             end
         end
         dedent!(pp)
@@ -2905,22 +2936,22 @@ function pretty_rel_atom(pp::PrettyPrinter, msg::Proto.RelAtom)
 end
 
 function pretty_cast(pp::PrettyPrinter, msg::Proto.Cast)
-    flat1210 = try_flat(pp, msg, pretty_cast)
-    if !isnothing(flat1210)
-        write(pp, flat1210)
+    flat1215 = try_flat(pp, msg, pretty_cast)
+    if !isnothing(flat1215)
+        write(pp, flat1215)
         return nothing
     else
         _dollar_dollar = msg
-        fields1206 = (_dollar_dollar.input, _dollar_dollar.result,)
-        unwrapped_fields1207 = fields1206
+        fields1211 = (_dollar_dollar.input, _dollar_dollar.result,)
+        unwrapped_fields1212 = fields1211
         write(pp, "(cast")
         indent_sexp!(pp)
         newline(pp)
-        field1208 = unwrapped_fields1207[1]
-        pretty_term(pp, field1208)
+        field1213 = unwrapped_fields1212[1]
+        pretty_term(pp, field1213)
         newline(pp)
-        field1209 = unwrapped_fields1207[2]
-        pretty_term(pp, field1209)
+        field1214 = unwrapped_fields1212[2]
+        pretty_term(pp, field1214)
         dedent!(pp)
         write(pp, ")")
     end
@@ -2928,22 +2959,22 @@ function pretty_cast(pp::PrettyPrinter, msg::Proto.Cast)
 end
 
 function pretty_attrs(pp::PrettyPrinter, msg::Vector{Proto.Attribute})
-    flat1214 = try_flat(pp, msg, pretty_attrs)
-    if !isnothing(flat1214)
-        write(pp, flat1214)
+    flat1219 = try_flat(pp, msg, pretty_attrs)
+    if !isnothing(flat1219)
+        write(pp, flat1219)
         return nothing
     else
-        fields1211 = msg
+        fields1216 = msg
         write(pp, "(attrs")
         indent_sexp!(pp)
-        if !isempty(fields1211)
+        if !isempty(fields1216)
             newline(pp)
-            for (i1698, elem1212) in enumerate(fields1211)
-                i1213 = i1698 - 1
-                if (i1213 > 0)
+            for (i1708, elem1217) in enumerate(fields1216)
+                i1218 = i1708 - 1
+                if (i1218 > 0)
                     newline(pp)
                 end
-                pretty_attribute(pp, elem1212)
+                pretty_attribute(pp, elem1217)
             end
         end
         dedent!(pp)
@@ -2953,28 +2984,28 @@ function pretty_attrs(pp::PrettyPrinter, msg::Vector{Proto.Attribute})
 end
 
 function pretty_attribute(pp::PrettyPrinter, msg::Proto.Attribute)
-    flat1221 = try_flat(pp, msg, pretty_attribute)
-    if !isnothing(flat1221)
-        write(pp, flat1221)
+    flat1226 = try_flat(pp, msg, pretty_attribute)
+    if !isnothing(flat1226)
+        write(pp, flat1226)
         return nothing
     else
         _dollar_dollar = msg
-        fields1215 = (_dollar_dollar.name, _dollar_dollar.args,)
-        unwrapped_fields1216 = fields1215
+        fields1220 = (_dollar_dollar.name, _dollar_dollar.args,)
+        unwrapped_fields1221 = fields1220
         write(pp, "(attribute")
         indent_sexp!(pp)
         newline(pp)
-        field1217 = unwrapped_fields1216[1]
-        pretty_name(pp, field1217)
-        field1218 = unwrapped_fields1216[2]
-        if !isempty(field1218)
+        field1222 = unwrapped_fields1221[1]
+        pretty_name(pp, field1222)
+        field1223 = unwrapped_fields1221[2]
+        if !isempty(field1223)
             newline(pp)
-            for (i1699, elem1219) in enumerate(field1218)
-                i1220 = i1699 - 1
-                if (i1220 > 0)
+            for (i1709, elem1224) in enumerate(field1223)
+                i1225 = i1709 - 1
+                if (i1225 > 0)
                     newline(pp)
                 end
-                pretty_raw_value(pp, elem1219)
+                pretty_raw_value(pp, elem1224)
             end
         end
         dedent!(pp)
@@ -2984,40 +3015,40 @@ function pretty_attribute(pp::PrettyPrinter, msg::Proto.Attribute)
 end
 
 function pretty_algorithm(pp::PrettyPrinter, msg::Proto.Algorithm)
-    flat1230 = try_flat(pp, msg, pretty_algorithm)
-    if !isnothing(flat1230)
-        write(pp, flat1230)
+    flat1235 = try_flat(pp, msg, pretty_algorithm)
+    if !isnothing(flat1235)
+        write(pp, flat1235)
         return nothing
     else
         _dollar_dollar = msg
         if !isempty(_dollar_dollar.attrs)
-            _t1700 = _dollar_dollar.attrs
+            _t1710 = _dollar_dollar.attrs
         else
-            _t1700 = nothing
+            _t1710 = nothing
         end
-        fields1222 = (_dollar_dollar.var"#global", _dollar_dollar.body, _t1700,)
-        unwrapped_fields1223 = fields1222
+        fields1227 = (_dollar_dollar.var"#global", _dollar_dollar.body, _t1710,)
+        unwrapped_fields1228 = fields1227
         write(pp, "(algorithm")
         indent_sexp!(pp)
-        field1224 = unwrapped_fields1223[1]
-        if !isempty(field1224)
+        field1229 = unwrapped_fields1228[1]
+        if !isempty(field1229)
             newline(pp)
-            for (i1701, elem1225) in enumerate(field1224)
-                i1226 = i1701 - 1
-                if (i1226 > 0)
+            for (i1711, elem1230) in enumerate(field1229)
+                i1231 = i1711 - 1
+                if (i1231 > 0)
                     newline(pp)
                 end
-                pretty_relation_id(pp, elem1225)
+                pretty_relation_id(pp, elem1230)
             end
         end
         newline(pp)
-        field1227 = unwrapped_fields1223[2]
-        pretty_script(pp, field1227)
-        field1228 = unwrapped_fields1223[3]
-        if !isnothing(field1228)
+        field1232 = unwrapped_fields1228[2]
+        pretty_script(pp, field1232)
+        field1233 = unwrapped_fields1228[3]
+        if !isnothing(field1233)
             newline(pp)
-            opt_val1229 = field1228
-            pretty_attrs(pp, opt_val1229)
+            opt_val1234 = field1233
+            pretty_attrs(pp, opt_val1234)
         end
         dedent!(pp)
         write(pp, ")")
@@ -3026,24 +3057,24 @@ function pretty_algorithm(pp::PrettyPrinter, msg::Proto.Algorithm)
 end
 
 function pretty_script(pp::PrettyPrinter, msg::Proto.Script)
-    flat1235 = try_flat(pp, msg, pretty_script)
-    if !isnothing(flat1235)
-        write(pp, flat1235)
+    flat1240 = try_flat(pp, msg, pretty_script)
+    if !isnothing(flat1240)
+        write(pp, flat1240)
         return nothing
     else
         _dollar_dollar = msg
-        fields1231 = _dollar_dollar.constructs
-        unwrapped_fields1232 = fields1231
+        fields1236 = _dollar_dollar.constructs
+        unwrapped_fields1237 = fields1236
         write(pp, "(script")
         indent_sexp!(pp)
-        if !isempty(unwrapped_fields1232)
+        if !isempty(unwrapped_fields1237)
             newline(pp)
-            for (i1702, elem1233) in enumerate(unwrapped_fields1232)
-                i1234 = i1702 - 1
-                if (i1234 > 0)
+            for (i1712, elem1238) in enumerate(unwrapped_fields1237)
+                i1239 = i1712 - 1
+                if (i1239 > 0)
                     newline(pp)
                 end
-                pretty_construct(pp, elem1233)
+                pretty_construct(pp, elem1238)
             end
         end
         dedent!(pp)
@@ -3053,32 +3084,32 @@ function pretty_script(pp::PrettyPrinter, msg::Proto.Script)
 end
 
 function pretty_construct(pp::PrettyPrinter, msg::Proto.Construct)
-    flat1240 = try_flat(pp, msg, pretty_construct)
-    if !isnothing(flat1240)
-        write(pp, flat1240)
+    flat1245 = try_flat(pp, msg, pretty_construct)
+    if !isnothing(flat1245)
+        write(pp, flat1245)
         return nothing
     else
         _dollar_dollar = msg
         if _has_proto_field(_dollar_dollar, Symbol("loop"))
-            _t1703 = _get_oneof_field(_dollar_dollar, :loop)
+            _t1713 = _get_oneof_field(_dollar_dollar, :loop)
         else
-            _t1703 = nothing
+            _t1713 = nothing
         end
-        deconstruct_result1238 = _t1703
-        if !isnothing(deconstruct_result1238)
-            unwrapped1239 = deconstruct_result1238
-            pretty_loop(pp, unwrapped1239)
+        deconstruct_result1243 = _t1713
+        if !isnothing(deconstruct_result1243)
+            unwrapped1244 = deconstruct_result1243
+            pretty_loop(pp, unwrapped1244)
         else
             _dollar_dollar = msg
             if _has_proto_field(_dollar_dollar, Symbol("instruction"))
-                _t1704 = _get_oneof_field(_dollar_dollar, :instruction)
+                _t1714 = _get_oneof_field(_dollar_dollar, :instruction)
             else
-                _t1704 = nothing
+                _t1714 = nothing
             end
-            deconstruct_result1236 = _t1704
-            if !isnothing(deconstruct_result1236)
-                unwrapped1237 = deconstruct_result1236
-                pretty_instruction(pp, unwrapped1237)
+            deconstruct_result1241 = _t1714
+            if !isnothing(deconstruct_result1241)
+                unwrapped1242 = deconstruct_result1241
+                pretty_instruction(pp, unwrapped1242)
             else
                 throw(ParseError("No matching rule for construct"))
             end
@@ -3088,32 +3119,32 @@ function pretty_construct(pp::PrettyPrinter, msg::Proto.Construct)
 end
 
 function pretty_loop(pp::PrettyPrinter, msg::Proto.Loop)
-    flat1247 = try_flat(pp, msg, pretty_loop)
-    if !isnothing(flat1247)
-        write(pp, flat1247)
+    flat1252 = try_flat(pp, msg, pretty_loop)
+    if !isnothing(flat1252)
+        write(pp, flat1252)
         return nothing
     else
         _dollar_dollar = msg
         if !isempty(_dollar_dollar.attrs)
-            _t1705 = _dollar_dollar.attrs
+            _t1715 = _dollar_dollar.attrs
         else
-            _t1705 = nothing
+            _t1715 = nothing
         end
-        fields1241 = (_dollar_dollar.init, _dollar_dollar.body, _t1705,)
-        unwrapped_fields1242 = fields1241
+        fields1246 = (_dollar_dollar.init, _dollar_dollar.body, _t1715,)
+        unwrapped_fields1247 = fields1246
         write(pp, "(loop")
         indent_sexp!(pp)
         newline(pp)
-        field1243 = unwrapped_fields1242[1]
-        pretty_init(pp, field1243)
+        field1248 = unwrapped_fields1247[1]
+        pretty_init(pp, field1248)
         newline(pp)
-        field1244 = unwrapped_fields1242[2]
-        pretty_script(pp, field1244)
-        field1245 = unwrapped_fields1242[3]
-        if !isnothing(field1245)
+        field1249 = unwrapped_fields1247[2]
+        pretty_script(pp, field1249)
+        field1250 = unwrapped_fields1247[3]
+        if !isnothing(field1250)
             newline(pp)
-            opt_val1246 = field1245
-            pretty_attrs(pp, opt_val1246)
+            opt_val1251 = field1250
+            pretty_attrs(pp, opt_val1251)
         end
         dedent!(pp)
         write(pp, ")")
@@ -3122,22 +3153,22 @@ function pretty_loop(pp::PrettyPrinter, msg::Proto.Loop)
 end
 
 function pretty_init(pp::PrettyPrinter, msg::Vector{Proto.Instruction})
-    flat1251 = try_flat(pp, msg, pretty_init)
-    if !isnothing(flat1251)
-        write(pp, flat1251)
+    flat1256 = try_flat(pp, msg, pretty_init)
+    if !isnothing(flat1256)
+        write(pp, flat1256)
         return nothing
     else
-        fields1248 = msg
+        fields1253 = msg
         write(pp, "(init")
         indent_sexp!(pp)
-        if !isempty(fields1248)
+        if !isempty(fields1253)
             newline(pp)
-            for (i1706, elem1249) in enumerate(fields1248)
-                i1250 = i1706 - 1
-                if (i1250 > 0)
+            for (i1716, elem1254) in enumerate(fields1253)
+                i1255 = i1716 - 1
+                if (i1255 > 0)
                     newline(pp)
                 end
-                pretty_instruction(pp, elem1249)
+                pretty_instruction(pp, elem1254)
             end
         end
         dedent!(pp)
@@ -3147,65 +3178,65 @@ function pretty_init(pp::PrettyPrinter, msg::Vector{Proto.Instruction})
 end
 
 function pretty_instruction(pp::PrettyPrinter, msg::Proto.Instruction)
-    flat1262 = try_flat(pp, msg, pretty_instruction)
-    if !isnothing(flat1262)
-        write(pp, flat1262)
+    flat1267 = try_flat(pp, msg, pretty_instruction)
+    if !isnothing(flat1267)
+        write(pp, flat1267)
         return nothing
     else
         _dollar_dollar = msg
         if _has_proto_field(_dollar_dollar, Symbol("assign"))
-            _t1707 = _get_oneof_field(_dollar_dollar, :assign)
+            _t1717 = _get_oneof_field(_dollar_dollar, :assign)
         else
-            _t1707 = nothing
+            _t1717 = nothing
         end
-        deconstruct_result1260 = _t1707
-        if !isnothing(deconstruct_result1260)
-            unwrapped1261 = deconstruct_result1260
-            pretty_assign(pp, unwrapped1261)
+        deconstruct_result1265 = _t1717
+        if !isnothing(deconstruct_result1265)
+            unwrapped1266 = deconstruct_result1265
+            pretty_assign(pp, unwrapped1266)
         else
             _dollar_dollar = msg
             if _has_proto_field(_dollar_dollar, Symbol("upsert"))
-                _t1708 = _get_oneof_field(_dollar_dollar, :upsert)
+                _t1718 = _get_oneof_field(_dollar_dollar, :upsert)
             else
-                _t1708 = nothing
+                _t1718 = nothing
             end
-            deconstruct_result1258 = _t1708
-            if !isnothing(deconstruct_result1258)
-                unwrapped1259 = deconstruct_result1258
-                pretty_upsert(pp, unwrapped1259)
+            deconstruct_result1263 = _t1718
+            if !isnothing(deconstruct_result1263)
+                unwrapped1264 = deconstruct_result1263
+                pretty_upsert(pp, unwrapped1264)
             else
                 _dollar_dollar = msg
                 if _has_proto_field(_dollar_dollar, Symbol("#break"))
-                    _t1709 = _get_oneof_field(_dollar_dollar, :var"#break")
+                    _t1719 = _get_oneof_field(_dollar_dollar, :var"#break")
                 else
-                    _t1709 = nothing
+                    _t1719 = nothing
                 end
-                deconstruct_result1256 = _t1709
-                if !isnothing(deconstruct_result1256)
-                    unwrapped1257 = deconstruct_result1256
-                    pretty_break(pp, unwrapped1257)
+                deconstruct_result1261 = _t1719
+                if !isnothing(deconstruct_result1261)
+                    unwrapped1262 = deconstruct_result1261
+                    pretty_break(pp, unwrapped1262)
                 else
                     _dollar_dollar = msg
                     if _has_proto_field(_dollar_dollar, Symbol("monoid_def"))
-                        _t1710 = _get_oneof_field(_dollar_dollar, :monoid_def)
+                        _t1720 = _get_oneof_field(_dollar_dollar, :monoid_def)
                     else
-                        _t1710 = nothing
+                        _t1720 = nothing
                     end
-                    deconstruct_result1254 = _t1710
-                    if !isnothing(deconstruct_result1254)
-                        unwrapped1255 = deconstruct_result1254
-                        pretty_monoid_def(pp, unwrapped1255)
+                    deconstruct_result1259 = _t1720
+                    if !isnothing(deconstruct_result1259)
+                        unwrapped1260 = deconstruct_result1259
+                        pretty_monoid_def(pp, unwrapped1260)
                     else
                         _dollar_dollar = msg
                         if _has_proto_field(_dollar_dollar, Symbol("monus_def"))
-                            _t1711 = _get_oneof_field(_dollar_dollar, :monus_def)
+                            _t1721 = _get_oneof_field(_dollar_dollar, :monus_def)
                         else
-                            _t1711 = nothing
+                            _t1721 = nothing
                         end
-                        deconstruct_result1252 = _t1711
-                        if !isnothing(deconstruct_result1252)
-                            unwrapped1253 = deconstruct_result1252
-                            pretty_monus_def(pp, unwrapped1253)
+                        deconstruct_result1257 = _t1721
+                        if !isnothing(deconstruct_result1257)
+                            unwrapped1258 = deconstruct_result1257
+                            pretty_monus_def(pp, unwrapped1258)
                         else
                             throw(ParseError("No matching rule for instruction"))
                         end
@@ -3218,32 +3249,32 @@ function pretty_instruction(pp::PrettyPrinter, msg::Proto.Instruction)
 end
 
 function pretty_assign(pp::PrettyPrinter, msg::Proto.Assign)
-    flat1269 = try_flat(pp, msg, pretty_assign)
-    if !isnothing(flat1269)
-        write(pp, flat1269)
+    flat1274 = try_flat(pp, msg, pretty_assign)
+    if !isnothing(flat1274)
+        write(pp, flat1274)
         return nothing
     else
         _dollar_dollar = msg
         if !isempty(_dollar_dollar.attrs)
-            _t1712 = _dollar_dollar.attrs
+            _t1722 = _dollar_dollar.attrs
         else
-            _t1712 = nothing
+            _t1722 = nothing
         end
-        fields1263 = (_dollar_dollar.name, _dollar_dollar.body, _t1712,)
-        unwrapped_fields1264 = fields1263
+        fields1268 = (_dollar_dollar.name, _dollar_dollar.body, _t1722,)
+        unwrapped_fields1269 = fields1268
         write(pp, "(assign")
         indent_sexp!(pp)
         newline(pp)
-        field1265 = unwrapped_fields1264[1]
-        pretty_relation_id(pp, field1265)
+        field1270 = unwrapped_fields1269[1]
+        pretty_relation_id(pp, field1270)
         newline(pp)
-        field1266 = unwrapped_fields1264[2]
-        pretty_abstraction(pp, field1266)
-        field1267 = unwrapped_fields1264[3]
-        if !isnothing(field1267)
+        field1271 = unwrapped_fields1269[2]
+        pretty_abstraction(pp, field1271)
+        field1272 = unwrapped_fields1269[3]
+        if !isnothing(field1272)
             newline(pp)
-            opt_val1268 = field1267
-            pretty_attrs(pp, opt_val1268)
+            opt_val1273 = field1272
+            pretty_attrs(pp, opt_val1273)
         end
         dedent!(pp)
         write(pp, ")")
@@ -3252,32 +3283,32 @@ function pretty_assign(pp::PrettyPrinter, msg::Proto.Assign)
 end
 
 function pretty_upsert(pp::PrettyPrinter, msg::Proto.Upsert)
-    flat1276 = try_flat(pp, msg, pretty_upsert)
-    if !isnothing(flat1276)
-        write(pp, flat1276)
+    flat1281 = try_flat(pp, msg, pretty_upsert)
+    if !isnothing(flat1281)
+        write(pp, flat1281)
         return nothing
     else
         _dollar_dollar = msg
         if !isempty(_dollar_dollar.attrs)
-            _t1713 = _dollar_dollar.attrs
+            _t1723 = _dollar_dollar.attrs
         else
-            _t1713 = nothing
+            _t1723 = nothing
         end
-        fields1270 = (_dollar_dollar.name, (_dollar_dollar.body, _dollar_dollar.value_arity,), _t1713,)
-        unwrapped_fields1271 = fields1270
+        fields1275 = (_dollar_dollar.name, (_dollar_dollar.body, _dollar_dollar.value_arity,), _t1723,)
+        unwrapped_fields1276 = fields1275
         write(pp, "(upsert")
         indent_sexp!(pp)
         newline(pp)
-        field1272 = unwrapped_fields1271[1]
-        pretty_relation_id(pp, field1272)
+        field1277 = unwrapped_fields1276[1]
+        pretty_relation_id(pp, field1277)
         newline(pp)
-        field1273 = unwrapped_fields1271[2]
-        pretty_abstraction_with_arity(pp, field1273)
-        field1274 = unwrapped_fields1271[3]
-        if !isnothing(field1274)
+        field1278 = unwrapped_fields1276[2]
+        pretty_abstraction_with_arity(pp, field1278)
+        field1279 = unwrapped_fields1276[3]
+        if !isnothing(field1279)
             newline(pp)
-            opt_val1275 = field1274
-            pretty_attrs(pp, opt_val1275)
+            opt_val1280 = field1279
+            pretty_attrs(pp, opt_val1280)
         end
         dedent!(pp)
         write(pp, ")")
@@ -3286,22 +3317,22 @@ function pretty_upsert(pp::PrettyPrinter, msg::Proto.Upsert)
 end
 
 function pretty_abstraction_with_arity(pp::PrettyPrinter, msg::Tuple{Proto.Abstraction, Int64})
-    flat1281 = try_flat(pp, msg, pretty_abstraction_with_arity)
-    if !isnothing(flat1281)
-        write(pp, flat1281)
+    flat1286 = try_flat(pp, msg, pretty_abstraction_with_arity)
+    if !isnothing(flat1286)
+        write(pp, flat1286)
         return nothing
     else
         _dollar_dollar = msg
-        _t1714 = deconstruct_bindings_with_arity(pp, _dollar_dollar[1], _dollar_dollar[2])
-        fields1277 = (_t1714, _dollar_dollar[1].value,)
-        unwrapped_fields1278 = fields1277
+        _t1724 = deconstruct_bindings_with_arity(pp, _dollar_dollar[1], _dollar_dollar[2])
+        fields1282 = (_t1724, _dollar_dollar[1].value,)
+        unwrapped_fields1283 = fields1282
         write(pp, "(")
         indent!(pp)
-        field1279 = unwrapped_fields1278[1]
-        pretty_bindings(pp, field1279)
+        field1284 = unwrapped_fields1283[1]
+        pretty_bindings(pp, field1284)
         newline(pp)
-        field1280 = unwrapped_fields1278[2]
-        pretty_formula(pp, field1280)
+        field1285 = unwrapped_fields1283[2]
+        pretty_formula(pp, field1285)
         dedent!(pp)
         write(pp, ")")
     end
@@ -3309,32 +3340,32 @@ function pretty_abstraction_with_arity(pp::PrettyPrinter, msg::Tuple{Proto.Abstr
 end
 
 function pretty_break(pp::PrettyPrinter, msg::Proto.Break)
-    flat1288 = try_flat(pp, msg, pretty_break)
-    if !isnothing(flat1288)
-        write(pp, flat1288)
+    flat1293 = try_flat(pp, msg, pretty_break)
+    if !isnothing(flat1293)
+        write(pp, flat1293)
         return nothing
     else
         _dollar_dollar = msg
         if !isempty(_dollar_dollar.attrs)
-            _t1715 = _dollar_dollar.attrs
+            _t1725 = _dollar_dollar.attrs
         else
-            _t1715 = nothing
+            _t1725 = nothing
         end
-        fields1282 = (_dollar_dollar.name, _dollar_dollar.body, _t1715,)
-        unwrapped_fields1283 = fields1282
+        fields1287 = (_dollar_dollar.name, _dollar_dollar.body, _t1725,)
+        unwrapped_fields1288 = fields1287
         write(pp, "(break")
         indent_sexp!(pp)
         newline(pp)
-        field1284 = unwrapped_fields1283[1]
-        pretty_relation_id(pp, field1284)
+        field1289 = unwrapped_fields1288[1]
+        pretty_relation_id(pp, field1289)
         newline(pp)
-        field1285 = unwrapped_fields1283[2]
-        pretty_abstraction(pp, field1285)
-        field1286 = unwrapped_fields1283[3]
-        if !isnothing(field1286)
+        field1290 = unwrapped_fields1288[2]
+        pretty_abstraction(pp, field1290)
+        field1291 = unwrapped_fields1288[3]
+        if !isnothing(field1291)
             newline(pp)
-            opt_val1287 = field1286
-            pretty_attrs(pp, opt_val1287)
+            opt_val1292 = field1291
+            pretty_attrs(pp, opt_val1292)
         end
         dedent!(pp)
         write(pp, ")")
@@ -3343,35 +3374,35 @@ function pretty_break(pp::PrettyPrinter, msg::Proto.Break)
 end
 
 function pretty_monoid_def(pp::PrettyPrinter, msg::Proto.MonoidDef)
-    flat1296 = try_flat(pp, msg, pretty_monoid_def)
-    if !isnothing(flat1296)
-        write(pp, flat1296)
+    flat1301 = try_flat(pp, msg, pretty_monoid_def)
+    if !isnothing(flat1301)
+        write(pp, flat1301)
         return nothing
     else
         _dollar_dollar = msg
         if !isempty(_dollar_dollar.attrs)
-            _t1716 = _dollar_dollar.attrs
+            _t1726 = _dollar_dollar.attrs
         else
-            _t1716 = nothing
+            _t1726 = nothing
         end
-        fields1289 = (_dollar_dollar.monoid, _dollar_dollar.name, (_dollar_dollar.body, _dollar_dollar.value_arity,), _t1716,)
-        unwrapped_fields1290 = fields1289
+        fields1294 = (_dollar_dollar.monoid, _dollar_dollar.name, (_dollar_dollar.body, _dollar_dollar.value_arity,), _t1726,)
+        unwrapped_fields1295 = fields1294
         write(pp, "(monoid")
         indent_sexp!(pp)
         newline(pp)
-        field1291 = unwrapped_fields1290[1]
-        pretty_monoid(pp, field1291)
+        field1296 = unwrapped_fields1295[1]
+        pretty_monoid(pp, field1296)
         newline(pp)
-        field1292 = unwrapped_fields1290[2]
-        pretty_relation_id(pp, field1292)
+        field1297 = unwrapped_fields1295[2]
+        pretty_relation_id(pp, field1297)
         newline(pp)
-        field1293 = unwrapped_fields1290[3]
-        pretty_abstraction_with_arity(pp, field1293)
-        field1294 = unwrapped_fields1290[4]
-        if !isnothing(field1294)
+        field1298 = unwrapped_fields1295[3]
+        pretty_abstraction_with_arity(pp, field1298)
+        field1299 = unwrapped_fields1295[4]
+        if !isnothing(field1299)
             newline(pp)
-            opt_val1295 = field1294
-            pretty_attrs(pp, opt_val1295)
+            opt_val1300 = field1299
+            pretty_attrs(pp, opt_val1300)
         end
         dedent!(pp)
         write(pp, ")")
@@ -3380,54 +3411,54 @@ function pretty_monoid_def(pp::PrettyPrinter, msg::Proto.MonoidDef)
 end
 
 function pretty_monoid(pp::PrettyPrinter, msg::Proto.Monoid)
-    flat1305 = try_flat(pp, msg, pretty_monoid)
-    if !isnothing(flat1305)
-        write(pp, flat1305)
+    flat1310 = try_flat(pp, msg, pretty_monoid)
+    if !isnothing(flat1310)
+        write(pp, flat1310)
         return nothing
     else
         _dollar_dollar = msg
         if _has_proto_field(_dollar_dollar, Symbol("or_monoid"))
-            _t1717 = _get_oneof_field(_dollar_dollar, :or_monoid)
+            _t1727 = _get_oneof_field(_dollar_dollar, :or_monoid)
         else
-            _t1717 = nothing
+            _t1727 = nothing
         end
-        deconstruct_result1303 = _t1717
-        if !isnothing(deconstruct_result1303)
-            unwrapped1304 = deconstruct_result1303
-            pretty_or_monoid(pp, unwrapped1304)
+        deconstruct_result1308 = _t1727
+        if !isnothing(deconstruct_result1308)
+            unwrapped1309 = deconstruct_result1308
+            pretty_or_monoid(pp, unwrapped1309)
         else
             _dollar_dollar = msg
             if _has_proto_field(_dollar_dollar, Symbol("min_monoid"))
-                _t1718 = _get_oneof_field(_dollar_dollar, :min_monoid)
+                _t1728 = _get_oneof_field(_dollar_dollar, :min_monoid)
             else
-                _t1718 = nothing
+                _t1728 = nothing
             end
-            deconstruct_result1301 = _t1718
-            if !isnothing(deconstruct_result1301)
-                unwrapped1302 = deconstruct_result1301
-                pretty_min_monoid(pp, unwrapped1302)
+            deconstruct_result1306 = _t1728
+            if !isnothing(deconstruct_result1306)
+                unwrapped1307 = deconstruct_result1306
+                pretty_min_monoid(pp, unwrapped1307)
             else
                 _dollar_dollar = msg
                 if _has_proto_field(_dollar_dollar, Symbol("max_monoid"))
-                    _t1719 = _get_oneof_field(_dollar_dollar, :max_monoid)
+                    _t1729 = _get_oneof_field(_dollar_dollar, :max_monoid)
                 else
-                    _t1719 = nothing
+                    _t1729 = nothing
                 end
-                deconstruct_result1299 = _t1719
-                if !isnothing(deconstruct_result1299)
-                    unwrapped1300 = deconstruct_result1299
-                    pretty_max_monoid(pp, unwrapped1300)
+                deconstruct_result1304 = _t1729
+                if !isnothing(deconstruct_result1304)
+                    unwrapped1305 = deconstruct_result1304
+                    pretty_max_monoid(pp, unwrapped1305)
                 else
                     _dollar_dollar = msg
                     if _has_proto_field(_dollar_dollar, Symbol("sum_monoid"))
-                        _t1720 = _get_oneof_field(_dollar_dollar, :sum_monoid)
+                        _t1730 = _get_oneof_field(_dollar_dollar, :sum_monoid)
                     else
-                        _t1720 = nothing
+                        _t1730 = nothing
                     end
-                    deconstruct_result1297 = _t1720
-                    if !isnothing(deconstruct_result1297)
-                        unwrapped1298 = deconstruct_result1297
-                        pretty_sum_monoid(pp, unwrapped1298)
+                    deconstruct_result1302 = _t1730
+                    if !isnothing(deconstruct_result1302)
+                        unwrapped1303 = deconstruct_result1302
+                        pretty_sum_monoid(pp, unwrapped1303)
                     else
                         throw(ParseError("No matching rule for monoid"))
                     end
@@ -3439,24 +3470,24 @@ function pretty_monoid(pp::PrettyPrinter, msg::Proto.Monoid)
 end
 
 function pretty_or_monoid(pp::PrettyPrinter, msg::Proto.OrMonoid)
-    fields1306 = msg
+    fields1311 = msg
     write(pp, "(or)")
     return nothing
 end
 
 function pretty_min_monoid(pp::PrettyPrinter, msg::Proto.MinMonoid)
-    flat1309 = try_flat(pp, msg, pretty_min_monoid)
-    if !isnothing(flat1309)
-        write(pp, flat1309)
+    flat1314 = try_flat(pp, msg, pretty_min_monoid)
+    if !isnothing(flat1314)
+        write(pp, flat1314)
         return nothing
     else
         _dollar_dollar = msg
-        fields1307 = _dollar_dollar.var"#type"
-        unwrapped_fields1308 = fields1307
+        fields1312 = _dollar_dollar.var"#type"
+        unwrapped_fields1313 = fields1312
         write(pp, "(min")
         indent_sexp!(pp)
         newline(pp)
-        pretty_type(pp, unwrapped_fields1308)
+        pretty_type(pp, unwrapped_fields1313)
         dedent!(pp)
         write(pp, ")")
     end
@@ -3464,18 +3495,18 @@ function pretty_min_monoid(pp::PrettyPrinter, msg::Proto.MinMonoid)
 end
 
 function pretty_max_monoid(pp::PrettyPrinter, msg::Proto.MaxMonoid)
-    flat1312 = try_flat(pp, msg, pretty_max_monoid)
-    if !isnothing(flat1312)
-        write(pp, flat1312)
+    flat1317 = try_flat(pp, msg, pretty_max_monoid)
+    if !isnothing(flat1317)
+        write(pp, flat1317)
         return nothing
     else
         _dollar_dollar = msg
-        fields1310 = _dollar_dollar.var"#type"
-        unwrapped_fields1311 = fields1310
+        fields1315 = _dollar_dollar.var"#type"
+        unwrapped_fields1316 = fields1315
         write(pp, "(max")
         indent_sexp!(pp)
         newline(pp)
-        pretty_type(pp, unwrapped_fields1311)
+        pretty_type(pp, unwrapped_fields1316)
         dedent!(pp)
         write(pp, ")")
     end
@@ -3483,18 +3514,18 @@ function pretty_max_monoid(pp::PrettyPrinter, msg::Proto.MaxMonoid)
 end
 
 function pretty_sum_monoid(pp::PrettyPrinter, msg::Proto.SumMonoid)
-    flat1315 = try_flat(pp, msg, pretty_sum_monoid)
-    if !isnothing(flat1315)
-        write(pp, flat1315)
+    flat1320 = try_flat(pp, msg, pretty_sum_monoid)
+    if !isnothing(flat1320)
+        write(pp, flat1320)
         return nothing
     else
         _dollar_dollar = msg
-        fields1313 = _dollar_dollar.var"#type"
-        unwrapped_fields1314 = fields1313
+        fields1318 = _dollar_dollar.var"#type"
+        unwrapped_fields1319 = fields1318
         write(pp, "(sum")
         indent_sexp!(pp)
         newline(pp)
-        pretty_type(pp, unwrapped_fields1314)
+        pretty_type(pp, unwrapped_fields1319)
         dedent!(pp)
         write(pp, ")")
     end
@@ -3502,35 +3533,35 @@ function pretty_sum_monoid(pp::PrettyPrinter, msg::Proto.SumMonoid)
 end
 
 function pretty_monus_def(pp::PrettyPrinter, msg::Proto.MonusDef)
-    flat1323 = try_flat(pp, msg, pretty_monus_def)
-    if !isnothing(flat1323)
-        write(pp, flat1323)
+    flat1328 = try_flat(pp, msg, pretty_monus_def)
+    if !isnothing(flat1328)
+        write(pp, flat1328)
         return nothing
     else
         _dollar_dollar = msg
         if !isempty(_dollar_dollar.attrs)
-            _t1721 = _dollar_dollar.attrs
+            _t1731 = _dollar_dollar.attrs
         else
-            _t1721 = nothing
+            _t1731 = nothing
         end
-        fields1316 = (_dollar_dollar.monoid, _dollar_dollar.name, (_dollar_dollar.body, _dollar_dollar.value_arity,), _t1721,)
-        unwrapped_fields1317 = fields1316
+        fields1321 = (_dollar_dollar.monoid, _dollar_dollar.name, (_dollar_dollar.body, _dollar_dollar.value_arity,), _t1731,)
+        unwrapped_fields1322 = fields1321
         write(pp, "(monus")
         indent_sexp!(pp)
         newline(pp)
-        field1318 = unwrapped_fields1317[1]
-        pretty_monoid(pp, field1318)
+        field1323 = unwrapped_fields1322[1]
+        pretty_monoid(pp, field1323)
         newline(pp)
-        field1319 = unwrapped_fields1317[2]
-        pretty_relation_id(pp, field1319)
+        field1324 = unwrapped_fields1322[2]
+        pretty_relation_id(pp, field1324)
         newline(pp)
-        field1320 = unwrapped_fields1317[3]
-        pretty_abstraction_with_arity(pp, field1320)
-        field1321 = unwrapped_fields1317[4]
-        if !isnothing(field1321)
+        field1325 = unwrapped_fields1322[3]
+        pretty_abstraction_with_arity(pp, field1325)
+        field1326 = unwrapped_fields1322[4]
+        if !isnothing(field1326)
             newline(pp)
-            opt_val1322 = field1321
-            pretty_attrs(pp, opt_val1322)
+            opt_val1327 = field1326
+            pretty_attrs(pp, opt_val1327)
         end
         dedent!(pp)
         write(pp, ")")
@@ -3539,28 +3570,28 @@ function pretty_monus_def(pp::PrettyPrinter, msg::Proto.MonusDef)
 end
 
 function pretty_constraint(pp::PrettyPrinter, msg::Proto.Constraint)
-    flat1330 = try_flat(pp, msg, pretty_constraint)
-    if !isnothing(flat1330)
-        write(pp, flat1330)
+    flat1335 = try_flat(pp, msg, pretty_constraint)
+    if !isnothing(flat1335)
+        write(pp, flat1335)
         return nothing
     else
         _dollar_dollar = msg
-        fields1324 = (_dollar_dollar.name, _get_oneof_field(_dollar_dollar, :functional_dependency).guard, _get_oneof_field(_dollar_dollar, :functional_dependency).keys, _get_oneof_field(_dollar_dollar, :functional_dependency).values,)
-        unwrapped_fields1325 = fields1324
+        fields1329 = (_dollar_dollar.name, _get_oneof_field(_dollar_dollar, :functional_dependency).guard, _get_oneof_field(_dollar_dollar, :functional_dependency).keys, _get_oneof_field(_dollar_dollar, :functional_dependency).values,)
+        unwrapped_fields1330 = fields1329
         write(pp, "(functional_dependency")
         indent_sexp!(pp)
         newline(pp)
-        field1326 = unwrapped_fields1325[1]
-        pretty_relation_id(pp, field1326)
+        field1331 = unwrapped_fields1330[1]
+        pretty_relation_id(pp, field1331)
         newline(pp)
-        field1327 = unwrapped_fields1325[2]
-        pretty_abstraction(pp, field1327)
+        field1332 = unwrapped_fields1330[2]
+        pretty_abstraction(pp, field1332)
         newline(pp)
-        field1328 = unwrapped_fields1325[3]
-        pretty_functional_dependency_keys(pp, field1328)
+        field1333 = unwrapped_fields1330[3]
+        pretty_functional_dependency_keys(pp, field1333)
         newline(pp)
-        field1329 = unwrapped_fields1325[4]
-        pretty_functional_dependency_values(pp, field1329)
+        field1334 = unwrapped_fields1330[4]
+        pretty_functional_dependency_values(pp, field1334)
         dedent!(pp)
         write(pp, ")")
     end
@@ -3568,22 +3599,22 @@ function pretty_constraint(pp::PrettyPrinter, msg::Proto.Constraint)
 end
 
 function pretty_functional_dependency_keys(pp::PrettyPrinter, msg::Vector{Proto.Var})
-    flat1334 = try_flat(pp, msg, pretty_functional_dependency_keys)
-    if !isnothing(flat1334)
-        write(pp, flat1334)
+    flat1339 = try_flat(pp, msg, pretty_functional_dependency_keys)
+    if !isnothing(flat1339)
+        write(pp, flat1339)
         return nothing
     else
-        fields1331 = msg
+        fields1336 = msg
         write(pp, "(keys")
         indent_sexp!(pp)
-        if !isempty(fields1331)
+        if !isempty(fields1336)
             newline(pp)
-            for (i1722, elem1332) in enumerate(fields1331)
-                i1333 = i1722 - 1
-                if (i1333 > 0)
+            for (i1732, elem1337) in enumerate(fields1336)
+                i1338 = i1732 - 1
+                if (i1338 > 0)
                     newline(pp)
                 end
-                pretty_var(pp, elem1332)
+                pretty_var(pp, elem1337)
             end
         end
         dedent!(pp)
@@ -3593,22 +3624,22 @@ function pretty_functional_dependency_keys(pp::PrettyPrinter, msg::Vector{Proto.
 end
 
 function pretty_functional_dependency_values(pp::PrettyPrinter, msg::Vector{Proto.Var})
-    flat1338 = try_flat(pp, msg, pretty_functional_dependency_values)
-    if !isnothing(flat1338)
-        write(pp, flat1338)
+    flat1343 = try_flat(pp, msg, pretty_functional_dependency_values)
+    if !isnothing(flat1343)
+        write(pp, flat1343)
         return nothing
     else
-        fields1335 = msg
+        fields1340 = msg
         write(pp, "(values")
         indent_sexp!(pp)
-        if !isempty(fields1335)
+        if !isempty(fields1340)
             newline(pp)
-            for (i1723, elem1336) in enumerate(fields1335)
-                i1337 = i1723 - 1
-                if (i1337 > 0)
+            for (i1733, elem1341) in enumerate(fields1340)
+                i1342 = i1733 - 1
+                if (i1342 > 0)
                     newline(pp)
                 end
-                pretty_var(pp, elem1336)
+                pretty_var(pp, elem1341)
             end
         end
         dedent!(pp)
@@ -3618,54 +3649,54 @@ function pretty_functional_dependency_values(pp::PrettyPrinter, msg::Vector{Prot
 end
 
 function pretty_data(pp::PrettyPrinter, msg::Proto.Data)
-    flat1347 = try_flat(pp, msg, pretty_data)
-    if !isnothing(flat1347)
-        write(pp, flat1347)
+    flat1352 = try_flat(pp, msg, pretty_data)
+    if !isnothing(flat1352)
+        write(pp, flat1352)
         return nothing
     else
         _dollar_dollar = msg
         if _has_proto_field(_dollar_dollar, Symbol("edb"))
-            _t1724 = _get_oneof_field(_dollar_dollar, :edb)
+            _t1734 = _get_oneof_field(_dollar_dollar, :edb)
         else
-            _t1724 = nothing
+            _t1734 = nothing
         end
-        deconstruct_result1345 = _t1724
-        if !isnothing(deconstruct_result1345)
-            unwrapped1346 = deconstruct_result1345
-            pretty_edb(pp, unwrapped1346)
+        deconstruct_result1350 = _t1734
+        if !isnothing(deconstruct_result1350)
+            unwrapped1351 = deconstruct_result1350
+            pretty_edb(pp, unwrapped1351)
         else
             _dollar_dollar = msg
             if _has_proto_field(_dollar_dollar, Symbol("betree_relation"))
-                _t1725 = _get_oneof_field(_dollar_dollar, :betree_relation)
+                _t1735 = _get_oneof_field(_dollar_dollar, :betree_relation)
             else
-                _t1725 = nothing
+                _t1735 = nothing
             end
-            deconstruct_result1343 = _t1725
-            if !isnothing(deconstruct_result1343)
-                unwrapped1344 = deconstruct_result1343
-                pretty_betree_relation(pp, unwrapped1344)
+            deconstruct_result1348 = _t1735
+            if !isnothing(deconstruct_result1348)
+                unwrapped1349 = deconstruct_result1348
+                pretty_betree_relation(pp, unwrapped1349)
             else
                 _dollar_dollar = msg
                 if _has_proto_field(_dollar_dollar, Symbol("csv_data"))
-                    _t1726 = _get_oneof_field(_dollar_dollar, :csv_data)
+                    _t1736 = _get_oneof_field(_dollar_dollar, :csv_data)
                 else
-                    _t1726 = nothing
+                    _t1736 = nothing
                 end
-                deconstruct_result1341 = _t1726
-                if !isnothing(deconstruct_result1341)
-                    unwrapped1342 = deconstruct_result1341
-                    pretty_csv_data(pp, unwrapped1342)
+                deconstruct_result1346 = _t1736
+                if !isnothing(deconstruct_result1346)
+                    unwrapped1347 = deconstruct_result1346
+                    pretty_csv_data(pp, unwrapped1347)
                 else
                     _dollar_dollar = msg
                     if _has_proto_field(_dollar_dollar, Symbol("iceberg_data"))
-                        _t1727 = _get_oneof_field(_dollar_dollar, :iceberg_data)
+                        _t1737 = _get_oneof_field(_dollar_dollar, :iceberg_data)
                     else
-                        _t1727 = nothing
+                        _t1737 = nothing
                     end
-                    deconstruct_result1339 = _t1727
-                    if !isnothing(deconstruct_result1339)
-                        unwrapped1340 = deconstruct_result1339
-                        pretty_iceberg_data(pp, unwrapped1340)
+                    deconstruct_result1344 = _t1737
+                    if !isnothing(deconstruct_result1344)
+                        unwrapped1345 = deconstruct_result1344
+                        pretty_iceberg_data(pp, unwrapped1345)
                     else
                         throw(ParseError("No matching rule for data"))
                     end
@@ -3677,25 +3708,25 @@ function pretty_data(pp::PrettyPrinter, msg::Proto.Data)
 end
 
 function pretty_edb(pp::PrettyPrinter, msg::Proto.EDB)
-    flat1353 = try_flat(pp, msg, pretty_edb)
-    if !isnothing(flat1353)
-        write(pp, flat1353)
+    flat1358 = try_flat(pp, msg, pretty_edb)
+    if !isnothing(flat1358)
+        write(pp, flat1358)
         return nothing
     else
         _dollar_dollar = msg
-        fields1348 = (_dollar_dollar.target_id, _dollar_dollar.path, _dollar_dollar.types,)
-        unwrapped_fields1349 = fields1348
+        fields1353 = (_dollar_dollar.target_id, _dollar_dollar.path, _dollar_dollar.types,)
+        unwrapped_fields1354 = fields1353
         write(pp, "(edb")
         indent_sexp!(pp)
         newline(pp)
-        field1350 = unwrapped_fields1349[1]
-        pretty_relation_id(pp, field1350)
+        field1355 = unwrapped_fields1354[1]
+        pretty_relation_id(pp, field1355)
         newline(pp)
-        field1351 = unwrapped_fields1349[2]
-        pretty_edb_path(pp, field1351)
+        field1356 = unwrapped_fields1354[2]
+        pretty_edb_path(pp, field1356)
         newline(pp)
-        field1352 = unwrapped_fields1349[3]
-        pretty_edb_types(pp, field1352)
+        field1357 = unwrapped_fields1354[3]
+        pretty_edb_types(pp, field1357)
         dedent!(pp)
         write(pp, ")")
     end
@@ -3703,20 +3734,20 @@ function pretty_edb(pp::PrettyPrinter, msg::Proto.EDB)
 end
 
 function pretty_edb_path(pp::PrettyPrinter, msg::Vector{String})
-    flat1357 = try_flat(pp, msg, pretty_edb_path)
-    if !isnothing(flat1357)
-        write(pp, flat1357)
+    flat1362 = try_flat(pp, msg, pretty_edb_path)
+    if !isnothing(flat1362)
+        write(pp, flat1362)
         return nothing
     else
-        fields1354 = msg
+        fields1359 = msg
         write(pp, "[")
         indent!(pp)
-        for (i1728, elem1355) in enumerate(fields1354)
-            i1356 = i1728 - 1
-            if (i1356 > 0)
+        for (i1738, elem1360) in enumerate(fields1359)
+            i1361 = i1738 - 1
+            if (i1361 > 0)
                 newline(pp)
             end
-            write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, elem1355))
+            write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, elem1360))
         end
         dedent!(pp)
         write(pp, "]")
@@ -3725,20 +3756,20 @@ function pretty_edb_path(pp::PrettyPrinter, msg::Vector{String})
 end
 
 function pretty_edb_types(pp::PrettyPrinter, msg::Vector{Proto.var"#Type"})
-    flat1361 = try_flat(pp, msg, pretty_edb_types)
-    if !isnothing(flat1361)
-        write(pp, flat1361)
+    flat1366 = try_flat(pp, msg, pretty_edb_types)
+    if !isnothing(flat1366)
+        write(pp, flat1366)
         return nothing
     else
-        fields1358 = msg
+        fields1363 = msg
         write(pp, "[")
         indent!(pp)
-        for (i1729, elem1359) in enumerate(fields1358)
-            i1360 = i1729 - 1
-            if (i1360 > 0)
+        for (i1739, elem1364) in enumerate(fields1363)
+            i1365 = i1739 - 1
+            if (i1365 > 0)
                 newline(pp)
             end
-            pretty_type(pp, elem1359)
+            pretty_type(pp, elem1364)
         end
         dedent!(pp)
         write(pp, "]")
@@ -3747,22 +3778,22 @@ function pretty_edb_types(pp::PrettyPrinter, msg::Vector{Proto.var"#Type"})
 end
 
 function pretty_betree_relation(pp::PrettyPrinter, msg::Proto.BeTreeRelation)
-    flat1366 = try_flat(pp, msg, pretty_betree_relation)
-    if !isnothing(flat1366)
-        write(pp, flat1366)
+    flat1371 = try_flat(pp, msg, pretty_betree_relation)
+    if !isnothing(flat1371)
+        write(pp, flat1371)
         return nothing
     else
         _dollar_dollar = msg
-        fields1362 = (_dollar_dollar.name, _dollar_dollar.relation_info,)
-        unwrapped_fields1363 = fields1362
+        fields1367 = (_dollar_dollar.name, _dollar_dollar.relation_info,)
+        unwrapped_fields1368 = fields1367
         write(pp, "(betree_relation")
         indent_sexp!(pp)
         newline(pp)
-        field1364 = unwrapped_fields1363[1]
-        pretty_relation_id(pp, field1364)
+        field1369 = unwrapped_fields1368[1]
+        pretty_relation_id(pp, field1369)
         newline(pp)
-        field1365 = unwrapped_fields1363[2]
-        pretty_betree_info(pp, field1365)
+        field1370 = unwrapped_fields1368[2]
+        pretty_betree_info(pp, field1370)
         dedent!(pp)
         write(pp, ")")
     end
@@ -3770,26 +3801,26 @@ function pretty_betree_relation(pp::PrettyPrinter, msg::Proto.BeTreeRelation)
 end
 
 function pretty_betree_info(pp::PrettyPrinter, msg::Proto.BeTreeInfo)
-    flat1372 = try_flat(pp, msg, pretty_betree_info)
-    if !isnothing(flat1372)
-        write(pp, flat1372)
+    flat1377 = try_flat(pp, msg, pretty_betree_info)
+    if !isnothing(flat1377)
+        write(pp, flat1377)
         return nothing
     else
         _dollar_dollar = msg
-        _t1730 = deconstruct_betree_info_config(pp, _dollar_dollar)
-        fields1367 = (_dollar_dollar.key_types, _dollar_dollar.value_types, _t1730,)
-        unwrapped_fields1368 = fields1367
+        _t1740 = deconstruct_betree_info_config(pp, _dollar_dollar)
+        fields1372 = (_dollar_dollar.key_types, _dollar_dollar.value_types, _t1740,)
+        unwrapped_fields1373 = fields1372
         write(pp, "(betree_info")
         indent_sexp!(pp)
         newline(pp)
-        field1369 = unwrapped_fields1368[1]
-        pretty_betree_info_key_types(pp, field1369)
+        field1374 = unwrapped_fields1373[1]
+        pretty_betree_info_key_types(pp, field1374)
         newline(pp)
-        field1370 = unwrapped_fields1368[2]
-        pretty_betree_info_value_types(pp, field1370)
+        field1375 = unwrapped_fields1373[2]
+        pretty_betree_info_value_types(pp, field1375)
         newline(pp)
-        field1371 = unwrapped_fields1368[3]
-        pretty_config_dict(pp, field1371)
+        field1376 = unwrapped_fields1373[3]
+        pretty_config_dict(pp, field1376)
         dedent!(pp)
         write(pp, ")")
     end
@@ -3797,22 +3828,22 @@ function pretty_betree_info(pp::PrettyPrinter, msg::Proto.BeTreeInfo)
 end
 
 function pretty_betree_info_key_types(pp::PrettyPrinter, msg::Vector{Proto.var"#Type"})
-    flat1376 = try_flat(pp, msg, pretty_betree_info_key_types)
-    if !isnothing(flat1376)
-        write(pp, flat1376)
+    flat1381 = try_flat(pp, msg, pretty_betree_info_key_types)
+    if !isnothing(flat1381)
+        write(pp, flat1381)
         return nothing
     else
-        fields1373 = msg
+        fields1378 = msg
         write(pp, "(key_types")
         indent_sexp!(pp)
-        if !isempty(fields1373)
+        if !isempty(fields1378)
             newline(pp)
-            for (i1731, elem1374) in enumerate(fields1373)
-                i1375 = i1731 - 1
-                if (i1375 > 0)
+            for (i1741, elem1379) in enumerate(fields1378)
+                i1380 = i1741 - 1
+                if (i1380 > 0)
                     newline(pp)
                 end
-                pretty_type(pp, elem1374)
+                pretty_type(pp, elem1379)
             end
         end
         dedent!(pp)
@@ -3822,22 +3853,22 @@ function pretty_betree_info_key_types(pp::PrettyPrinter, msg::Vector{Proto.var"#
 end
 
 function pretty_betree_info_value_types(pp::PrettyPrinter, msg::Vector{Proto.var"#Type"})
-    flat1380 = try_flat(pp, msg, pretty_betree_info_value_types)
-    if !isnothing(flat1380)
-        write(pp, flat1380)
+    flat1385 = try_flat(pp, msg, pretty_betree_info_value_types)
+    if !isnothing(flat1385)
+        write(pp, flat1385)
         return nothing
     else
-        fields1377 = msg
+        fields1382 = msg
         write(pp, "(value_types")
         indent_sexp!(pp)
-        if !isempty(fields1377)
+        if !isempty(fields1382)
             newline(pp)
-            for (i1732, elem1378) in enumerate(fields1377)
-                i1379 = i1732 - 1
-                if (i1379 > 0)
+            for (i1742, elem1383) in enumerate(fields1382)
+                i1384 = i1742 - 1
+                if (i1384 > 0)
                     newline(pp)
                 end
-                pretty_type(pp, elem1378)
+                pretty_type(pp, elem1383)
             end
         end
         dedent!(pp)
@@ -3847,28 +3878,28 @@ function pretty_betree_info_value_types(pp::PrettyPrinter, msg::Vector{Proto.var
 end
 
 function pretty_csv_data(pp::PrettyPrinter, msg::Proto.CSVData)
-    flat1387 = try_flat(pp, msg, pretty_csv_data)
-    if !isnothing(flat1387)
-        write(pp, flat1387)
+    flat1392 = try_flat(pp, msg, pretty_csv_data)
+    if !isnothing(flat1392)
+        write(pp, flat1392)
         return nothing
     else
         _dollar_dollar = msg
-        fields1381 = (_dollar_dollar.locator, _dollar_dollar.config, _dollar_dollar.columns, _dollar_dollar.asof,)
-        unwrapped_fields1382 = fields1381
+        fields1386 = (_dollar_dollar.locator, _dollar_dollar.config, _dollar_dollar.columns, _dollar_dollar.asof,)
+        unwrapped_fields1387 = fields1386
         write(pp, "(csv_data")
         indent_sexp!(pp)
         newline(pp)
-        field1383 = unwrapped_fields1382[1]
-        pretty_csvlocator(pp, field1383)
+        field1388 = unwrapped_fields1387[1]
+        pretty_csvlocator(pp, field1388)
         newline(pp)
-        field1384 = unwrapped_fields1382[2]
-        pretty_csv_config(pp, field1384)
+        field1389 = unwrapped_fields1387[2]
+        pretty_csv_config(pp, field1389)
         newline(pp)
-        field1385 = unwrapped_fields1382[3]
-        pretty_gnf_columns(pp, field1385)
+        field1390 = unwrapped_fields1387[3]
+        pretty_gnf_columns(pp, field1390)
         newline(pp)
-        field1386 = unwrapped_fields1382[4]
-        pretty_csv_asof(pp, field1386)
+        field1391 = unwrapped_fields1387[4]
+        pretty_csv_asof(pp, field1391)
         dedent!(pp)
         write(pp, ")")
     end
@@ -3876,37 +3907,37 @@ function pretty_csv_data(pp::PrettyPrinter, msg::Proto.CSVData)
 end
 
 function pretty_csvlocator(pp::PrettyPrinter, msg::Proto.CSVLocator)
-    flat1394 = try_flat(pp, msg, pretty_csvlocator)
-    if !isnothing(flat1394)
-        write(pp, flat1394)
+    flat1399 = try_flat(pp, msg, pretty_csvlocator)
+    if !isnothing(flat1399)
+        write(pp, flat1399)
         return nothing
     else
         _dollar_dollar = msg
         if !isempty(_dollar_dollar.paths)
-            _t1733 = _dollar_dollar.paths
+            _t1743 = _dollar_dollar.paths
         else
-            _t1733 = nothing
+            _t1743 = nothing
         end
         if String(copy(_dollar_dollar.inline_data)) != ""
-            _t1734 = String(copy(_dollar_dollar.inline_data))
+            _t1744 = String(copy(_dollar_dollar.inline_data))
         else
-            _t1734 = nothing
+            _t1744 = nothing
         end
-        fields1388 = (_t1733, _t1734,)
-        unwrapped_fields1389 = fields1388
+        fields1393 = (_t1743, _t1744,)
+        unwrapped_fields1394 = fields1393
         write(pp, "(csv_locator")
         indent_sexp!(pp)
-        field1390 = unwrapped_fields1389[1]
-        if !isnothing(field1390)
+        field1395 = unwrapped_fields1394[1]
+        if !isnothing(field1395)
             newline(pp)
-            opt_val1391 = field1390
-            pretty_csv_locator_paths(pp, opt_val1391)
+            opt_val1396 = field1395
+            pretty_csv_locator_paths(pp, opt_val1396)
         end
-        field1392 = unwrapped_fields1389[2]
-        if !isnothing(field1392)
+        field1397 = unwrapped_fields1394[2]
+        if !isnothing(field1397)
             newline(pp)
-            opt_val1393 = field1392
-            pretty_csv_locator_inline_data(pp, opt_val1393)
+            opt_val1398 = field1397
+            pretty_csv_locator_inline_data(pp, opt_val1398)
         end
         dedent!(pp)
         write(pp, ")")
@@ -3915,22 +3946,22 @@ function pretty_csvlocator(pp::PrettyPrinter, msg::Proto.CSVLocator)
 end
 
 function pretty_csv_locator_paths(pp::PrettyPrinter, msg::Vector{String})
-    flat1398 = try_flat(pp, msg, pretty_csv_locator_paths)
-    if !isnothing(flat1398)
-        write(pp, flat1398)
+    flat1403 = try_flat(pp, msg, pretty_csv_locator_paths)
+    if !isnothing(flat1403)
+        write(pp, flat1403)
         return nothing
     else
-        fields1395 = msg
+        fields1400 = msg
         write(pp, "(paths")
         indent_sexp!(pp)
-        if !isempty(fields1395)
+        if !isempty(fields1400)
             newline(pp)
-            for (i1735, elem1396) in enumerate(fields1395)
-                i1397 = i1735 - 1
-                if (i1397 > 0)
+            for (i1745, elem1401) in enumerate(fields1400)
+                i1402 = i1745 - 1
+                if (i1402 > 0)
                     newline(pp)
                 end
-                write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, elem1396))
+                write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, elem1401))
             end
         end
         dedent!(pp)
@@ -3940,16 +3971,16 @@ function pretty_csv_locator_paths(pp::PrettyPrinter, msg::Vector{String})
 end
 
 function pretty_csv_locator_inline_data(pp::PrettyPrinter, msg::String)
-    flat1400 = try_flat(pp, msg, pretty_csv_locator_inline_data)
-    if !isnothing(flat1400)
-        write(pp, flat1400)
+    flat1405 = try_flat(pp, msg, pretty_csv_locator_inline_data)
+    if !isnothing(flat1405)
+        write(pp, flat1405)
         return nothing
     else
-        fields1399 = msg
+        fields1404 = msg
         write(pp, "(inline_data")
         indent_sexp!(pp)
         newline(pp)
-        write(pp, format_string(pp, fields1399))
+        write(pp, format_string(pp, fields1404))
         dedent!(pp)
         write(pp, ")")
     end
@@ -3957,19 +3988,44 @@ function pretty_csv_locator_inline_data(pp::PrettyPrinter, msg::String)
 end
 
 function pretty_csv_config(pp::PrettyPrinter, msg::Proto.CSVConfig)
-    flat1403 = try_flat(pp, msg, pretty_csv_config)
-    if !isnothing(flat1403)
-        write(pp, flat1403)
+    flat1411 = try_flat(pp, msg, pretty_csv_config)
+    if !isnothing(flat1411)
+        write(pp, flat1411)
         return nothing
     else
         _dollar_dollar = msg
-        _t1736 = deconstruct_csv_config(pp, _dollar_dollar)
-        fields1401 = _t1736
-        unwrapped_fields1402 = fields1401
+        _t1746 = deconstruct_csv_config(pp, _dollar_dollar)
+        _t1747 = deconstruct_csv_storage_integration_optional(pp, _dollar_dollar)
+        fields1406 = (_t1746, _t1747,)
+        unwrapped_fields1407 = fields1406
         write(pp, "(csv_config")
         indent_sexp!(pp)
         newline(pp)
-        pretty_config_dict(pp, unwrapped_fields1402)
+        field1408 = unwrapped_fields1407[1]
+        pretty_config_dict(pp, field1408)
+        field1409 = unwrapped_fields1407[2]
+        if !isnothing(field1409)
+            newline(pp)
+            opt_val1410 = field1409
+            pretty__storage_integration(pp, opt_val1410)
+        end
+        dedent!(pp)
+        write(pp, ")")
+    end
+    return nothing
+end
+
+function pretty__storage_integration(pp::PrettyPrinter, msg::Vector{Tuple{String, Proto.Value}})
+    flat1413 = try_flat(pp, msg, pretty__storage_integration)
+    if !isnothing(flat1413)
+        write(pp, flat1413)
+        return nothing
+    else
+        fields1412 = msg
+        write(pp, "(storage_integration")
+        indent_sexp!(pp)
+        newline(pp)
+        pretty_config_dict(pp, fields1412)
         dedent!(pp)
         write(pp, ")")
     end
@@ -3977,22 +4033,22 @@ function pretty_csv_config(pp::PrettyPrinter, msg::Proto.CSVConfig)
 end
 
 function pretty_gnf_columns(pp::PrettyPrinter, msg::Vector{Proto.GNFColumn})
-    flat1407 = try_flat(pp, msg, pretty_gnf_columns)
-    if !isnothing(flat1407)
-        write(pp, flat1407)
+    flat1417 = try_flat(pp, msg, pretty_gnf_columns)
+    if !isnothing(flat1417)
+        write(pp, flat1417)
         return nothing
     else
-        fields1404 = msg
+        fields1414 = msg
         write(pp, "(columns")
         indent_sexp!(pp)
-        if !isempty(fields1404)
+        if !isempty(fields1414)
             newline(pp)
-            for (i1737, elem1405) in enumerate(fields1404)
-                i1406 = i1737 - 1
-                if (i1406 > 0)
+            for (i1748, elem1415) in enumerate(fields1414)
+                i1416 = i1748 - 1
+                if (i1416 > 0)
                     newline(pp)
                 end
-                pretty_gnf_column(pp, elem1405)
+                pretty_gnf_column(pp, elem1415)
             end
         end
         dedent!(pp)
@@ -4002,39 +4058,39 @@ function pretty_gnf_columns(pp::PrettyPrinter, msg::Vector{Proto.GNFColumn})
 end
 
 function pretty_gnf_column(pp::PrettyPrinter, msg::Proto.GNFColumn)
-    flat1416 = try_flat(pp, msg, pretty_gnf_column)
-    if !isnothing(flat1416)
-        write(pp, flat1416)
+    flat1426 = try_flat(pp, msg, pretty_gnf_column)
+    if !isnothing(flat1426)
+        write(pp, flat1426)
         return nothing
     else
         _dollar_dollar = msg
         if _has_proto_field(_dollar_dollar, Symbol("target_id"))
-            _t1738 = _dollar_dollar.target_id
+            _t1749 = _dollar_dollar.target_id
         else
-            _t1738 = nothing
+            _t1749 = nothing
         end
-        fields1408 = (_dollar_dollar.column_path, _t1738, _dollar_dollar.types,)
-        unwrapped_fields1409 = fields1408
+        fields1418 = (_dollar_dollar.column_path, _t1749, _dollar_dollar.types,)
+        unwrapped_fields1419 = fields1418
         write(pp, "(column")
         indent_sexp!(pp)
         newline(pp)
-        field1410 = unwrapped_fields1409[1]
-        pretty_gnf_column_path(pp, field1410)
-        field1411 = unwrapped_fields1409[2]
-        if !isnothing(field1411)
+        field1420 = unwrapped_fields1419[1]
+        pretty_gnf_column_path(pp, field1420)
+        field1421 = unwrapped_fields1419[2]
+        if !isnothing(field1421)
             newline(pp)
-            opt_val1412 = field1411
-            pretty_relation_id(pp, opt_val1412)
+            opt_val1422 = field1421
+            pretty_relation_id(pp, opt_val1422)
         end
         newline(pp)
         write(pp, "[")
-        field1413 = unwrapped_fields1409[3]
-        for (i1739, elem1414) in enumerate(field1413)
-            i1415 = i1739 - 1
-            if (i1415 > 0)
+        field1423 = unwrapped_fields1419[3]
+        for (i1750, elem1424) in enumerate(field1423)
+            i1425 = i1750 - 1
+            if (i1425 > 0)
                 newline(pp)
             end
-            pretty_type(pp, elem1414)
+            pretty_type(pp, elem1424)
         end
         write(pp, "]")
         dedent!(pp)
@@ -4044,39 +4100,39 @@ function pretty_gnf_column(pp::PrettyPrinter, msg::Proto.GNFColumn)
 end
 
 function pretty_gnf_column_path(pp::PrettyPrinter, msg::Vector{String})
-    flat1423 = try_flat(pp, msg, pretty_gnf_column_path)
-    if !isnothing(flat1423)
-        write(pp, flat1423)
+    flat1433 = try_flat(pp, msg, pretty_gnf_column_path)
+    if !isnothing(flat1433)
+        write(pp, flat1433)
         return nothing
     else
         _dollar_dollar = msg
         if length(_dollar_dollar) == 1
-            _t1740 = _dollar_dollar[1]
+            _t1751 = _dollar_dollar[1]
         else
-            _t1740 = nothing
+            _t1751 = nothing
         end
-        deconstruct_result1421 = _t1740
-        if !isnothing(deconstruct_result1421)
-            unwrapped1422 = deconstruct_result1421
-            write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, unwrapped1422))
+        deconstruct_result1431 = _t1751
+        if !isnothing(deconstruct_result1431)
+            unwrapped1432 = deconstruct_result1431
+            write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, unwrapped1432))
         else
             _dollar_dollar = msg
             if length(_dollar_dollar) != 1
-                _t1741 = _dollar_dollar
+                _t1752 = _dollar_dollar
             else
-                _t1741 = nothing
+                _t1752 = nothing
             end
-            deconstruct_result1417 = _t1741
-            if !isnothing(deconstruct_result1417)
-                unwrapped1418 = deconstruct_result1417
+            deconstruct_result1427 = _t1752
+            if !isnothing(deconstruct_result1427)
+                unwrapped1428 = deconstruct_result1427
                 write(pp, "[")
                 indent!(pp)
-                for (i1742, elem1419) in enumerate(unwrapped1418)
-                    i1420 = i1742 - 1
-                    if (i1420 > 0)
+                for (i1753, elem1429) in enumerate(unwrapped1428)
+                    i1430 = i1753 - 1
+                    if (i1430 > 0)
                         newline(pp)
                     end
-                    write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, elem1419))
+                    write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, elem1429))
                 end
                 dedent!(pp)
                 write(pp, "]")
@@ -4089,16 +4145,16 @@ function pretty_gnf_column_path(pp::PrettyPrinter, msg::Vector{String})
 end
 
 function pretty_csv_asof(pp::PrettyPrinter, msg::String)
-    flat1425 = try_flat(pp, msg, pretty_csv_asof)
-    if !isnothing(flat1425)
-        write(pp, flat1425)
+    flat1435 = try_flat(pp, msg, pretty_csv_asof)
+    if !isnothing(flat1435)
+        write(pp, flat1435)
         return nothing
     else
-        fields1424 = msg
+        fields1434 = msg
         write(pp, "(asof")
         indent_sexp!(pp)
         newline(pp)
-        write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, fields1424))
+        write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, fields1434))
         dedent!(pp)
         write(pp, ")")
     end
@@ -4106,42 +4162,42 @@ function pretty_csv_asof(pp::PrettyPrinter, msg::String)
 end
 
 function pretty_iceberg_data(pp::PrettyPrinter, msg::Proto.IcebergData)
-    flat1436 = try_flat(pp, msg, pretty_iceberg_data)
-    if !isnothing(flat1436)
-        write(pp, flat1436)
+    flat1446 = try_flat(pp, msg, pretty_iceberg_data)
+    if !isnothing(flat1446)
+        write(pp, flat1446)
         return nothing
     else
         _dollar_dollar = msg
-        _t1743 = deconstruct_iceberg_data_from_snapshot_optional(pp, _dollar_dollar)
-        _t1744 = deconstruct_iceberg_data_to_snapshot_optional(pp, _dollar_dollar)
-        fields1426 = (_dollar_dollar.locator, _dollar_dollar.config, _dollar_dollar.columns, _t1743, _t1744, _dollar_dollar.returns_delta,)
-        unwrapped_fields1427 = fields1426
+        _t1754 = deconstruct_iceberg_data_from_snapshot_optional(pp, _dollar_dollar)
+        _t1755 = deconstruct_iceberg_data_to_snapshot_optional(pp, _dollar_dollar)
+        fields1436 = (_dollar_dollar.locator, _dollar_dollar.config, _dollar_dollar.columns, _t1754, _t1755, _dollar_dollar.returns_delta,)
+        unwrapped_fields1437 = fields1436
         write(pp, "(iceberg_data")
         indent_sexp!(pp)
         newline(pp)
-        field1428 = unwrapped_fields1427[1]
-        pretty_iceberg_locator(pp, field1428)
+        field1438 = unwrapped_fields1437[1]
+        pretty_iceberg_locator(pp, field1438)
         newline(pp)
-        field1429 = unwrapped_fields1427[2]
-        pretty_iceberg_catalog_config(pp, field1429)
+        field1439 = unwrapped_fields1437[2]
+        pretty_iceberg_catalog_config(pp, field1439)
         newline(pp)
-        field1430 = unwrapped_fields1427[3]
-        pretty_gnf_columns(pp, field1430)
-        field1431 = unwrapped_fields1427[4]
-        if !isnothing(field1431)
+        field1440 = unwrapped_fields1437[3]
+        pretty_gnf_columns(pp, field1440)
+        field1441 = unwrapped_fields1437[4]
+        if !isnothing(field1441)
             newline(pp)
-            opt_val1432 = field1431
-            pretty_iceberg_from_snapshot(pp, opt_val1432)
+            opt_val1442 = field1441
+            pretty_iceberg_from_snapshot(pp, opt_val1442)
         end
-        field1433 = unwrapped_fields1427[5]
-        if !isnothing(field1433)
+        field1443 = unwrapped_fields1437[5]
+        if !isnothing(field1443)
             newline(pp)
-            opt_val1434 = field1433
-            pretty_iceberg_to_snapshot(pp, opt_val1434)
+            opt_val1444 = field1443
+            pretty_iceberg_to_snapshot(pp, opt_val1444)
         end
         newline(pp)
-        field1435 = unwrapped_fields1427[6]
-        pretty_boolean_value(pp, field1435)
+        field1445 = unwrapped_fields1437[6]
+        pretty_boolean_value(pp, field1445)
         dedent!(pp)
         write(pp, ")")
     end
@@ -4149,25 +4205,25 @@ function pretty_iceberg_data(pp::PrettyPrinter, msg::Proto.IcebergData)
 end
 
 function pretty_iceberg_locator(pp::PrettyPrinter, msg::Proto.IcebergLocator)
-    flat1442 = try_flat(pp, msg, pretty_iceberg_locator)
-    if !isnothing(flat1442)
-        write(pp, flat1442)
+    flat1452 = try_flat(pp, msg, pretty_iceberg_locator)
+    if !isnothing(flat1452)
+        write(pp, flat1452)
         return nothing
     else
         _dollar_dollar = msg
-        fields1437 = (_dollar_dollar.table_name, _dollar_dollar.namespace, _dollar_dollar.warehouse,)
-        unwrapped_fields1438 = fields1437
+        fields1447 = (_dollar_dollar.table_name, _dollar_dollar.namespace, _dollar_dollar.warehouse,)
+        unwrapped_fields1448 = fields1447
         write(pp, "(iceberg_locator")
         indent_sexp!(pp)
         newline(pp)
-        field1439 = unwrapped_fields1438[1]
-        pretty_iceberg_locator_table_name(pp, field1439)
+        field1449 = unwrapped_fields1448[1]
+        pretty_iceberg_locator_table_name(pp, field1449)
         newline(pp)
-        field1440 = unwrapped_fields1438[2]
-        pretty_iceberg_locator_namespace(pp, field1440)
+        field1450 = unwrapped_fields1448[2]
+        pretty_iceberg_locator_namespace(pp, field1450)
         newline(pp)
-        field1441 = unwrapped_fields1438[3]
-        pretty_iceberg_locator_warehouse(pp, field1441)
+        field1451 = unwrapped_fields1448[3]
+        pretty_iceberg_locator_warehouse(pp, field1451)
         dedent!(pp)
         write(pp, ")")
     end
@@ -4175,16 +4231,16 @@ function pretty_iceberg_locator(pp::PrettyPrinter, msg::Proto.IcebergLocator)
 end
 
 function pretty_iceberg_locator_table_name(pp::PrettyPrinter, msg::String)
-    flat1444 = try_flat(pp, msg, pretty_iceberg_locator_table_name)
-    if !isnothing(flat1444)
-        write(pp, flat1444)
+    flat1454 = try_flat(pp, msg, pretty_iceberg_locator_table_name)
+    if !isnothing(flat1454)
+        write(pp, flat1454)
         return nothing
     else
-        fields1443 = msg
+        fields1453 = msg
         write(pp, "(table_name")
         indent_sexp!(pp)
         newline(pp)
-        write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, fields1443))
+        write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, fields1453))
         dedent!(pp)
         write(pp, ")")
     end
@@ -4192,22 +4248,22 @@ function pretty_iceberg_locator_table_name(pp::PrettyPrinter, msg::String)
 end
 
 function pretty_iceberg_locator_namespace(pp::PrettyPrinter, msg::Vector{String})
-    flat1448 = try_flat(pp, msg, pretty_iceberg_locator_namespace)
-    if !isnothing(flat1448)
-        write(pp, flat1448)
+    flat1458 = try_flat(pp, msg, pretty_iceberg_locator_namespace)
+    if !isnothing(flat1458)
+        write(pp, flat1458)
         return nothing
     else
-        fields1445 = msg
+        fields1455 = msg
         write(pp, "(namespace")
         indent_sexp!(pp)
-        if !isempty(fields1445)
+        if !isempty(fields1455)
             newline(pp)
-            for (i1745, elem1446) in enumerate(fields1445)
-                i1447 = i1745 - 1
-                if (i1447 > 0)
+            for (i1756, elem1456) in enumerate(fields1455)
+                i1457 = i1756 - 1
+                if (i1457 > 0)
                     newline(pp)
                 end
-                write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, elem1446))
+                write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, elem1456))
             end
         end
         dedent!(pp)
@@ -4217,63 +4273,13 @@ function pretty_iceberg_locator_namespace(pp::PrettyPrinter, msg::Vector{String}
 end
 
 function pretty_iceberg_locator_warehouse(pp::PrettyPrinter, msg::String)
-    flat1450 = try_flat(pp, msg, pretty_iceberg_locator_warehouse)
-    if !isnothing(flat1450)
-        write(pp, flat1450)
-        return nothing
-    else
-        fields1449 = msg
-        write(pp, "(warehouse")
-        indent_sexp!(pp)
-        newline(pp)
-        write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, fields1449))
-        dedent!(pp)
-        write(pp, ")")
-    end
-    return nothing
-end
-
-function pretty_iceberg_catalog_config(pp::PrettyPrinter, msg::Proto.IcebergCatalogConfig)
-    flat1458 = try_flat(pp, msg, pretty_iceberg_catalog_config)
-    if !isnothing(flat1458)
-        write(pp, flat1458)
-        return nothing
-    else
-        _dollar_dollar = msg
-        _t1746 = deconstruct_iceberg_catalog_config_scope_optional(pp, _dollar_dollar)
-        fields1451 = (_dollar_dollar.catalog_uri, _t1746, sort([(k, v) for (k, v) in _dollar_dollar.properties]), sort([(k, v) for (k, v) in _dollar_dollar.auth_properties]),)
-        unwrapped_fields1452 = fields1451
-        write(pp, "(iceberg_catalog_config")
-        indent_sexp!(pp)
-        newline(pp)
-        field1453 = unwrapped_fields1452[1]
-        pretty_iceberg_catalog_uri(pp, field1453)
-        field1454 = unwrapped_fields1452[2]
-        if !isnothing(field1454)
-            newline(pp)
-            opt_val1455 = field1454
-            pretty_iceberg_catalog_config_scope(pp, opt_val1455)
-        end
-        newline(pp)
-        field1456 = unwrapped_fields1452[3]
-        pretty_iceberg_properties(pp, field1456)
-        newline(pp)
-        field1457 = unwrapped_fields1452[4]
-        pretty_iceberg_auth_properties(pp, field1457)
-        dedent!(pp)
-        write(pp, ")")
-    end
-    return nothing
-end
-
-function pretty_iceberg_catalog_uri(pp::PrettyPrinter, msg::String)
-    flat1460 = try_flat(pp, msg, pretty_iceberg_catalog_uri)
+    flat1460 = try_flat(pp, msg, pretty_iceberg_locator_warehouse)
     if !isnothing(flat1460)
         write(pp, flat1460)
         return nothing
     else
         fields1459 = msg
-        write(pp, "(catalog_uri")
+        write(pp, "(warehouse")
         indent_sexp!(pp)
         newline(pp)
         write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, fields1459))
@@ -4283,17 +4289,67 @@ function pretty_iceberg_catalog_uri(pp::PrettyPrinter, msg::String)
     return nothing
 end
 
-function pretty_iceberg_catalog_config_scope(pp::PrettyPrinter, msg::String)
-    flat1462 = try_flat(pp, msg, pretty_iceberg_catalog_config_scope)
-    if !isnothing(flat1462)
-        write(pp, flat1462)
+function pretty_iceberg_catalog_config(pp::PrettyPrinter, msg::Proto.IcebergCatalogConfig)
+    flat1468 = try_flat(pp, msg, pretty_iceberg_catalog_config)
+    if !isnothing(flat1468)
+        write(pp, flat1468)
         return nothing
     else
-        fields1461 = msg
+        _dollar_dollar = msg
+        _t1757 = deconstruct_iceberg_catalog_config_scope_optional(pp, _dollar_dollar)
+        fields1461 = (_dollar_dollar.catalog_uri, _t1757, sort([(k, v) for (k, v) in _dollar_dollar.properties]), sort([(k, v) for (k, v) in _dollar_dollar.auth_properties]),)
+        unwrapped_fields1462 = fields1461
+        write(pp, "(iceberg_catalog_config")
+        indent_sexp!(pp)
+        newline(pp)
+        field1463 = unwrapped_fields1462[1]
+        pretty_iceberg_catalog_uri(pp, field1463)
+        field1464 = unwrapped_fields1462[2]
+        if !isnothing(field1464)
+            newline(pp)
+            opt_val1465 = field1464
+            pretty_iceberg_catalog_config_scope(pp, opt_val1465)
+        end
+        newline(pp)
+        field1466 = unwrapped_fields1462[3]
+        pretty_iceberg_properties(pp, field1466)
+        newline(pp)
+        field1467 = unwrapped_fields1462[4]
+        pretty_iceberg_auth_properties(pp, field1467)
+        dedent!(pp)
+        write(pp, ")")
+    end
+    return nothing
+end
+
+function pretty_iceberg_catalog_uri(pp::PrettyPrinter, msg::String)
+    flat1470 = try_flat(pp, msg, pretty_iceberg_catalog_uri)
+    if !isnothing(flat1470)
+        write(pp, flat1470)
+        return nothing
+    else
+        fields1469 = msg
+        write(pp, "(catalog_uri")
+        indent_sexp!(pp)
+        newline(pp)
+        write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, fields1469))
+        dedent!(pp)
+        write(pp, ")")
+    end
+    return nothing
+end
+
+function pretty_iceberg_catalog_config_scope(pp::PrettyPrinter, msg::String)
+    flat1472 = try_flat(pp, msg, pretty_iceberg_catalog_config_scope)
+    if !isnothing(flat1472)
+        write(pp, flat1472)
+        return nothing
+    else
+        fields1471 = msg
         write(pp, "(scope")
         indent_sexp!(pp)
         newline(pp)
-        write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, fields1461))
+        write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, fields1471))
         dedent!(pp)
         write(pp, ")")
     end
@@ -4301,22 +4357,22 @@ function pretty_iceberg_catalog_config_scope(pp::PrettyPrinter, msg::String)
 end
 
 function pretty_iceberg_properties(pp::PrettyPrinter, msg::Vector{Tuple{String, String}})
-    flat1466 = try_flat(pp, msg, pretty_iceberg_properties)
-    if !isnothing(flat1466)
-        write(pp, flat1466)
+    flat1476 = try_flat(pp, msg, pretty_iceberg_properties)
+    if !isnothing(flat1476)
+        write(pp, flat1476)
         return nothing
     else
-        fields1463 = msg
+        fields1473 = msg
         write(pp, "(properties")
         indent_sexp!(pp)
-        if !isempty(fields1463)
+        if !isempty(fields1473)
             newline(pp)
-            for (i1747, elem1464) in enumerate(fields1463)
-                i1465 = i1747 - 1
-                if (i1465 > 0)
+            for (i1758, elem1474) in enumerate(fields1473)
+                i1475 = i1758 - 1
+                if (i1475 > 0)
                     newline(pp)
                 end
-                pretty_iceberg_property_entry(pp, elem1464)
+                pretty_iceberg_property_entry(pp, elem1474)
             end
         end
         dedent!(pp)
@@ -4326,22 +4382,22 @@ function pretty_iceberg_properties(pp::PrettyPrinter, msg::Vector{Tuple{String, 
 end
 
 function pretty_iceberg_property_entry(pp::PrettyPrinter, msg::Tuple{String, String})
-    flat1471 = try_flat(pp, msg, pretty_iceberg_property_entry)
-    if !isnothing(flat1471)
-        write(pp, flat1471)
+    flat1481 = try_flat(pp, msg, pretty_iceberg_property_entry)
+    if !isnothing(flat1481)
+        write(pp, flat1481)
         return nothing
     else
         _dollar_dollar = msg
-        fields1467 = (_dollar_dollar[1], _dollar_dollar[2],)
-        unwrapped_fields1468 = fields1467
+        fields1477 = (_dollar_dollar[1], _dollar_dollar[2],)
+        unwrapped_fields1478 = fields1477
         write(pp, "(prop")
         indent_sexp!(pp)
         newline(pp)
-        field1469 = unwrapped_fields1468[1]
-        write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, field1469))
+        field1479 = unwrapped_fields1478[1]
+        write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, field1479))
         newline(pp)
-        field1470 = unwrapped_fields1468[2]
-        write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, field1470))
+        field1480 = unwrapped_fields1478[2]
+        write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, field1480))
         dedent!(pp)
         write(pp, ")")
     end
@@ -4349,22 +4405,22 @@ function pretty_iceberg_property_entry(pp::PrettyPrinter, msg::Tuple{String, Str
 end
 
 function pretty_iceberg_auth_properties(pp::PrettyPrinter, msg::Vector{Tuple{String, String}})
-    flat1475 = try_flat(pp, msg, pretty_iceberg_auth_properties)
-    if !isnothing(flat1475)
-        write(pp, flat1475)
+    flat1485 = try_flat(pp, msg, pretty_iceberg_auth_properties)
+    if !isnothing(flat1485)
+        write(pp, flat1485)
         return nothing
     else
-        fields1472 = msg
+        fields1482 = msg
         write(pp, "(auth_properties")
         indent_sexp!(pp)
-        if !isempty(fields1472)
+        if !isempty(fields1482)
             newline(pp)
-            for (i1748, elem1473) in enumerate(fields1472)
-                i1474 = i1748 - 1
-                if (i1474 > 0)
+            for (i1759, elem1483) in enumerate(fields1482)
+                i1484 = i1759 - 1
+                if (i1484 > 0)
                     newline(pp)
                 end
-                pretty_iceberg_masked_property_entry(pp, elem1473)
+                pretty_iceberg_masked_property_entry(pp, elem1483)
             end
         end
         dedent!(pp)
@@ -4374,23 +4430,23 @@ function pretty_iceberg_auth_properties(pp::PrettyPrinter, msg::Vector{Tuple{Str
 end
 
 function pretty_iceberg_masked_property_entry(pp::PrettyPrinter, msg::Tuple{String, String})
-    flat1480 = try_flat(pp, msg, pretty_iceberg_masked_property_entry)
-    if !isnothing(flat1480)
-        write(pp, flat1480)
+    flat1490 = try_flat(pp, msg, pretty_iceberg_masked_property_entry)
+    if !isnothing(flat1490)
+        write(pp, flat1490)
         return nothing
     else
         _dollar_dollar = msg
-        _t1749 = mask_secret_value(pp, _dollar_dollar)
-        fields1476 = (_dollar_dollar[1], _t1749,)
-        unwrapped_fields1477 = fields1476
+        _t1760 = mask_secret_value(pp, _dollar_dollar)
+        fields1486 = (_dollar_dollar[1], _t1760,)
+        unwrapped_fields1487 = fields1486
         write(pp, "(prop")
         indent_sexp!(pp)
         newline(pp)
-        field1478 = unwrapped_fields1477[1]
-        write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, field1478))
+        field1488 = unwrapped_fields1487[1]
+        write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, field1488))
         newline(pp)
-        field1479 = unwrapped_fields1477[2]
-        write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, field1479))
+        field1489 = unwrapped_fields1487[2]
+        write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, field1489))
         dedent!(pp)
         write(pp, ")")
     end
@@ -4398,16 +4454,16 @@ function pretty_iceberg_masked_property_entry(pp::PrettyPrinter, msg::Tuple{Stri
 end
 
 function pretty_iceberg_from_snapshot(pp::PrettyPrinter, msg::String)
-    flat1482 = try_flat(pp, msg, pretty_iceberg_from_snapshot)
-    if !isnothing(flat1482)
-        write(pp, flat1482)
+    flat1492 = try_flat(pp, msg, pretty_iceberg_from_snapshot)
+    if !isnothing(flat1492)
+        write(pp, flat1492)
         return nothing
     else
-        fields1481 = msg
+        fields1491 = msg
         write(pp, "(from_snapshot")
         indent_sexp!(pp)
         newline(pp)
-        write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, fields1481))
+        write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, fields1491))
         dedent!(pp)
         write(pp, ")")
     end
@@ -4415,16 +4471,16 @@ function pretty_iceberg_from_snapshot(pp::PrettyPrinter, msg::String)
 end
 
 function pretty_iceberg_to_snapshot(pp::PrettyPrinter, msg::String)
-    flat1484 = try_flat(pp, msg, pretty_iceberg_to_snapshot)
-    if !isnothing(flat1484)
-        write(pp, flat1484)
+    flat1494 = try_flat(pp, msg, pretty_iceberg_to_snapshot)
+    if !isnothing(flat1494)
+        write(pp, flat1494)
         return nothing
     else
-        fields1483 = msg
+        fields1493 = msg
         write(pp, "(to_snapshot")
         indent_sexp!(pp)
         newline(pp)
-        write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, fields1483))
+        write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, fields1493))
         dedent!(pp)
         write(pp, ")")
     end
@@ -4432,18 +4488,18 @@ function pretty_iceberg_to_snapshot(pp::PrettyPrinter, msg::String)
 end
 
 function pretty_undefine(pp::PrettyPrinter, msg::Proto.Undefine)
-    flat1487 = try_flat(pp, msg, pretty_undefine)
-    if !isnothing(flat1487)
-        write(pp, flat1487)
+    flat1497 = try_flat(pp, msg, pretty_undefine)
+    if !isnothing(flat1497)
+        write(pp, flat1497)
         return nothing
     else
         _dollar_dollar = msg
-        fields1485 = _dollar_dollar.fragment_id
-        unwrapped_fields1486 = fields1485
+        fields1495 = _dollar_dollar.fragment_id
+        unwrapped_fields1496 = fields1495
         write(pp, "(undefine")
         indent_sexp!(pp)
         newline(pp)
-        pretty_fragment_id(pp, unwrapped_fields1486)
+        pretty_fragment_id(pp, unwrapped_fields1496)
         dedent!(pp)
         write(pp, ")")
     end
@@ -4451,24 +4507,24 @@ function pretty_undefine(pp::PrettyPrinter, msg::Proto.Undefine)
 end
 
 function pretty_context(pp::PrettyPrinter, msg::Proto.Context)
-    flat1492 = try_flat(pp, msg, pretty_context)
-    if !isnothing(flat1492)
-        write(pp, flat1492)
+    flat1502 = try_flat(pp, msg, pretty_context)
+    if !isnothing(flat1502)
+        write(pp, flat1502)
         return nothing
     else
         _dollar_dollar = msg
-        fields1488 = _dollar_dollar.relations
-        unwrapped_fields1489 = fields1488
+        fields1498 = _dollar_dollar.relations
+        unwrapped_fields1499 = fields1498
         write(pp, "(context")
         indent_sexp!(pp)
-        if !isempty(unwrapped_fields1489)
+        if !isempty(unwrapped_fields1499)
             newline(pp)
-            for (i1750, elem1490) in enumerate(unwrapped_fields1489)
-                i1491 = i1750 - 1
-                if (i1491 > 0)
+            for (i1761, elem1500) in enumerate(unwrapped_fields1499)
+                i1501 = i1761 - 1
+                if (i1501 > 0)
                     newline(pp)
                 end
-                pretty_relation_id(pp, elem1490)
+                pretty_relation_id(pp, elem1500)
             end
         end
         dedent!(pp)
@@ -4478,28 +4534,28 @@ function pretty_context(pp::PrettyPrinter, msg::Proto.Context)
 end
 
 function pretty_snapshot(pp::PrettyPrinter, msg::Proto.Snapshot)
-    flat1499 = try_flat(pp, msg, pretty_snapshot)
-    if !isnothing(flat1499)
-        write(pp, flat1499)
+    flat1509 = try_flat(pp, msg, pretty_snapshot)
+    if !isnothing(flat1509)
+        write(pp, flat1509)
         return nothing
     else
         _dollar_dollar = msg
-        fields1493 = (_dollar_dollar.prefix, _dollar_dollar.mappings,)
-        unwrapped_fields1494 = fields1493
+        fields1503 = (_dollar_dollar.prefix, _dollar_dollar.mappings,)
+        unwrapped_fields1504 = fields1503
         write(pp, "(snapshot")
         indent_sexp!(pp)
         newline(pp)
-        field1495 = unwrapped_fields1494[1]
-        pretty_edb_path(pp, field1495)
-        field1496 = unwrapped_fields1494[2]
-        if !isempty(field1496)
+        field1505 = unwrapped_fields1504[1]
+        pretty_edb_path(pp, field1505)
+        field1506 = unwrapped_fields1504[2]
+        if !isempty(field1506)
             newline(pp)
-            for (i1751, elem1497) in enumerate(field1496)
-                i1498 = i1751 - 1
-                if (i1498 > 0)
+            for (i1762, elem1507) in enumerate(field1506)
+                i1508 = i1762 - 1
+                if (i1508 > 0)
                     newline(pp)
                 end
-                pretty_snapshot_mapping(pp, elem1497)
+                pretty_snapshot_mapping(pp, elem1507)
             end
         end
         dedent!(pp)
@@ -4509,40 +4565,40 @@ function pretty_snapshot(pp::PrettyPrinter, msg::Proto.Snapshot)
 end
 
 function pretty_snapshot_mapping(pp::PrettyPrinter, msg::Proto.SnapshotMapping)
-    flat1504 = try_flat(pp, msg, pretty_snapshot_mapping)
-    if !isnothing(flat1504)
-        write(pp, flat1504)
+    flat1514 = try_flat(pp, msg, pretty_snapshot_mapping)
+    if !isnothing(flat1514)
+        write(pp, flat1514)
         return nothing
     else
         _dollar_dollar = msg
-        fields1500 = (_dollar_dollar.destination_path, _dollar_dollar.source_relation,)
-        unwrapped_fields1501 = fields1500
-        field1502 = unwrapped_fields1501[1]
-        pretty_edb_path(pp, field1502)
+        fields1510 = (_dollar_dollar.destination_path, _dollar_dollar.source_relation,)
+        unwrapped_fields1511 = fields1510
+        field1512 = unwrapped_fields1511[1]
+        pretty_edb_path(pp, field1512)
         write(pp, " ")
-        field1503 = unwrapped_fields1501[2]
-        pretty_relation_id(pp, field1503)
+        field1513 = unwrapped_fields1511[2]
+        pretty_relation_id(pp, field1513)
     end
     return nothing
 end
 
 function pretty_epoch_reads(pp::PrettyPrinter, msg::Vector{Proto.Read})
-    flat1508 = try_flat(pp, msg, pretty_epoch_reads)
-    if !isnothing(flat1508)
-        write(pp, flat1508)
+    flat1518 = try_flat(pp, msg, pretty_epoch_reads)
+    if !isnothing(flat1518)
+        write(pp, flat1518)
         return nothing
     else
-        fields1505 = msg
+        fields1515 = msg
         write(pp, "(reads")
         indent_sexp!(pp)
-        if !isempty(fields1505)
+        if !isempty(fields1515)
             newline(pp)
-            for (i1752, elem1506) in enumerate(fields1505)
-                i1507 = i1752 - 1
-                if (i1507 > 0)
+            for (i1763, elem1516) in enumerate(fields1515)
+                i1517 = i1763 - 1
+                if (i1517 > 0)
                     newline(pp)
                 end
-                pretty_read(pp, elem1506)
+                pretty_read(pp, elem1516)
             end
         end
         dedent!(pp)
@@ -4552,65 +4608,65 @@ function pretty_epoch_reads(pp::PrettyPrinter, msg::Vector{Proto.Read})
 end
 
 function pretty_read(pp::PrettyPrinter, msg::Proto.Read)
-    flat1519 = try_flat(pp, msg, pretty_read)
-    if !isnothing(flat1519)
-        write(pp, flat1519)
+    flat1529 = try_flat(pp, msg, pretty_read)
+    if !isnothing(flat1529)
+        write(pp, flat1529)
         return nothing
     else
         _dollar_dollar = msg
         if _has_proto_field(_dollar_dollar, Symbol("demand"))
-            _t1753 = _get_oneof_field(_dollar_dollar, :demand)
+            _t1764 = _get_oneof_field(_dollar_dollar, :demand)
         else
-            _t1753 = nothing
+            _t1764 = nothing
         end
-        deconstruct_result1517 = _t1753
-        if !isnothing(deconstruct_result1517)
-            unwrapped1518 = deconstruct_result1517
-            pretty_demand(pp, unwrapped1518)
+        deconstruct_result1527 = _t1764
+        if !isnothing(deconstruct_result1527)
+            unwrapped1528 = deconstruct_result1527
+            pretty_demand(pp, unwrapped1528)
         else
             _dollar_dollar = msg
             if _has_proto_field(_dollar_dollar, Symbol("output"))
-                _t1754 = _get_oneof_field(_dollar_dollar, :output)
+                _t1765 = _get_oneof_field(_dollar_dollar, :output)
             else
-                _t1754 = nothing
+                _t1765 = nothing
             end
-            deconstruct_result1515 = _t1754
-            if !isnothing(deconstruct_result1515)
-                unwrapped1516 = deconstruct_result1515
-                pretty_output(pp, unwrapped1516)
+            deconstruct_result1525 = _t1765
+            if !isnothing(deconstruct_result1525)
+                unwrapped1526 = deconstruct_result1525
+                pretty_output(pp, unwrapped1526)
             else
                 _dollar_dollar = msg
                 if _has_proto_field(_dollar_dollar, Symbol("what_if"))
-                    _t1755 = _get_oneof_field(_dollar_dollar, :what_if)
+                    _t1766 = _get_oneof_field(_dollar_dollar, :what_if)
                 else
-                    _t1755 = nothing
+                    _t1766 = nothing
                 end
-                deconstruct_result1513 = _t1755
-                if !isnothing(deconstruct_result1513)
-                    unwrapped1514 = deconstruct_result1513
-                    pretty_what_if(pp, unwrapped1514)
+                deconstruct_result1523 = _t1766
+                if !isnothing(deconstruct_result1523)
+                    unwrapped1524 = deconstruct_result1523
+                    pretty_what_if(pp, unwrapped1524)
                 else
                     _dollar_dollar = msg
                     if _has_proto_field(_dollar_dollar, Symbol("abort"))
-                        _t1756 = _get_oneof_field(_dollar_dollar, :abort)
+                        _t1767 = _get_oneof_field(_dollar_dollar, :abort)
                     else
-                        _t1756 = nothing
+                        _t1767 = nothing
                     end
-                    deconstruct_result1511 = _t1756
-                    if !isnothing(deconstruct_result1511)
-                        unwrapped1512 = deconstruct_result1511
-                        pretty_abort(pp, unwrapped1512)
+                    deconstruct_result1521 = _t1767
+                    if !isnothing(deconstruct_result1521)
+                        unwrapped1522 = deconstruct_result1521
+                        pretty_abort(pp, unwrapped1522)
                     else
                         _dollar_dollar = msg
                         if _has_proto_field(_dollar_dollar, Symbol("#export"))
-                            _t1757 = _get_oneof_field(_dollar_dollar, :var"#export")
+                            _t1768 = _get_oneof_field(_dollar_dollar, :var"#export")
                         else
-                            _t1757 = nothing
+                            _t1768 = nothing
                         end
-                        deconstruct_result1509 = _t1757
-                        if !isnothing(deconstruct_result1509)
-                            unwrapped1510 = deconstruct_result1509
-                            pretty_export(pp, unwrapped1510)
+                        deconstruct_result1519 = _t1768
+                        if !isnothing(deconstruct_result1519)
+                            unwrapped1520 = deconstruct_result1519
+                            pretty_export(pp, unwrapped1520)
                         else
                             throw(ParseError("No matching rule for read"))
                         end
@@ -4623,18 +4679,18 @@ function pretty_read(pp::PrettyPrinter, msg::Proto.Read)
 end
 
 function pretty_demand(pp::PrettyPrinter, msg::Proto.Demand)
-    flat1522 = try_flat(pp, msg, pretty_demand)
-    if !isnothing(flat1522)
-        write(pp, flat1522)
+    flat1532 = try_flat(pp, msg, pretty_demand)
+    if !isnothing(flat1532)
+        write(pp, flat1532)
         return nothing
     else
         _dollar_dollar = msg
-        fields1520 = _dollar_dollar.relation_id
-        unwrapped_fields1521 = fields1520
+        fields1530 = _dollar_dollar.relation_id
+        unwrapped_fields1531 = fields1530
         write(pp, "(demand")
         indent_sexp!(pp)
         newline(pp)
-        pretty_relation_id(pp, unwrapped_fields1521)
+        pretty_relation_id(pp, unwrapped_fields1531)
         dedent!(pp)
         write(pp, ")")
     end
@@ -4642,22 +4698,22 @@ function pretty_demand(pp::PrettyPrinter, msg::Proto.Demand)
 end
 
 function pretty_output(pp::PrettyPrinter, msg::Proto.Output)
-    flat1527 = try_flat(pp, msg, pretty_output)
-    if !isnothing(flat1527)
-        write(pp, flat1527)
+    flat1537 = try_flat(pp, msg, pretty_output)
+    if !isnothing(flat1537)
+        write(pp, flat1537)
         return nothing
     else
         _dollar_dollar = msg
-        fields1523 = (_dollar_dollar.name, _dollar_dollar.relation_id,)
-        unwrapped_fields1524 = fields1523
+        fields1533 = (_dollar_dollar.name, _dollar_dollar.relation_id,)
+        unwrapped_fields1534 = fields1533
         write(pp, "(output")
         indent_sexp!(pp)
         newline(pp)
-        field1525 = unwrapped_fields1524[1]
-        pretty_name(pp, field1525)
+        field1535 = unwrapped_fields1534[1]
+        pretty_name(pp, field1535)
         newline(pp)
-        field1526 = unwrapped_fields1524[2]
-        pretty_relation_id(pp, field1526)
+        field1536 = unwrapped_fields1534[2]
+        pretty_relation_id(pp, field1536)
         dedent!(pp)
         write(pp, ")")
     end
@@ -4665,22 +4721,22 @@ function pretty_output(pp::PrettyPrinter, msg::Proto.Output)
 end
 
 function pretty_what_if(pp::PrettyPrinter, msg::Proto.WhatIf)
-    flat1532 = try_flat(pp, msg, pretty_what_if)
-    if !isnothing(flat1532)
-        write(pp, flat1532)
+    flat1542 = try_flat(pp, msg, pretty_what_if)
+    if !isnothing(flat1542)
+        write(pp, flat1542)
         return nothing
     else
         _dollar_dollar = msg
-        fields1528 = (_dollar_dollar.branch, _dollar_dollar.epoch,)
-        unwrapped_fields1529 = fields1528
+        fields1538 = (_dollar_dollar.branch, _dollar_dollar.epoch,)
+        unwrapped_fields1539 = fields1538
         write(pp, "(what_if")
         indent_sexp!(pp)
         newline(pp)
-        field1530 = unwrapped_fields1529[1]
-        pretty_name(pp, field1530)
+        field1540 = unwrapped_fields1539[1]
+        pretty_name(pp, field1540)
         newline(pp)
-        field1531 = unwrapped_fields1529[2]
-        pretty_epoch(pp, field1531)
+        field1541 = unwrapped_fields1539[2]
+        pretty_epoch(pp, field1541)
         dedent!(pp)
         write(pp, ")")
     end
@@ -4688,30 +4744,30 @@ function pretty_what_if(pp::PrettyPrinter, msg::Proto.WhatIf)
 end
 
 function pretty_abort(pp::PrettyPrinter, msg::Proto.Abort)
-    flat1538 = try_flat(pp, msg, pretty_abort)
-    if !isnothing(flat1538)
-        write(pp, flat1538)
+    flat1548 = try_flat(pp, msg, pretty_abort)
+    if !isnothing(flat1548)
+        write(pp, flat1548)
         return nothing
     else
         _dollar_dollar = msg
         if _dollar_dollar.name != "abort"
-            _t1758 = _dollar_dollar.name
+            _t1769 = _dollar_dollar.name
         else
-            _t1758 = nothing
+            _t1769 = nothing
         end
-        fields1533 = (_t1758, _dollar_dollar.relation_id,)
-        unwrapped_fields1534 = fields1533
+        fields1543 = (_t1769, _dollar_dollar.relation_id,)
+        unwrapped_fields1544 = fields1543
         write(pp, "(abort")
         indent_sexp!(pp)
-        field1535 = unwrapped_fields1534[1]
-        if !isnothing(field1535)
+        field1545 = unwrapped_fields1544[1]
+        if !isnothing(field1545)
             newline(pp)
-            opt_val1536 = field1535
-            pretty_name(pp, opt_val1536)
+            opt_val1546 = field1545
+            pretty_name(pp, opt_val1546)
         end
         newline(pp)
-        field1537 = unwrapped_fields1534[2]
-        pretty_relation_id(pp, field1537)
+        field1547 = unwrapped_fields1544[2]
+        pretty_relation_id(pp, field1547)
         dedent!(pp)
         write(pp, ")")
     end
@@ -4719,40 +4775,40 @@ function pretty_abort(pp::PrettyPrinter, msg::Proto.Abort)
 end
 
 function pretty_export(pp::PrettyPrinter, msg::Proto.Export)
-    flat1543 = try_flat(pp, msg, pretty_export)
-    if !isnothing(flat1543)
-        write(pp, flat1543)
+    flat1553 = try_flat(pp, msg, pretty_export)
+    if !isnothing(flat1553)
+        write(pp, flat1553)
         return nothing
     else
         _dollar_dollar = msg
         if _has_proto_field(_dollar_dollar, Symbol("csv_config"))
-            _t1759 = _get_oneof_field(_dollar_dollar, :csv_config)
+            _t1770 = _get_oneof_field(_dollar_dollar, :csv_config)
         else
-            _t1759 = nothing
+            _t1770 = nothing
         end
-        deconstruct_result1541 = _t1759
-        if !isnothing(deconstruct_result1541)
-            unwrapped1542 = deconstruct_result1541
+        deconstruct_result1551 = _t1770
+        if !isnothing(deconstruct_result1551)
+            unwrapped1552 = deconstruct_result1551
             write(pp, "(export")
             indent_sexp!(pp)
             newline(pp)
-            pretty_export_csv_config(pp, unwrapped1542)
+            pretty_export_csv_config(pp, unwrapped1552)
             dedent!(pp)
             write(pp, ")")
         else
             _dollar_dollar = msg
             if _has_proto_field(_dollar_dollar, Symbol("iceberg_config"))
-                _t1760 = _get_oneof_field(_dollar_dollar, :iceberg_config)
+                _t1771 = _get_oneof_field(_dollar_dollar, :iceberg_config)
             else
-                _t1760 = nothing
+                _t1771 = nothing
             end
-            deconstruct_result1539 = _t1760
-            if !isnothing(deconstruct_result1539)
-                unwrapped1540 = deconstruct_result1539
+            deconstruct_result1549 = _t1771
+            if !isnothing(deconstruct_result1549)
+                unwrapped1550 = deconstruct_result1549
                 write(pp, "(export_iceberg")
                 indent_sexp!(pp)
                 newline(pp)
-                pretty_export_iceberg_config(pp, unwrapped1540)
+                pretty_export_iceberg_config(pp, unwrapped1550)
                 dedent!(pp)
                 write(pp, ")")
             else
@@ -4764,55 +4820,55 @@ function pretty_export(pp::PrettyPrinter, msg::Proto.Export)
 end
 
 function pretty_export_csv_config(pp::PrettyPrinter, msg::Proto.ExportCSVConfig)
-    flat1554 = try_flat(pp, msg, pretty_export_csv_config)
-    if !isnothing(flat1554)
-        write(pp, flat1554)
+    flat1564 = try_flat(pp, msg, pretty_export_csv_config)
+    if !isnothing(flat1564)
+        write(pp, flat1564)
         return nothing
     else
         _dollar_dollar = msg
         if length(_dollar_dollar.data_columns) == 0
-            _t1761 = (_dollar_dollar.path, _dollar_dollar.csv_source, _dollar_dollar.csv_config,)
+            _t1772 = (_dollar_dollar.path, _dollar_dollar.csv_source, _dollar_dollar.csv_config,)
         else
-            _t1761 = nothing
+            _t1772 = nothing
         end
-        deconstruct_result1549 = _t1761
-        if !isnothing(deconstruct_result1549)
-            unwrapped1550 = deconstruct_result1549
+        deconstruct_result1559 = _t1772
+        if !isnothing(deconstruct_result1559)
+            unwrapped1560 = deconstruct_result1559
             write(pp, "(export_csv_config_v2")
             indent_sexp!(pp)
             newline(pp)
-            field1551 = unwrapped1550[1]
-            pretty_export_csv_path(pp, field1551)
+            field1561 = unwrapped1560[1]
+            pretty_export_csv_path(pp, field1561)
             newline(pp)
-            field1552 = unwrapped1550[2]
-            pretty_export_csv_source(pp, field1552)
+            field1562 = unwrapped1560[2]
+            pretty_export_csv_source(pp, field1562)
             newline(pp)
-            field1553 = unwrapped1550[3]
-            pretty_csv_config(pp, field1553)
+            field1563 = unwrapped1560[3]
+            pretty_csv_config(pp, field1563)
             dedent!(pp)
             write(pp, ")")
         else
             _dollar_dollar = msg
             if length(_dollar_dollar.data_columns) != 0
-                _t1763 = deconstruct_export_csv_config(pp, _dollar_dollar)
-                _t1762 = (_dollar_dollar.path, _dollar_dollar.data_columns, _t1763,)
+                _t1774 = deconstruct_export_csv_config(pp, _dollar_dollar)
+                _t1773 = (_dollar_dollar.path, _dollar_dollar.data_columns, _t1774,)
             else
-                _t1762 = nothing
+                _t1773 = nothing
             end
-            deconstruct_result1544 = _t1762
-            if !isnothing(deconstruct_result1544)
-                unwrapped1545 = deconstruct_result1544
+            deconstruct_result1554 = _t1773
+            if !isnothing(deconstruct_result1554)
+                unwrapped1555 = deconstruct_result1554
                 write(pp, "(export_csv_config")
                 indent_sexp!(pp)
                 newline(pp)
-                field1546 = unwrapped1545[1]
-                pretty_export_csv_path(pp, field1546)
+                field1556 = unwrapped1555[1]
+                pretty_export_csv_path(pp, field1556)
                 newline(pp)
-                field1547 = unwrapped1545[2]
-                pretty_export_csv_columns_list(pp, field1547)
+                field1557 = unwrapped1555[2]
+                pretty_export_csv_columns_list(pp, field1557)
                 newline(pp)
-                field1548 = unwrapped1545[3]
-                pretty_config_dict(pp, field1548)
+                field1558 = unwrapped1555[3]
+                pretty_config_dict(pp, field1558)
                 dedent!(pp)
                 write(pp, ")")
             else
@@ -4824,16 +4880,16 @@ function pretty_export_csv_config(pp::PrettyPrinter, msg::Proto.ExportCSVConfig)
 end
 
 function pretty_export_csv_path(pp::PrettyPrinter, msg::String)
-    flat1556 = try_flat(pp, msg, pretty_export_csv_path)
-    if !isnothing(flat1556)
-        write(pp, flat1556)
+    flat1566 = try_flat(pp, msg, pretty_export_csv_path)
+    if !isnothing(flat1566)
+        write(pp, flat1566)
         return nothing
     else
-        fields1555 = msg
+        fields1565 = msg
         write(pp, "(path")
         indent_sexp!(pp)
         newline(pp)
-        write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, fields1555))
+        write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, fields1565))
         dedent!(pp)
         write(pp, ")")
     end
@@ -4841,30 +4897,30 @@ function pretty_export_csv_path(pp::PrettyPrinter, msg::String)
 end
 
 function pretty_export_csv_source(pp::PrettyPrinter, msg::Proto.ExportCSVSource)
-    flat1563 = try_flat(pp, msg, pretty_export_csv_source)
-    if !isnothing(flat1563)
-        write(pp, flat1563)
+    flat1573 = try_flat(pp, msg, pretty_export_csv_source)
+    if !isnothing(flat1573)
+        write(pp, flat1573)
         return nothing
     else
         _dollar_dollar = msg
         if _has_proto_field(_dollar_dollar, Symbol("gnf_columns"))
-            _t1764 = _get_oneof_field(_dollar_dollar, :gnf_columns).columns
+            _t1775 = _get_oneof_field(_dollar_dollar, :gnf_columns).columns
         else
-            _t1764 = nothing
+            _t1775 = nothing
         end
-        deconstruct_result1559 = _t1764
-        if !isnothing(deconstruct_result1559)
-            unwrapped1560 = deconstruct_result1559
+        deconstruct_result1569 = _t1775
+        if !isnothing(deconstruct_result1569)
+            unwrapped1570 = deconstruct_result1569
             write(pp, "(gnf_columns")
             indent_sexp!(pp)
-            if !isempty(unwrapped1560)
+            if !isempty(unwrapped1570)
                 newline(pp)
-                for (i1765, elem1561) in enumerate(unwrapped1560)
-                    i1562 = i1765 - 1
-                    if (i1562 > 0)
+                for (i1776, elem1571) in enumerate(unwrapped1570)
+                    i1572 = i1776 - 1
+                    if (i1572 > 0)
                         newline(pp)
                     end
-                    pretty_export_csv_column(pp, elem1561)
+                    pretty_export_csv_column(pp, elem1571)
                 end
             end
             dedent!(pp)
@@ -4872,17 +4928,17 @@ function pretty_export_csv_source(pp::PrettyPrinter, msg::Proto.ExportCSVSource)
         else
             _dollar_dollar = msg
             if _has_proto_field(_dollar_dollar, Symbol("table_def"))
-                _t1766 = _get_oneof_field(_dollar_dollar, :table_def)
+                _t1777 = _get_oneof_field(_dollar_dollar, :table_def)
             else
-                _t1766 = nothing
+                _t1777 = nothing
             end
-            deconstruct_result1557 = _t1766
-            if !isnothing(deconstruct_result1557)
-                unwrapped1558 = deconstruct_result1557
+            deconstruct_result1567 = _t1777
+            if !isnothing(deconstruct_result1567)
+                unwrapped1568 = deconstruct_result1567
                 write(pp, "(table_def")
                 indent_sexp!(pp)
                 newline(pp)
-                pretty_relation_id(pp, unwrapped1558)
+                pretty_relation_id(pp, unwrapped1568)
                 dedent!(pp)
                 write(pp, ")")
             else
@@ -4894,22 +4950,22 @@ function pretty_export_csv_source(pp::PrettyPrinter, msg::Proto.ExportCSVSource)
 end
 
 function pretty_export_csv_column(pp::PrettyPrinter, msg::Proto.ExportCSVColumn)
-    flat1568 = try_flat(pp, msg, pretty_export_csv_column)
-    if !isnothing(flat1568)
-        write(pp, flat1568)
+    flat1578 = try_flat(pp, msg, pretty_export_csv_column)
+    if !isnothing(flat1578)
+        write(pp, flat1578)
         return nothing
     else
         _dollar_dollar = msg
-        fields1564 = (_dollar_dollar.column_name, _dollar_dollar.column_data,)
-        unwrapped_fields1565 = fields1564
+        fields1574 = (_dollar_dollar.column_name, _dollar_dollar.column_data,)
+        unwrapped_fields1575 = fields1574
         write(pp, "(column")
         indent_sexp!(pp)
         newline(pp)
-        field1566 = unwrapped_fields1565[1]
-        write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, field1566))
+        field1576 = unwrapped_fields1575[1]
+        write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, field1576))
         newline(pp)
-        field1567 = unwrapped_fields1565[2]
-        pretty_relation_id(pp, field1567)
+        field1577 = unwrapped_fields1575[2]
+        pretty_relation_id(pp, field1577)
         dedent!(pp)
         write(pp, ")")
     end
@@ -4917,22 +4973,22 @@ function pretty_export_csv_column(pp::PrettyPrinter, msg::Proto.ExportCSVColumn)
 end
 
 function pretty_export_csv_columns_list(pp::PrettyPrinter, msg::Vector{Proto.ExportCSVColumn})
-    flat1572 = try_flat(pp, msg, pretty_export_csv_columns_list)
-    if !isnothing(flat1572)
-        write(pp, flat1572)
+    flat1582 = try_flat(pp, msg, pretty_export_csv_columns_list)
+    if !isnothing(flat1582)
+        write(pp, flat1582)
         return nothing
     else
-        fields1569 = msg
+        fields1579 = msg
         write(pp, "(columns")
         indent_sexp!(pp)
-        if !isempty(fields1569)
+        if !isempty(fields1579)
             newline(pp)
-            for (i1767, elem1570) in enumerate(fields1569)
-                i1571 = i1767 - 1
-                if (i1571 > 0)
+            for (i1778, elem1580) in enumerate(fields1579)
+                i1581 = i1778 - 1
+                if (i1581 > 0)
                     newline(pp)
                 end
-                pretty_export_csv_column(pp, elem1570)
+                pretty_export_csv_column(pp, elem1580)
             end
         end
         dedent!(pp)
@@ -4942,34 +4998,34 @@ function pretty_export_csv_columns_list(pp::PrettyPrinter, msg::Vector{Proto.Exp
 end
 
 function pretty_export_iceberg_config(pp::PrettyPrinter, msg::Proto.ExportIcebergConfig)
-    flat1581 = try_flat(pp, msg, pretty_export_iceberg_config)
-    if !isnothing(flat1581)
-        write(pp, flat1581)
+    flat1591 = try_flat(pp, msg, pretty_export_iceberg_config)
+    if !isnothing(flat1591)
+        write(pp, flat1591)
         return nothing
     else
         _dollar_dollar = msg
-        _t1768 = deconstruct_export_iceberg_config_optional(pp, _dollar_dollar)
-        fields1573 = (_dollar_dollar.locator, _dollar_dollar.config, _dollar_dollar.table_def, sort([(k, v) for (k, v) in _dollar_dollar.table_properties]), _t1768,)
-        unwrapped_fields1574 = fields1573
+        _t1779 = deconstruct_export_iceberg_config_optional(pp, _dollar_dollar)
+        fields1583 = (_dollar_dollar.locator, _dollar_dollar.config, _dollar_dollar.table_def, sort([(k, v) for (k, v) in _dollar_dollar.table_properties]), _t1779,)
+        unwrapped_fields1584 = fields1583
         write(pp, "(export_iceberg_config")
         indent_sexp!(pp)
         newline(pp)
-        field1575 = unwrapped_fields1574[1]
-        pretty_iceberg_locator(pp, field1575)
+        field1585 = unwrapped_fields1584[1]
+        pretty_iceberg_locator(pp, field1585)
         newline(pp)
-        field1576 = unwrapped_fields1574[2]
-        pretty_iceberg_catalog_config(pp, field1576)
+        field1586 = unwrapped_fields1584[2]
+        pretty_iceberg_catalog_config(pp, field1586)
         newline(pp)
-        field1577 = unwrapped_fields1574[3]
-        pretty_export_iceberg_table_def(pp, field1577)
+        field1587 = unwrapped_fields1584[3]
+        pretty_export_iceberg_table_def(pp, field1587)
         newline(pp)
-        field1578 = unwrapped_fields1574[4]
-        pretty_iceberg_table_properties(pp, field1578)
-        field1579 = unwrapped_fields1574[5]
-        if !isnothing(field1579)
+        field1588 = unwrapped_fields1584[4]
+        pretty_iceberg_table_properties(pp, field1588)
+        field1589 = unwrapped_fields1584[5]
+        if !isnothing(field1589)
             newline(pp)
-            opt_val1580 = field1579
-            pretty_config_dict(pp, opt_val1580)
+            opt_val1590 = field1589
+            pretty_config_dict(pp, opt_val1590)
         end
         dedent!(pp)
         write(pp, ")")
@@ -4978,16 +5034,16 @@ function pretty_export_iceberg_config(pp::PrettyPrinter, msg::Proto.ExportIceber
 end
 
 function pretty_export_iceberg_table_def(pp::PrettyPrinter, msg::Proto.RelationId)
-    flat1583 = try_flat(pp, msg, pretty_export_iceberg_table_def)
-    if !isnothing(flat1583)
-        write(pp, flat1583)
+    flat1593 = try_flat(pp, msg, pretty_export_iceberg_table_def)
+    if !isnothing(flat1593)
+        write(pp, flat1593)
         return nothing
     else
-        fields1582 = msg
+        fields1592 = msg
         write(pp, "(table_def")
         indent_sexp!(pp)
         newline(pp)
-        pretty_relation_id(pp, fields1582)
+        pretty_relation_id(pp, fields1592)
         dedent!(pp)
         write(pp, ")")
     end
@@ -4995,22 +5051,22 @@ function pretty_export_iceberg_table_def(pp::PrettyPrinter, msg::Proto.RelationI
 end
 
 function pretty_iceberg_table_properties(pp::PrettyPrinter, msg::Vector{Tuple{String, String}})
-    flat1587 = try_flat(pp, msg, pretty_iceberg_table_properties)
-    if !isnothing(flat1587)
-        write(pp, flat1587)
+    flat1597 = try_flat(pp, msg, pretty_iceberg_table_properties)
+    if !isnothing(flat1597)
+        write(pp, flat1597)
         return nothing
     else
-        fields1584 = msg
+        fields1594 = msg
         write(pp, "(table_properties")
         indent_sexp!(pp)
-        if !isempty(fields1584)
+        if !isempty(fields1594)
             newline(pp)
-            for (i1769, elem1585) in enumerate(fields1584)
-                i1586 = i1769 - 1
-                if (i1586 > 0)
+            for (i1780, elem1595) in enumerate(fields1594)
+                i1596 = i1780 - 1
+                if (i1596 > 0)
                     newline(pp)
                 end
-                pretty_iceberg_property_entry(pp, elem1585)
+                pretty_iceberg_property_entry(pp, elem1595)
             end
         end
         dedent!(pp)
@@ -5025,12 +5081,12 @@ end
 function pretty_debug_info(pp::PrettyPrinter, msg::Proto.DebugInfo)
     write(pp, "(debug_info")
     indent_sexp!(pp)
-    for (i1815, _rid) in enumerate(msg.ids)
-        _idx = i1815 - 1
+    for (i1832, _rid) in enumerate(msg.ids)
+        _idx = i1832 - 1
         newline(pp)
         write(pp, "(")
-        _t1816 = Proto.UInt128Value(low=_rid.id_low, high=_rid.id_high)
-        _pprint_dispatch(pp, _t1816)
+        _t1833 = Proto.UInt128Value(low=_rid.id_low, high=_rid.id_high)
+        _pprint_dispatch(pp, _t1833)
         write(pp, " ")
         write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, msg.orig_names[_idx + 1]))
         write(pp, ")")
@@ -5102,8 +5158,8 @@ function pretty_functional_dependency(pp::PrettyPrinter, msg::Proto.FunctionalDe
     _pprint_dispatch(pp, msg.guard)
     newline(pp)
     write(pp, ":keys (")
-    for (i1817, _elem) in enumerate(msg.keys)
-        _idx = i1817 - 1
+    for (i1834, _elem) in enumerate(msg.keys)
+        _idx = i1834 - 1
         if (_idx > 0)
             write(pp, " ")
         end
@@ -5112,8 +5168,8 @@ function pretty_functional_dependency(pp::PrettyPrinter, msg::Proto.FunctionalDe
     write(pp, ")")
     newline(pp)
     write(pp, ":values (")
-    for (i1818, _elem) in enumerate(msg.values)
-        _idx = i1818 - 1
+    for (i1835, _elem) in enumerate(msg.values)
+        _idx = i1835 - 1
         if (_idx > 0)
             write(pp, " ")
         end
@@ -5134,6 +5190,29 @@ function pretty_missing_value(pp::PrettyPrinter, msg::Proto.MissingValue)
     return nothing
 end
 
+function pretty_storage_integration(pp::PrettyPrinter, msg::Proto.StorageIntegration)
+    write(pp, "(storage_integration")
+    indent_sexp!(pp)
+    newline(pp)
+    write(pp, ":provider ")
+    write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, msg.provider))
+    newline(pp)
+    write(pp, ":azure_sas_token ")
+    write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, msg.azure_sas_token))
+    newline(pp)
+    write(pp, ":s3_region ")
+    write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, msg.s3_region))
+    newline(pp)
+    write(pp, ":s3_access_key_id ")
+    write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, msg.s3_access_key_id))
+    newline(pp)
+    write(pp, ":s3_secret_access_key ")
+    write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, msg.s3_secret_access_key))
+    write(pp, ")")
+    dedent!(pp)
+    return nothing
+end
+
 function pretty_u_int128_value(pp::PrettyPrinter, msg::Proto.UInt128Value)
     write(pp, format_uint128(pp, msg))
     return nothing
@@ -5144,8 +5223,8 @@ function pretty_export_csv_columns(pp::PrettyPrinter, msg::Proto.ExportCSVColumn
     indent_sexp!(pp)
     newline(pp)
     write(pp, ":columns (")
-    for (i1819, _elem) in enumerate(msg.columns)
-        _idx = i1819 - 1
+    for (i1836, _elem) in enumerate(msg.columns)
+        _idx = i1836 - 1
         if (_idx > 0)
             write(pp, " ")
         end
@@ -5302,6 +5381,7 @@ _pprint_dispatch(pp::PrettyPrinter, x::Proto.DecimalValue) = pretty_decimal_valu
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.FunctionalDependency) = pretty_functional_dependency(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.Int128Value) = pretty_int128_value(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.MissingValue) = pretty_missing_value(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.StorageIntegration) = pretty_storage_integration(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.UInt128Value) = pretty_u_int128_value(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.ExportCSVColumns) = pretty_export_csv_columns(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.IVMConfig) = pretty_ivm_config(pp, x)

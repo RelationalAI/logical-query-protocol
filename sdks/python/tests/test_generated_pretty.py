@@ -442,3 +442,73 @@ def test_pretty_from_binary_roundtrip(bin_file):
     assert txn.SerializeToString() == re_proto.SerializeToString(), (
         f"Binary roundtrip failed for {Path(bin_file).name}"
     )
+
+
+# ---------------------------------------------------------------------------
+# CSV storage integration secret masking
+#
+# Secret credentials are masked as "***" on print, so they cannot round-trip
+# through a fixture. These tests cover masking directly instead.
+# ---------------------------------------------------------------------------
+
+_STORAGE_INTEGRATION_LQP = """(transaction
+  (epoch
+    (writes
+      (define
+        (fragment :f1
+          (csv_data
+            (csv_locator (paths "s3://private-bucket/data.csv"))
+            (csv_config {}
+              (storage_integration {
+                :provider "s3"
+                :s3_region "us-west-2"
+                :s3_access_key_id "AKIAEXAMPLE"
+                :s3_secret_access_key "topsecret-value"
+                :azure_sas_token "sas-token-value" }))
+            (columns (column "id" :x [INT]))
+            (asof "2025-01-01T00:00:00Z")))))
+    (reads (output :x :x))))"""
+
+
+def _parsed_storage_integration():
+    proto, _ = generated_parse(_STORAGE_INTEGRATION_LQP)
+    config = (
+        proto.epochs[0].writes[0].define.fragment.declarations[0].data.csv_data.config
+    )
+    return proto, config
+
+
+def test_storage_integration_parse_preserves_secrets():
+    """Parsing keeps the real secret values; masking is a print-only concern."""
+    _, config = _parsed_storage_integration()
+    assert config.HasField("storage_integration")
+    si = config.storage_integration
+    assert si.provider == "s3"
+    assert si.s3_region == "us-west-2"
+    assert si.s3_access_key_id == "AKIAEXAMPLE"
+    assert si.s3_secret_access_key == "topsecret-value"
+    assert si.azure_sas_token == "sas-token-value"
+
+
+def test_storage_integration_secrets_masked_on_print():
+    """Secret fields print as "***"; non-secret fields print verbatim."""
+    proto, _ = _parsed_storage_integration()
+    printed = pretty(proto)
+    # Secret values must never leak into the human-readable output.
+    assert "AKIAEXAMPLE" not in printed
+    assert "topsecret-value" not in printed
+    assert "sas-token-value" not in printed
+    assert ':s3_access_key_id "***"' in printed
+    assert ':s3_secret_access_key "***"' in printed
+    assert ':azure_sas_token "***"' in printed
+    # Non-secret fields are shown as-is.
+    assert ':provider "s3"' in printed
+    assert ':s3_region "us-west-2"' in printed
+
+
+def test_storage_integration_absent_emits_no_block():
+    """A CSVConfig without a storage integration prints no storage_integration block."""
+    config = logic_pb2.CSVConfig()
+    assert not config.HasField("storage_integration")
+    printer = PrettyPrinter()
+    assert printer.deconstruct_csv_storage_integration_optional(config) is None

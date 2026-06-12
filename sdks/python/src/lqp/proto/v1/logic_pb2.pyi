@@ -406,6 +406,20 @@ class BeTreeLocator(_message.Message):
     tree_height: int
     def __init__(self, root_pageid: _Optional[_Union[UInt128Value, _Mapping]] = ..., inline_data: _Optional[bytes] = ..., element_count: _Optional[int] = ..., tree_height: _Optional[int] = ...) -> None: ...
 
+class StorageIntegration(_message.Message):
+    __slots__ = ("provider", "azure_sas_token", "s3_region", "s3_access_key_id", "s3_secret_access_key")
+    PROVIDER_FIELD_NUMBER: _ClassVar[int]
+    AZURE_SAS_TOKEN_FIELD_NUMBER: _ClassVar[int]
+    S3_REGION_FIELD_NUMBER: _ClassVar[int]
+    S3_ACCESS_KEY_ID_FIELD_NUMBER: _ClassVar[int]
+    S3_SECRET_ACCESS_KEY_FIELD_NUMBER: _ClassVar[int]
+    provider: str
+    azure_sas_token: str
+    s3_region: str
+    s3_access_key_id: str
+    s3_secret_access_key: str
+    def __init__(self, provider: _Optional[str] = ..., azure_sas_token: _Optional[str] = ..., s3_region: _Optional[str] = ..., s3_access_key_id: _Optional[str] = ..., s3_secret_access_key: _Optional[str] = ...) -> None: ...
+
 class CSVData(_message.Message):
     __slots__ = ("locator", "config", "columns", "asof")
     LOCATOR_FIELD_NUMBER: _ClassVar[int]
@@ -427,7 +441,7 @@ class CSVLocator(_message.Message):
     def __init__(self, paths: _Optional[_Iterable[str]] = ..., inline_data: _Optional[bytes] = ...) -> None: ...
 
 class CSVConfig(_message.Message):
-    __slots__ = ("header_row", "skip", "new_line", "delimiter", "quotechar", "escapechar", "comment", "missing_strings", "decimal_separator", "encoding", "compression", "partition_size_mb")
+    __slots__ = ("header_row", "skip", "new_line", "delimiter", "quotechar", "escapechar", "comment", "missing_strings", "decimal_separator", "encoding", "compression", "partition_size_mb", "storage_integration")
     HEADER_ROW_FIELD_NUMBER: _ClassVar[int]
     SKIP_FIELD_NUMBER: _ClassVar[int]
     NEW_LINE_FIELD_NUMBER: _ClassVar[int]
@@ -440,6 +454,7 @@ class CSVConfig(_message.Message):
     ENCODING_FIELD_NUMBER: _ClassVar[int]
     COMPRESSION_FIELD_NUMBER: _ClassVar[int]
     PARTITION_SIZE_MB_FIELD_NUMBER: _ClassVar[int]
+    STORAGE_INTEGRATION_FIELD_NUMBER: _ClassVar[int]
     header_row: int
     skip: int
     new_line: str
@@ -452,7 +467,8 @@ class CSVConfig(_message.Message):
     encoding: str
     compression: str
     partition_size_mb: int
-    def __init__(self, header_row: _Optional[int] = ..., skip: _Optional[int] = ..., new_line: _Optional[str] = ..., delimiter: _Optional[str] = ..., quotechar: _Optional[str] = ..., escapechar: _Optional[str] = ..., comment: _Optional[str] = ..., missing_strings: _Optional[_Iterable[str]] = ..., decimal_separator: _Optional[str] = ..., encoding: _Optional[str] = ..., compression: _Optional[str] = ..., partition_size_mb: _Optional[int] = ...) -> None: ...
+    storage_integration: StorageIntegration
+    def __init__(self, header_row: _Optional[int] = ..., skip: _Optional[int] = ..., new_line: _Optional[str] = ..., delimiter: _Optional[str] = ..., quotechar: _Optional[str] = ..., escapechar: _Optional[str] = ..., comment: _Optional[str] = ..., missing_strings: _Optional[_Iterable[str]] = ..., decimal_separator: _Optional[str] = ..., encoding: _Optional[str] = ..., compression: _Optional[str] = ..., partition_size_mb: _Optional[int] = ..., storage_integration: _Optional[_Union[StorageIntegration, _Mapping]] = ...) -> None: ...
 
 class IcebergData(_message.Message):
     __slots__ = ("locator", "config", "columns", "from_snapshot", "to_snapshot", "returns_delta")

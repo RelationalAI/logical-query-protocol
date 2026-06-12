@@ -1,0 +1,74 @@
+(transaction
+  (configure { :ivm.maintenance_level "off" :semantics_version 0})
+  (epoch
+    (writes
+      (define
+        (fragment
+          :f1
+          (csv_data
+            (csv_locator (paths "s3://private-bucket/data.csv"))
+            (csv_config
+              {
+               :csv_compression "auto"
+               :csv_decimal_separator "."
+               :csv_delimiter ","
+               :csv_encoding "utf-8"
+               :csv_escapechar "\""
+               :csv_header_row 1i32
+               :csv_quotechar "\""
+               :csv_skip 0}
+              (storage_integration { :provider "s3" :s3_region "us-west-2"}))
+            (columns
+              (column "id" 0xa8fddbc3b12b310fcc62a8787c0275ee [INT])
+              (column "value" 0xa1d3693fc0ad703401781b6157c43be6 [STRING]))
+            (asof "2025-04-01T00:00:00Z"))
+          (csv_data
+            (csv_locator (paths "https://account.blob.core.windows.net/container/data.csv"))
+            (csv_config
+              {
+               :csv_compression "auto"
+               :csv_decimal_separator "."
+               :csv_delimiter "|"
+               :csv_encoding "utf-8"
+               :csv_escapechar "\""
+               :csv_header_row 1i32
+               :csv_quotechar "\""
+               :csv_skip 0}
+              (storage_integration { :provider "azure"}))
+            (columns
+              (column "id" 0xe677384f82819e4660ab90350cf0fcd2 [INT])
+              (column "value" 0xac342981e260741d41d756a098f2269a [STRING]))
+            (asof "2025-04-02T00:00:00Z"))
+          (def
+            0xe239456d024bc2c38b99cd9d5fabadab
+            ([id::INT value::STRING]
+             (or (and (= id 1) (= value "a")) (and (= id 2) (= value "b"))))))))
+    (reads
+      (output :s3_id 0xa8fddbc3b12b310fcc62a8787c0275ee)
+      (output :s3_value 0xa1d3693fc0ad703401781b6157c43be6)
+      (output :azure_id 0xe677384f82819e4660ab90350cf0fcd2)
+      (output :azure_value 0xac342981e260741d41d756a098f2269a)
+      (export
+        (export_csv_config_v2
+          (path "s3://private-bucket/export.csv")
+          (table_def 0xe239456d024bc2c38b99cd9d5fabadab)
+          (csv_config
+            {
+             :csv_compression "auto"
+             :csv_decimal_separator "."
+             :csv_delimiter ","
+             :csv_encoding "utf-8"
+             :csv_escapechar "\""
+             :csv_header_row 1i32
+             :csv_quotechar "\""
+             :csv_skip 0}
+            (storage_integration { :provider "s3" :s3_region "eu-central-1"})))))))
+
+;; Debug information
+;; -----------------------
+;; Original names
+;; 	 ID `0xe677384f82819e4660ab90350cf0fcd2` -> `azure_id`
+;; 	 ID `0xac342981e260741d41d756a098f2269a` -> `azure_value`
+;; 	 ID `0xe239456d024bc2c38b99cd9d5fabadab` -> `exported`
+;; 	 ID `0xa8fddbc3b12b310fcc62a8787c0275ee` -> `s3_id`
+;; 	 ID `0xa1d3693fc0ad703401781b6157c43be6` -> `s3_value`
