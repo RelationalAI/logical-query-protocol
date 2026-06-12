@@ -471,7 +471,7 @@ function construct_csv_config(parser::ParserState, config_dict::Vector{Tuple{Str
     decimal_separator = _t2105
     _t2106 = _extract_value_string(parser, get(config, "csv_encoding", nothing), "utf-8")
     encoding = _t2106
-    _t2107 = _extract_value_string(parser, get(config, "csv_compression", nothing), "auto")
+    _t2107 = _extract_value_string(parser, get(config, "csv_compression", nothing), "")
     compression = _t2107
     _t2108 = _extract_value_int64(parser, get(config, "csv_partition_size_mb", nothing), 0)
     partition_size_mb = _t2108

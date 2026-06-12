@@ -757,7 +757,7 @@ func (p *Parser) construct_csv_config(config_dict [][]interface{}, storage_integ
 	decimal_separator := _t2118
 	_t2119 := p._extract_value_string(dictGetValue(config, "csv_encoding"), "utf-8")
 	encoding := _t2119
-	_t2120 := p._extract_value_string(dictGetValue(config, "csv_compression"), "auto")
+	_t2120 := p._extract_value_string(dictGetValue(config, "csv_compression"), "")
 	compression := _t2120
 	_t2121 := p._extract_value_int64(dictGetValue(config, "csv_partition_size_mb"), 0)
 	partition_size_mb := _t2121

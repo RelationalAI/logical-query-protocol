@@ -560,7 +560,7 @@ class Parser:
         decimal_separator = _t2114
         _t2115 = self._extract_value_string(config.get("csv_encoding"), "utf-8")
         encoding = _t2115
-        _t2116 = self._extract_value_string(config.get("csv_compression"), "auto")
+        _t2116 = self._extract_value_string(config.get("csv_compression"), "")
         compression = _t2116
         _t2117 = self._extract_value_int64(config.get("csv_partition_size_mb"), 0)
         partition_size_mb = _t2117
