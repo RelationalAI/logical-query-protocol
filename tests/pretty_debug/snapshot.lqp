@@ -20,7 +20,7 @@
                 "id,big_signed,big_unsigned\n1,170141183460469231731687303715884105727,340282366920938463463374607431768211455\n2,-170141183460469231731687303715884105728,0\n3,0,1"))
             (csv_config
               {
-               :csv_compression "auto"
+               :csv_compression ""
                :csv_decimal_separator "."
                :csv_delimiter ","
                :csv_encoding "utf-8"

@@ -71,7 +71,7 @@
           (table_def 0xfcec892cae7f6ee39b75f34e659d672c)
           (csv_config
             {
-             :csv_compression "auto"
+             :csv_compression ""
              :csv_decimal_separator "."
              :csv_delimiter ","
              :csv_encoding "utf-8"
@@ -85,7 +85,7 @@
           (table_def 0xfcec892cae7f6ee39b75f34e659d672c)
           (csv_config
             {
-             :csv_compression "auto"
+             :csv_compression ""
              :csv_decimal_separator "."
              :csv_delimiter "|"
              :csv_encoding "utf-8"
@@ -114,7 +114,7 @@
           (table_def 0xe6d1c919204e329c580fbc9429ab4f9)
           (csv_config
             {
-             :csv_compression "auto"
+             :csv_compression ""
              :csv_decimal_separator "."
              :csv_delimiter ","
              :csv_encoding "utf-8"
@@ -128,7 +128,7 @@
           (table_def 0x2d787823b6f9a0f453e42824c5a4d4b6)
           (csv_config
             {
-             :csv_compression "auto"
+             :csv_compression ""
              :csv_decimal_separator "."
              :csv_delimiter ","
              :csv_encoding "utf-8"
@@ -142,7 +142,7 @@
           (table_def 0xfcec892cae7f6ee39b75f34e659d672c)
           (csv_config
             {
-             :csv_compression "auto"
+             :csv_compression ""
              :csv_decimal_separator "."
              :csv_delimiter "\t"
              :csv_encoding "utf-8"
@@ -156,7 +156,7 @@
           (table_def 0x7057b7a1c77d1fe321a1afcff041d4e1)
           (csv_config
             {
-             :csv_compression "auto"
+             :csv_compression ""
              :csv_decimal_separator "."
              :csv_delimiter ","
              :csv_encoding "utf-8"
@@ -170,7 +170,7 @@
           (table_def 0x8556eb0fb49a215ae5eb1b970cad0315)
           (csv_config
             {
-             :csv_compression "auto"
+             :csv_compression ""
              :csv_decimal_separator "."
              :csv_delimiter ","
              :csv_encoding "utf-8"
@@ -188,7 +188,7 @@
             (column "active" 0xa97bc5091457148653c6a521ac05bfc1))
           (csv_config
             {
-             :csv_compression "auto"
+             :csv_compression ""
              :csv_decimal_separator "."
              :csv_delimiter ","
              :csv_encoding "utf-8"
@@ -204,7 +204,7 @@
             (column "user_name" 0xb87a660519d4c6d737802ad8ccc0cbbb))
           (csv_config
             {
-             :csv_compression "auto"
+             :csv_compression ""
              :csv_decimal_separator "."
              :csv_delimiter ","
              :csv_encoding "utf-8"
@@ -220,7 +220,7 @@
             (column "score" 0x1cc0df3ea1ebf5a81b22377b3d414fad))
           (csv_config
             {
-             :csv_compression "auto"
+             :csv_compression ""
              :csv_decimal_separator "."
              :csv_delimiter ","
              :csv_encoding "utf-8"
@@ -234,7 +234,7 @@
           (gnf_columns (column "score" 0x1cc0df3ea1ebf5a81b22377b3d414fad))
           (csv_config
             {
-             :csv_compression "auto"
+             :csv_compression ""
              :csv_decimal_separator "."
              :csv_delimiter ","
              :csv_encoding "utf-8"
