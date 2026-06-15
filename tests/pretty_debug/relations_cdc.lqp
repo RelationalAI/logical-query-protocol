@@ -6,7 +6,7 @@
         (fragment
           :f1
           (csv_data
-            (csv_locator (paths "s3://bucket/cdc/edges_batch_001.csv"))
+            (csv_locator (paths "s3://bucket/edges.csv"))
             (csv_config
               {
                :csv_compression "auto"
@@ -19,16 +19,15 @@
                :csv_skip 0})
             (relations
               (keys (column "METADATA$KEY" UINT128))
-              (inserts
-                (relation 0x6c9225cf3609ca4d26168fd6652e0d03 (column "weight" FLOAT))) (deletes
-                (relation 0x5ef875f96a25ff5f076bea0e815c6ce0 (column "weight" FLOAT))))
+              (inserts (relation 0x678037975b01b6389c78bc1cc79abde (column "weight" FLOAT))) (deletes
+                (relation 0xb214f85adaa2e403bed30d3721f4363 (column "weight" FLOAT))))
             (asof "2025-06-01T00:00:00Z")))))
     (reads
-      (output :edge_ins 0x6c9225cf3609ca4d26168fd6652e0d03)
-      (output :edge_del 0x5ef875f96a25ff5f076bea0e815c6ce0))))
+      (output :weight_ins 0x678037975b01b6389c78bc1cc79abde)
+      (output :weight_del 0xb214f85adaa2e403bed30d3721f4363))))
 
 ;; Debug information
 ;; -----------------------
 ;; Original names
-;; 	 ID `0x5ef875f96a25ff5f076bea0e815c6ce0` -> `edge_del`
-;; 	 ID `0x6c9225cf3609ca4d26168fd6652e0d03` -> `edge_ins`
+;; 	 ID `0xb214f85adaa2e403bed30d3721f4363` -> `weight_del`
+;; 	 ID `0x678037975b01b6389c78bc1cc79abde` -> `weight_ins`

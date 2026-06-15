@@ -8,21 +8,21 @@
           ;; derived from the CSV's METADATA$ROW_ID column).
           (csv_data
             (csv_locator
-              (paths "s3://bucket/cdc/edges_batch_001.csv"))
+              (paths "s3://bucket/edges.csv"))
             (csv_config {})
             ;; Insert and delete deltas must target DISTINCT relations (like the legacy
-            ;; columnar loader): a row's METADATA$ACTION routes it to :edge_ins or :edge_del.
+            ;; columnar loader): a row's METADATA$ACTION routes it to :weight_ins or :weight_del.
             (relations
               (keys
                 (column "METADATA$KEY" UINT128))
               (inserts
-                (relation :edge_ins
+                (relation :weight_ins
                   (column "weight" FLOAT)))
               (deletes
-                (relation :edge_del
+                (relation :weight_del
                   (column "weight" FLOAT))))
             (asof "2025-06-01T00:00:00Z")))))
 
     (reads
-      (output :edge_ins :edge_ins)
-      (output :edge_del :edge_del))))
+      (output :weight_ins :weight_ins)
+      (output :weight_del :weight_del))))

@@ -6,7 +6,7 @@
         (fragment
           :f1
           (csv_data
-            (csv_locator (paths "s3://bucket/cdc/edges_batch_001.csv"))
+            (csv_locator (paths "s3://bucket/edges.csv"))
             (csv_config
               {
                :csv_compression "auto"
@@ -19,7 +19,7 @@
                :csv_skip 0})
             (relations
               (keys (column "METADATA$KEY" UINT128))
-              (inserts (relation :edge_ins (column "weight" FLOAT))) (deletes
-                (relation :edge_del (column "weight" FLOAT))))
+              (inserts (relation :weight_ins (column "weight" FLOAT))) (deletes
+                (relation :weight_del (column "weight" FLOAT))))
             (asof "2025-06-01T00:00:00Z")))))
-    (reads (output :edge_ins :edge_ins) (output :edge_del :edge_del))))
+    (reads (output :weight_ins :weight_ins) (output :weight_del :weight_del))))
