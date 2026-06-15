@@ -9,7 +9,7 @@
             (csv_locator (paths "s3://bucket/data/file1.csv" "s3://bucket/data/file2.csv"))
             (csv_config
               {
-               :csv_compression "auto"
+               :csv_compression ""
                :csv_decimal_separator "."
                :csv_delimiter ","
                :csv_encoding "utf-8"
@@ -44,7 +44,7 @@
             (csv_locator (inline_data "user_id,name,score\n1,Alice,95.5\n2,Bob,87.3"))
             (csv_config
               {
-               :csv_compression "auto"
+               :csv_compression ""
                :csv_decimal_separator "."
                :csv_delimiter ","
                :csv_encoding "utf-8"
@@ -61,7 +61,7 @@
             (csv_locator (paths "/local/path/data.csv"))
             (csv_config
               {
-               :csv_compression "auto"
+               :csv_compression ""
                :csv_decimal_separator "."
                :csv_delimiter "\t"
                :csv_encoding "utf-8"
@@ -77,7 +77,7 @@
             (csv_locator (paths "data/infer.csv"))
             (csv_config
               {
-               :csv_compression "auto"
+               :csv_compression ""
                :csv_decimal_separator "."
                :csv_delimiter ","
                :csv_encoding "utf-8"
