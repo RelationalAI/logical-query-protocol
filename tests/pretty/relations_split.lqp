@@ -9,7 +9,7 @@
             (csv_locator (paths "s3://bucket/nodes.csv"))
             (csv_config
               {
-               :csv_compression "auto"
+               :csv_compression ""
                :csv_decimal_separator "."
                :csv_delimiter ","
                :csv_encoding "utf-8"
