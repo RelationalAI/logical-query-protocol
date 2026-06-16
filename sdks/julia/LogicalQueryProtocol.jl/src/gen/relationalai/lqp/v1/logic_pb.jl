@@ -11,9 +11,9 @@ export OrMonoid, CSVLocator, Int128Type, DecimalType, UnspecifiedType, DateType
 export MissingType, MissingValue, IntType, StringType, Int128Value, UInt128Value
 export StorageIntegration, BooleanType, UInt32Type, DecimalValue, BeTreeLocator, CSVConfig
 export var"#Type", Value, NamedColumn, GNFColumn, MinMonoid, SumMonoid, MaxMonoid
-export BeTreeInfo, Binding, EDB, Attribute, Term, OutputRelation, IcebergData, Monoid
-export BeTreeRelation, Cast, Pragma, Atom, RelTerm, Relations, Primitive, RelAtom, CSVData
-export Data, Abstraction, Algorithm, Assign, Break, Conjunction, Constraint, Def
+export BeTreeInfo, Binding, EDB, Attribute, Term, TargetRelation, IcebergData, Monoid
+export BeTreeRelation, Cast, Pragma, Atom, RelTerm, TargetRelations, Primitive, RelAtom
+export CSVData, Data, Abstraction, Algorithm, Assign, Break, Conjunction, Constraint, Def
 export Disjunction, Exists, FFI, FunctionalDependency, MonoidDef, MonusDef, Not, Reduce
 export Script, Upsert, Construct, Loop, Declaration, Instruction, Formula
 abstract type var"##Abstract#Abstraction" end
@@ -1667,15 +1667,15 @@ function PB._encoded_size(x::Term)
     return encoded_size
 end
 
-struct OutputRelation
+struct TargetRelation
     target_id::Union{Nothing,RelationId}
     values::Vector{NamedColumn}
 end
-OutputRelation(;target_id = nothing, values = Vector{NamedColumn}()) = OutputRelation(target_id, values)
-PB.default_values(::Type{OutputRelation}) = (;target_id = nothing, values = Vector{NamedColumn}())
-PB.field_numbers(::Type{OutputRelation}) = (;target_id = 1, values = 2)
+TargetRelation(;target_id = nothing, values = Vector{NamedColumn}()) = TargetRelation(target_id, values)
+PB.default_values(::Type{TargetRelation}) = (;target_id = nothing, values = Vector{NamedColumn}())
+PB.field_numbers(::Type{TargetRelation}) = (;target_id = 1, values = 2)
 
-function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:OutputRelation}, _endpos::Int=0, _group::Bool=false)
+function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:TargetRelation}, _endpos::Int=0, _group::Bool=false)
     target_id = Ref{Union{Nothing,RelationId}}(nothing)
     values = PB.BufferedVector{NamedColumn}()
     while !PB.message_done(d, _endpos, _group)
@@ -1688,16 +1688,16 @@ function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:OutputRelation}, _endpos
             Base.skip(d, wire_type)
         end
     end
-    return OutputRelation(target_id[], values[])
+    return TargetRelation(target_id[], values[])
 end
 
-function PB.encode(e::PB.AbstractProtoEncoder, x::OutputRelation)
+function PB.encode(e::PB.AbstractProtoEncoder, x::TargetRelation)
     initpos = position(e.io)
     !isnothing(x.target_id) && PB.encode(e, 1, x.target_id)
     !isempty(x.values) && PB.encode(e, 2, x.values)
     return position(e.io) - initpos
 end
-function PB._encoded_size(x::OutputRelation)
+function PB._encoded_size(x::TargetRelation)
     encoded_size = 0
     !isnothing(x.target_id) && (encoded_size += PB._encoded_size(x.target_id, 1))
     !isempty(x.values) && (encoded_size += PB._encoded_size(x.values, 2))
@@ -2017,21 +2017,21 @@ function PB._encoded_size(x::RelTerm)
     return encoded_size
 end
 
-struct Relations
+struct TargetRelations
     keys::Vector{NamedColumn}
-    relations::Vector{OutputRelation}
-    inserts::Vector{OutputRelation}
-    deletes::Vector{OutputRelation}
+    relations::Vector{TargetRelation}
+    inserts::Vector{TargetRelation}
+    deletes::Vector{TargetRelation}
 end
-Relations(;keys = Vector{NamedColumn}(), relations = Vector{OutputRelation}(), inserts = Vector{OutputRelation}(), deletes = Vector{OutputRelation}()) = Relations(keys, relations, inserts, deletes)
-PB.default_values(::Type{Relations}) = (;keys = Vector{NamedColumn}(), relations = Vector{OutputRelation}(), inserts = Vector{OutputRelation}(), deletes = Vector{OutputRelation}())
-PB.field_numbers(::Type{Relations}) = (;keys = 1, relations = 2, inserts = 3, deletes = 4)
+TargetRelations(;keys = Vector{NamedColumn}(), relations = Vector{TargetRelation}(), inserts = Vector{TargetRelation}(), deletes = Vector{TargetRelation}()) = TargetRelations(keys, relations, inserts, deletes)
+PB.default_values(::Type{TargetRelations}) = (;keys = Vector{NamedColumn}(), relations = Vector{TargetRelation}(), inserts = Vector{TargetRelation}(), deletes = Vector{TargetRelation}())
+PB.field_numbers(::Type{TargetRelations}) = (;keys = 1, relations = 2, inserts = 3, deletes = 4)
 
-function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:Relations}, _endpos::Int=0, _group::Bool=false)
+function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:TargetRelations}, _endpos::Int=0, _group::Bool=false)
     keys = PB.BufferedVector{NamedColumn}()
-    relations = PB.BufferedVector{OutputRelation}()
-    inserts = PB.BufferedVector{OutputRelation}()
-    deletes = PB.BufferedVector{OutputRelation}()
+    relations = PB.BufferedVector{TargetRelation}()
+    inserts = PB.BufferedVector{TargetRelation}()
+    deletes = PB.BufferedVector{TargetRelation}()
     while !PB.message_done(d, _endpos, _group)
         field_number, wire_type = PB.decode_tag(d)
         if field_number == 1
@@ -2046,10 +2046,10 @@ function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:Relations}, _endpos::Int
             Base.skip(d, wire_type)
         end
     end
-    return Relations(keys[], relations[], inserts[], deletes[])
+    return TargetRelations(keys[], relations[], inserts[], deletes[])
 end
 
-function PB.encode(e::PB.AbstractProtoEncoder, x::Relations)
+function PB.encode(e::PB.AbstractProtoEncoder, x::TargetRelations)
     initpos = position(e.io)
     !isempty(x.keys) && PB.encode(e, 1, x.keys)
     !isempty(x.relations) && PB.encode(e, 2, x.relations)
@@ -2057,7 +2057,7 @@ function PB.encode(e::PB.AbstractProtoEncoder, x::Relations)
     !isempty(x.deletes) && PB.encode(e, 4, x.deletes)
     return position(e.io) - initpos
 end
-function PB._encoded_size(x::Relations)
+function PB._encoded_size(x::TargetRelations)
     encoded_size = 0
     !isempty(x.keys) && (encoded_size += PB._encoded_size(x.keys, 1))
     !isempty(x.relations) && (encoded_size += PB._encoded_size(x.relations, 2))
@@ -2145,7 +2145,7 @@ struct CSVData
     config::Union{Nothing,CSVConfig}
     columns::Vector{GNFColumn}
     asof::String
-    relations::Union{Nothing,Relations}
+    relations::Union{Nothing,TargetRelations}
 end
 CSVData(;locator = nothing, config = nothing, columns = Vector{GNFColumn}(), asof = "", relations = nothing) = CSVData(locator, config, columns, asof, relations)
 PB.default_values(::Type{CSVData}) = (;locator = nothing, config = nothing, columns = Vector{GNFColumn}(), asof = "", relations = nothing)
@@ -2156,7 +2156,7 @@ function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:CSVData}, _endpos::Int=0
     config = Ref{Union{Nothing,CSVConfig}}(nothing)
     columns = PB.BufferedVector{GNFColumn}()
     asof = ""
-    relations = Ref{Union{Nothing,Relations}}(nothing)
+    relations = Ref{Union{Nothing,TargetRelations}}(nothing)
     while !PB.message_done(d, _endpos, _group)
         field_number, wire_type = PB.decode_tag(d)
         if field_number == 1

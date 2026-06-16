@@ -428,7 +428,7 @@ class NamedColumn(_message.Message):
     type: Type
     def __init__(self, name: _Optional[str] = ..., type: _Optional[_Union[Type, _Mapping]] = ...) -> None: ...
 
-class OutputRelation(_message.Message):
+class TargetRelation(_message.Message):
     __slots__ = ("target_id", "values")
     TARGET_ID_FIELD_NUMBER: _ClassVar[int]
     VALUES_FIELD_NUMBER: _ClassVar[int]
@@ -436,17 +436,17 @@ class OutputRelation(_message.Message):
     values: _containers.RepeatedCompositeFieldContainer[NamedColumn]
     def __init__(self, target_id: _Optional[_Union[RelationId, _Mapping]] = ..., values: _Optional[_Iterable[_Union[NamedColumn, _Mapping]]] = ...) -> None: ...
 
-class Relations(_message.Message):
+class TargetRelations(_message.Message):
     __slots__ = ("keys", "relations", "inserts", "deletes")
     KEYS_FIELD_NUMBER: _ClassVar[int]
     RELATIONS_FIELD_NUMBER: _ClassVar[int]
     INSERTS_FIELD_NUMBER: _ClassVar[int]
     DELETES_FIELD_NUMBER: _ClassVar[int]
     keys: _containers.RepeatedCompositeFieldContainer[NamedColumn]
-    relations: _containers.RepeatedCompositeFieldContainer[OutputRelation]
-    inserts: _containers.RepeatedCompositeFieldContainer[OutputRelation]
-    deletes: _containers.RepeatedCompositeFieldContainer[OutputRelation]
-    def __init__(self, keys: _Optional[_Iterable[_Union[NamedColumn, _Mapping]]] = ..., relations: _Optional[_Iterable[_Union[OutputRelation, _Mapping]]] = ..., inserts: _Optional[_Iterable[_Union[OutputRelation, _Mapping]]] = ..., deletes: _Optional[_Iterable[_Union[OutputRelation, _Mapping]]] = ...) -> None: ...
+    relations: _containers.RepeatedCompositeFieldContainer[TargetRelation]
+    inserts: _containers.RepeatedCompositeFieldContainer[TargetRelation]
+    deletes: _containers.RepeatedCompositeFieldContainer[TargetRelation]
+    def __init__(self, keys: _Optional[_Iterable[_Union[NamedColumn, _Mapping]]] = ..., relations: _Optional[_Iterable[_Union[TargetRelation, _Mapping]]] = ..., inserts: _Optional[_Iterable[_Union[TargetRelation, _Mapping]]] = ..., deletes: _Optional[_Iterable[_Union[TargetRelation, _Mapping]]] = ...) -> None: ...
 
 class CSVData(_message.Message):
     __slots__ = ("locator", "config", "columns", "asof", "relations")
@@ -459,8 +459,8 @@ class CSVData(_message.Message):
     config: CSVConfig
     columns: _containers.RepeatedCompositeFieldContainer[GNFColumn]
     asof: str
-    relations: Relations
-    def __init__(self, locator: _Optional[_Union[CSVLocator, _Mapping]] = ..., config: _Optional[_Union[CSVConfig, _Mapping]] = ..., columns: _Optional[_Iterable[_Union[GNFColumn, _Mapping]]] = ..., asof: _Optional[str] = ..., relations: _Optional[_Union[Relations, _Mapping]] = ...) -> None: ...
+    relations: TargetRelations
+    def __init__(self, locator: _Optional[_Union[CSVLocator, _Mapping]] = ..., config: _Optional[_Union[CSVConfig, _Mapping]] = ..., columns: _Optional[_Iterable[_Union[GNFColumn, _Mapping]]] = ..., asof: _Optional[str] = ..., relations: _Optional[_Union[TargetRelations, _Mapping]] = ...) -> None: ...
 
 class CSVLocator(_message.Message):
     __slots__ = ("paths", "inline_data")

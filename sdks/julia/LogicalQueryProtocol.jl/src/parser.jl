@@ -449,22 +449,22 @@ function _try_extract_value_uint128(parser::ParserState, value::Union{Nothing, P
     return nothing
 end
 
-function construct_non_cdc_relations(parser::ParserState, relations::Vector{Proto.OutputRelation})::Proto.Relations
-    _t2196 = Proto.Relations(keys=Proto.NamedColumn[], relations=relations, inserts=Proto.OutputRelation[], deletes=Proto.OutputRelation[])
+function construct_non_cdc_relations(parser::ParserState, relations::Vector{Proto.TargetRelation})::Proto.TargetRelations
+    _t2196 = Proto.TargetRelations(keys=Proto.NamedColumn[], relations=relations, inserts=Proto.TargetRelation[], deletes=Proto.TargetRelation[])
     return _t2196
 end
 
-function construct_cdc_relations(parser::ParserState, inserts::Vector{Proto.OutputRelation}, deletes::Vector{Proto.OutputRelation})::Proto.Relations
-    _t2197 = Proto.Relations(keys=Proto.NamedColumn[], relations=Proto.OutputRelation[], inserts=inserts, deletes=deletes)
+function construct_cdc_relations(parser::ParserState, inserts::Vector{Proto.TargetRelation}, deletes::Vector{Proto.TargetRelation})::Proto.TargetRelations
+    _t2197 = Proto.TargetRelations(keys=Proto.NamedColumn[], relations=Proto.TargetRelation[], inserts=inserts, deletes=deletes)
     return _t2197
 end
 
-function construct_relations(parser::ParserState, keys::Vector{Proto.NamedColumn}, body::Proto.Relations)::Proto.Relations
-    _t2198 = Proto.Relations(keys=keys, relations=body.relations, inserts=body.inserts, deletes=body.deletes)
+function construct_relations(parser::ParserState, keys::Vector{Proto.NamedColumn}, body::Proto.TargetRelations)::Proto.TargetRelations
+    _t2198 = Proto.TargetRelations(keys=keys, relations=body.relations, inserts=body.inserts, deletes=body.deletes)
     return _t2198
 end
 
-function construct_csv_data(parser::ParserState, locator::Proto.CSVLocator, config::Proto.CSVConfig, columns_opt::Union{Nothing, Vector{Proto.GNFColumn}}, relations_opt::Union{Nothing, Proto.Relations}, asof::String)::Proto.CSVData
+function construct_csv_data(parser::ParserState, locator::Proto.CSVLocator, config::Proto.CSVConfig, columns_opt::Union{Nothing, Vector{Proto.GNFColumn}}, relations_opt::Union{Nothing, Proto.TargetRelations}, asof::String)::Proto.CSVData
     _t2199 = Proto.CSVData(locator=locator, config=config, columns=(!isnothing(columns_opt) ? columns_opt : Proto.GNFColumn[]), asof=asof, relations=relations_opt)
     return _t2199
 end
@@ -3591,16 +3591,16 @@ function parse_csv_data(parser::ParserState)::Proto.CSVData
     end
     gnf_columns1201 = _t2029
     if (match_lookahead_literal(parser, "(", 0) && match_lookahead_literal(parser, "relations", 1))
-        _t2032 = parse_relations(parser)
+        _t2032 = parse_target_relations(parser)
         _t2031 = _t2032
     else
         _t2031 = nothing
     end
-    relations1202 = _t2031
+    target_relations1202 = _t2031
     _t2033 = parse_csv_asof(parser)
     csv_asof1203 = _t2033
     consume_literal!(parser, ")")
-    _t2034 = construct_csv_data(parser, csvlocator1199, csv_config1200, gnf_columns1201, relations1202, csv_asof1203)
+    _t2034 = construct_csv_data(parser, csvlocator1199, csv_config1200, gnf_columns1201, target_relations1202, csv_asof1203)
     result1205 = _t2034
     record_span!(parser, span_start1204, "CSVData")
     return result1205
@@ -3766,7 +3766,7 @@ function parse_gnf_column_path(parser::ParserState)::Vector{String}
     return _t2053
 end
 
-function parse_relations(parser::ParserState)::Proto.Relations
+function parse_target_relations(parser::ParserState)::Proto.TargetRelations
     span_start1240 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "relations")
@@ -3777,7 +3777,7 @@ function parse_relations(parser::ParserState)::Proto.Relations
     consume_literal!(parser, ")")
     _t2057 = construct_relations(parser, relation_keys1238, relation_body1239)
     result1241 = _t2057
-    record_span!(parser, span_start1240, "Relations")
+    record_span!(parser, span_start1240, "TargetRelations")
     return result1241
 end
 
@@ -3811,7 +3811,7 @@ function parse_named_column(parser::ParserState)::Proto.NamedColumn
     return result1249
 end
 
-function parse_relation_body(parser::ParserState)::Proto.Relations
+function parse_relation_body(parser::ParserState)::Proto.TargetRelations
     span_start1254 = span_start(parser)
     if match_lookahead_literal(parser, "(", 0)
         if match_lookahead_literal(parser, "relation", 1)
@@ -3848,15 +3848,15 @@ function parse_relation_body(parser::ParserState)::Proto.Relations
         _t2064 = _t2068
     end
     result1255 = _t2064
-    record_span!(parser, span_start1254, "Relations")
+    record_span!(parser, span_start1254, "TargetRelations")
     return result1255
 end
 
-function parse_non_cdc_relations(parser::ParserState)::Vector{Proto.OutputRelation}
-    xs1256 = Proto.OutputRelation[]
+function parse_non_cdc_relations(parser::ParserState)::Vector{Proto.TargetRelation}
+    xs1256 = Proto.TargetRelation[]
     cond1257 = match_lookahead_literal(parser, "(", 0)
     while cond1257
-        _t2071 = parse_output_relation(parser)
+        _t2071 = parse_target_relation(parser)
         item1258 = _t2071
         push!(xs1256, item1258)
         cond1257 = match_lookahead_literal(parser, "(", 0)
@@ -3864,7 +3864,7 @@ function parse_non_cdc_relations(parser::ParserState)::Vector{Proto.OutputRelati
     return xs1256
 end
 
-function parse_output_relation(parser::ParserState)::Proto.OutputRelation
+function parse_target_relation(parser::ParserState)::Proto.TargetRelation
     span_start1264 = span_start(parser)
     consume_literal!(parser, "(")
     consume_literal!(parser, "relation")
@@ -3880,42 +3880,42 @@ function parse_output_relation(parser::ParserState)::Proto.OutputRelation
     end
     named_columns1263 = xs1260
     consume_literal!(parser, ")")
-    _t2074 = Proto.OutputRelation(target_id=relation_id1259, values=named_columns1263)
+    _t2074 = Proto.TargetRelation(target_id=relation_id1259, values=named_columns1263)
     result1265 = _t2074
-    record_span!(parser, span_start1264, "OutputRelation")
+    record_span!(parser, span_start1264, "TargetRelation")
     return result1265
 end
 
-function parse_cdc_inserts(parser::ParserState)::Vector{Proto.OutputRelation}
+function parse_cdc_inserts(parser::ParserState)::Vector{Proto.TargetRelation}
     consume_literal!(parser, "(")
     consume_literal!(parser, "inserts")
-    xs1266 = Proto.OutputRelation[]
+    xs1266 = Proto.TargetRelation[]
     cond1267 = match_lookahead_literal(parser, "(", 0)
     while cond1267
-        _t2075 = parse_output_relation(parser)
+        _t2075 = parse_target_relation(parser)
         item1268 = _t2075
         push!(xs1266, item1268)
         cond1267 = match_lookahead_literal(parser, "(", 0)
     end
-    output_relations1269 = xs1266
+    target_relations1269 = xs1266
     consume_literal!(parser, ")")
-    return output_relations1269
+    return target_relations1269
 end
 
-function parse_cdc_deletes(parser::ParserState)::Vector{Proto.OutputRelation}
+function parse_cdc_deletes(parser::ParserState)::Vector{Proto.TargetRelation}
     consume_literal!(parser, "(")
     consume_literal!(parser, "deletes")
-    xs1270 = Proto.OutputRelation[]
+    xs1270 = Proto.TargetRelation[]
     cond1271 = match_lookahead_literal(parser, "(", 0)
     while cond1271
-        _t2076 = parse_output_relation(parser)
+        _t2076 = parse_target_relation(parser)
         item1272 = _t2076
         push!(xs1270, item1272)
         cond1271 = match_lookahead_literal(parser, "(", 0)
     end
-    output_relations1273 = xs1270
+    target_relations1273 = xs1270
     consume_literal!(parser, ")")
-    return output_relations1273
+    return target_relations1273
 end
 
 function parse_csv_asof(parser::ParserState)::String

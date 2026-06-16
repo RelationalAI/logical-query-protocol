@@ -223,7 +223,7 @@ class PrettyPrinter:
             _t1832 = None
         return msg.columns
 
-    def deconstruct_csv_data_relations_optional(self, msg: logic_pb2.CSVData) -> logic_pb2.Relations | None:
+    def deconstruct_csv_data_relations_optional(self, msg: logic_pb2.CSVData) -> logic_pb2.TargetRelations | None:
         if msg.HasField("relations"):
             assert msg.relations is not None
             return msg.relations
@@ -3364,7 +3364,7 @@ class PrettyPrinter:
                 self.newline()
                 assert field1435 is not None
                 opt_val1436 = field1435
-                self.pretty_relations(opt_val1436)
+                self.pretty_target_relations(opt_val1436)
             self.newline()
             field1437 = unwrapped_fields1430[4]
             self.pretty_csv_asof(field1437)
@@ -3577,8 +3577,8 @@ class PrettyPrinter:
                 else:
                     raise ParseError("No matching rule for gnf_column_path")
 
-    def pretty_relations(self, msg: logic_pb2.Relations):
-        flat1484 = self._try_flat(msg, self.pretty_relations)
+    def pretty_target_relations(self, msg: logic_pb2.TargetRelations):
+        flat1484 = self._try_flat(msg, self.pretty_target_relations)
         if flat1484 is not None:
             assert flat1484 is not None
             self.write(flat1484)
@@ -3640,7 +3640,7 @@ class PrettyPrinter:
             self.dedent()
             self.write(")")
 
-    def pretty_relation_body(self, msg: logic_pb2.Relations):
+    def pretty_relation_body(self, msg: logic_pb2.TargetRelations):
         flat1500 = self._try_flat(msg, self.pretty_relation_body)
         if flat1500 is not None:
             assert flat1500 is not None
@@ -3675,7 +3675,7 @@ class PrettyPrinter:
                 else:
                     raise ParseError("No matching rule for relation_body")
 
-    def pretty_non_cdc_relations(self, msg: Sequence[logic_pb2.OutputRelation]):
+    def pretty_non_cdc_relations(self, msg: Sequence[logic_pb2.TargetRelation]):
         flat1504 = self._try_flat(msg, self.pretty_non_cdc_relations)
         if flat1504 is not None:
             assert flat1504 is not None
@@ -3686,10 +3686,10 @@ class PrettyPrinter:
             for i1503, elem1502 in enumerate(fields1501):
                 if (i1503 > 0):
                     self.newline()
-                self.pretty_output_relation(elem1502)
+                self.pretty_target_relation(elem1502)
 
-    def pretty_output_relation(self, msg: logic_pb2.OutputRelation):
-        flat1511 = self._try_flat(msg, self.pretty_output_relation)
+    def pretty_target_relation(self, msg: logic_pb2.TargetRelation):
+        flat1511 = self._try_flat(msg, self.pretty_target_relation)
         if flat1511 is not None:
             assert flat1511 is not None
             self.write(flat1511)
@@ -3714,7 +3714,7 @@ class PrettyPrinter:
             self.dedent()
             self.write(")")
 
-    def pretty_cdc_inserts(self, msg: Sequence[logic_pb2.OutputRelation]):
+    def pretty_cdc_inserts(self, msg: Sequence[logic_pb2.TargetRelation]):
         flat1515 = self._try_flat(msg, self.pretty_cdc_inserts)
         if flat1515 is not None:
             assert flat1515 is not None
@@ -3729,11 +3729,11 @@ class PrettyPrinter:
                 for i1514, elem1513 in enumerate(fields1512):
                     if (i1514 > 0):
                         self.newline()
-                    self.pretty_output_relation(elem1513)
+                    self.pretty_target_relation(elem1513)
             self.dedent()
             self.write(")")
 
-    def pretty_cdc_deletes(self, msg: Sequence[logic_pb2.OutputRelation]):
+    def pretty_cdc_deletes(self, msg: Sequence[logic_pb2.TargetRelation]):
         flat1519 = self._try_flat(msg, self.pretty_cdc_deletes)
         if flat1519 is not None:
             assert flat1519 is not None
@@ -3748,7 +3748,7 @@ class PrettyPrinter:
                 for i1518, elem1517 in enumerate(fields1516):
                     if (i1518 > 0):
                         self.newline()
-                    self.pretty_output_relation(elem1517)
+                    self.pretty_target_relation(elem1517)
             self.dedent()
             self.write(")")
 
@@ -4880,12 +4880,12 @@ class PrettyPrinter:
             self.pretty_csv_config(msg)
         elif isinstance(msg, logic_pb2.GNFColumn):
             self.pretty_gnf_column(msg)
-        elif isinstance(msg, logic_pb2.Relations):
-            self.pretty_relations(msg)
+        elif isinstance(msg, logic_pb2.TargetRelations):
+            self.pretty_target_relations(msg)
         elif isinstance(msg, logic_pb2.NamedColumn):
             self.pretty_named_column(msg)
-        elif isinstance(msg, logic_pb2.OutputRelation):
-            self.pretty_output_relation(msg)
+        elif isinstance(msg, logic_pb2.TargetRelation):
+            self.pretty_target_relation(msg)
         elif isinstance(msg, logic_pb2.IcebergData):
             self.pretty_iceberg_data(msg)
         elif isinstance(msg, logic_pb2.IcebergLocator):

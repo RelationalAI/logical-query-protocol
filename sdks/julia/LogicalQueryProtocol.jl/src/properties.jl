@@ -225,7 +225,7 @@ function global_ids(data::Data)
         csv_data = dt[]::CSVData
         ids = LQPRelationId[]
         if !isnothing(csv_data.relations)
-            # Generalized form: the defined relations are the output relations across the
+            # Generalized form: the defined relations are the target relations across the
             # non-CDC `relations` group and the CDC `inserts`/`deletes` groups. CDC insert and
             # delete groups may share a target, so deduplicate.
             rels = csv_data.relations

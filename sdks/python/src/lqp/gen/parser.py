@@ -538,19 +538,19 @@ class Parser:
             _t2204 = None
         return None
 
-    def construct_non_cdc_relations(self, relations: Sequence[logic_pb2.OutputRelation]) -> logic_pb2.Relations:
-        _t2205 = logic_pb2.Relations(keys=[], relations=relations, inserts=[], deletes=[])
+    def construct_non_cdc_relations(self, relations: Sequence[logic_pb2.TargetRelation]) -> logic_pb2.TargetRelations:
+        _t2205 = logic_pb2.TargetRelations(keys=[], relations=relations, inserts=[], deletes=[])
         return _t2205
 
-    def construct_cdc_relations(self, inserts: Sequence[logic_pb2.OutputRelation], deletes: Sequence[logic_pb2.OutputRelation]) -> logic_pb2.Relations:
-        _t2206 = logic_pb2.Relations(keys=[], relations=[], inserts=inserts, deletes=deletes)
+    def construct_cdc_relations(self, inserts: Sequence[logic_pb2.TargetRelation], deletes: Sequence[logic_pb2.TargetRelation]) -> logic_pb2.TargetRelations:
+        _t2206 = logic_pb2.TargetRelations(keys=[], relations=[], inserts=inserts, deletes=deletes)
         return _t2206
 
-    def construct_relations(self, keys: Sequence[logic_pb2.NamedColumn], body: logic_pb2.Relations) -> logic_pb2.Relations:
-        _t2207 = logic_pb2.Relations(keys=keys, relations=body.relations, inserts=body.inserts, deletes=body.deletes)
+    def construct_relations(self, keys: Sequence[logic_pb2.NamedColumn], body: logic_pb2.TargetRelations) -> logic_pb2.TargetRelations:
+        _t2207 = logic_pb2.TargetRelations(keys=keys, relations=body.relations, inserts=body.inserts, deletes=body.deletes)
         return _t2207
 
-    def construct_csv_data(self, locator: logic_pb2.CSVLocator, config: logic_pb2.CSVConfig, columns_opt: Sequence[logic_pb2.GNFColumn] | None, relations_opt: logic_pb2.Relations | None, asof: str) -> logic_pb2.CSVData:
+    def construct_csv_data(self, locator: logic_pb2.CSVLocator, config: logic_pb2.CSVConfig, columns_opt: Sequence[logic_pb2.GNFColumn] | None, relations_opt: logic_pb2.TargetRelations | None, asof: str) -> logic_pb2.CSVData:
         _t2208 = logic_pb2.CSVData(locator=locator, config=config, columns=(columns_opt if columns_opt is not None else []), asof=asof, relations=relations_opt)
         return _t2208
 
@@ -3282,15 +3282,15 @@ class Parser:
             _t2029 = None
         gnf_columns1201 = _t2029
         if (self.match_lookahead_literal("(", 0) and self.match_lookahead_literal("relations", 1)):
-            _t2032 = self.parse_relations()
+            _t2032 = self.parse_target_relations()
             _t2031 = _t2032
         else:
             _t2031 = None
-        relations1202 = _t2031
+        target_relations1202 = _t2031
         _t2033 = self.parse_csv_asof()
         csv_asof1203 = _t2033
         self.consume_literal(")")
-        _t2034 = self.construct_csv_data(csvlocator1199, csv_config1200, gnf_columns1201, relations1202, csv_asof1203)
+        _t2034 = self.construct_csv_data(csvlocator1199, csv_config1200, gnf_columns1201, target_relations1202, csv_asof1203)
         result1205 = _t2034
         self.record_span(span_start1204, "CSVData")
         return result1205
@@ -3435,7 +3435,7 @@ class Parser:
             _t2053 = _t2054
         return _t2053
 
-    def parse_relations(self) -> logic_pb2.Relations:
+    def parse_target_relations(self) -> logic_pb2.TargetRelations:
         span_start1240 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("relations")
@@ -3446,7 +3446,7 @@ class Parser:
         self.consume_literal(")")
         _t2057 = self.construct_relations(relation_keys1238, relation_body1239)
         result1241 = _t2057
-        self.record_span(span_start1240, "Relations")
+        self.record_span(span_start1240, "TargetRelations")
         return result1241
 
     def parse_relation_keys(self) -> Sequence[logic_pb2.NamedColumn]:
@@ -3476,7 +3476,7 @@ class Parser:
         self.record_span(span_start1248, "NamedColumn")
         return result1249
 
-    def parse_relation_body(self) -> logic_pb2.Relations:
+    def parse_relation_body(self) -> logic_pb2.TargetRelations:
         span_start1254 = self.span_start()
         if self.match_lookahead_literal("(", 0):
             if self.match_lookahead_literal("relation", 1):
@@ -3508,20 +3508,20 @@ class Parser:
                 raise ParseError("Unexpected token in relation_body" + f": {self.lookahead(0).type}=`{self.lookahead(0).value}`")
             _t2064 = _t2068
         result1255 = _t2064
-        self.record_span(span_start1254, "Relations")
+        self.record_span(span_start1254, "TargetRelations")
         return result1255
 
-    def parse_non_cdc_relations(self) -> Sequence[logic_pb2.OutputRelation]:
+    def parse_non_cdc_relations(self) -> Sequence[logic_pb2.TargetRelation]:
         xs1256 = []
         cond1257 = self.match_lookahead_literal("(", 0)
         while cond1257:
-            _t2071 = self.parse_output_relation()
+            _t2071 = self.parse_target_relation()
             item1258 = _t2071
             xs1256.append(item1258)
             cond1257 = self.match_lookahead_literal("(", 0)
         return xs1256
 
-    def parse_output_relation(self) -> logic_pb2.OutputRelation:
+    def parse_target_relation(self) -> logic_pb2.TargetRelation:
         span_start1264 = self.span_start()
         self.consume_literal("(")
         self.consume_literal("relation")
@@ -3536,38 +3536,38 @@ class Parser:
             cond1261 = self.match_lookahead_literal("(", 0)
         named_columns1263 = xs1260
         self.consume_literal(")")
-        _t2074 = logic_pb2.OutputRelation(target_id=relation_id1259, values=named_columns1263)
+        _t2074 = logic_pb2.TargetRelation(target_id=relation_id1259, values=named_columns1263)
         result1265 = _t2074
-        self.record_span(span_start1264, "OutputRelation")
+        self.record_span(span_start1264, "TargetRelation")
         return result1265
 
-    def parse_cdc_inserts(self) -> Sequence[logic_pb2.OutputRelation]:
+    def parse_cdc_inserts(self) -> Sequence[logic_pb2.TargetRelation]:
         self.consume_literal("(")
         self.consume_literal("inserts")
         xs1266 = []
         cond1267 = self.match_lookahead_literal("(", 0)
         while cond1267:
-            _t2075 = self.parse_output_relation()
+            _t2075 = self.parse_target_relation()
             item1268 = _t2075
             xs1266.append(item1268)
             cond1267 = self.match_lookahead_literal("(", 0)
-        output_relations1269 = xs1266
+        target_relations1269 = xs1266
         self.consume_literal(")")
-        return output_relations1269
+        return target_relations1269
 
-    def parse_cdc_deletes(self) -> Sequence[logic_pb2.OutputRelation]:
+    def parse_cdc_deletes(self) -> Sequence[logic_pb2.TargetRelation]:
         self.consume_literal("(")
         self.consume_literal("deletes")
         xs1270 = []
         cond1271 = self.match_lookahead_literal("(", 0)
         while cond1271:
-            _t2076 = self.parse_output_relation()
+            _t2076 = self.parse_target_relation()
             item1272 = _t2076
             xs1270.append(item1272)
             cond1271 = self.match_lookahead_literal("(", 0)
-        output_relations1273 = xs1270
+        target_relations1273 = xs1270
         self.consume_literal(")")
-        return output_relations1273
+        return target_relations1273
 
     def parse_csv_asof(self) -> str:
         self.consume_literal("(")

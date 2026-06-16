@@ -385,7 +385,7 @@ function deconstruct_csv_data_columns_optional(pp::PrettyPrinter, msg::Proto.CSV
     return msg.columns
 end
 
-function deconstruct_csv_data_relations_optional(pp::PrettyPrinter, msg::Proto.CSVData)::Union{Nothing, Proto.Relations}
+function deconstruct_csv_data_relations_optional(pp::PrettyPrinter, msg::Proto.CSVData)::Union{Nothing, Proto.TargetRelations}
     if _has_proto_field(msg, Symbol("relations"))
         return msg.relations
     else
@@ -3924,7 +3924,7 @@ function pretty_csv_data(pp::PrettyPrinter, msg::Proto.CSVData)
         if !isnothing(field1435)
             newline(pp)
             opt_val1436 = field1435
-            pretty_relations(pp, opt_val1436)
+            pretty_target_relations(pp, opt_val1436)
         end
         newline(pp)
         field1437 = unwrapped_fields1430[5]
@@ -4173,8 +4173,8 @@ function pretty_gnf_column_path(pp::PrettyPrinter, msg::Vector{String})
     return nothing
 end
 
-function pretty_relations(pp::PrettyPrinter, msg::Proto.Relations)
-    flat1484 = try_flat(pp, msg, pretty_relations)
+function pretty_target_relations(pp::PrettyPrinter, msg::Proto.TargetRelations)
+    flat1484 = try_flat(pp, msg, pretty_target_relations)
     if !isnothing(flat1484)
         write(pp, flat1484)
         return nothing
@@ -4244,7 +4244,7 @@ function pretty_named_column(pp::PrettyPrinter, msg::Proto.NamedColumn)
     return nothing
 end
 
-function pretty_relation_body(pp::PrettyPrinter, msg::Proto.Relations)
+function pretty_relation_body(pp::PrettyPrinter, msg::Proto.TargetRelations)
     flat1500 = try_flat(pp, msg, pretty_relation_body)
     if !isnothing(flat1500)
         write(pp, flat1500)
@@ -4283,7 +4283,7 @@ function pretty_relation_body(pp::PrettyPrinter, msg::Proto.Relations)
     return nothing
 end
 
-function pretty_non_cdc_relations(pp::PrettyPrinter, msg::Vector{Proto.OutputRelation})
+function pretty_non_cdc_relations(pp::PrettyPrinter, msg::Vector{Proto.TargetRelation})
     flat1504 = try_flat(pp, msg, pretty_non_cdc_relations)
     if !isnothing(flat1504)
         write(pp, flat1504)
@@ -4295,14 +4295,14 @@ function pretty_non_cdc_relations(pp::PrettyPrinter, msg::Vector{Proto.OutputRel
             if (i1503 > 0)
                 newline(pp)
             end
-            pretty_output_relation(pp, elem1502)
+            pretty_target_relation(pp, elem1502)
         end
     end
     return nothing
 end
 
-function pretty_output_relation(pp::PrettyPrinter, msg::Proto.OutputRelation)
-    flat1511 = try_flat(pp, msg, pretty_output_relation)
+function pretty_target_relation(pp::PrettyPrinter, msg::Proto.TargetRelation)
+    flat1511 = try_flat(pp, msg, pretty_target_relation)
     if !isnothing(flat1511)
         write(pp, flat1511)
         return nothing
@@ -4332,7 +4332,7 @@ function pretty_output_relation(pp::PrettyPrinter, msg::Proto.OutputRelation)
     return nothing
 end
 
-function pretty_cdc_inserts(pp::PrettyPrinter, msg::Vector{Proto.OutputRelation})
+function pretty_cdc_inserts(pp::PrettyPrinter, msg::Vector{Proto.TargetRelation})
     flat1515 = try_flat(pp, msg, pretty_cdc_inserts)
     if !isnothing(flat1515)
         write(pp, flat1515)
@@ -4348,7 +4348,7 @@ function pretty_cdc_inserts(pp::PrettyPrinter, msg::Vector{Proto.OutputRelation}
                 if (i1514 > 0)
                     newline(pp)
                 end
-                pretty_output_relation(pp, elem1513)
+                pretty_target_relation(pp, elem1513)
             end
         end
         dedent!(pp)
@@ -4357,7 +4357,7 @@ function pretty_cdc_inserts(pp::PrettyPrinter, msg::Vector{Proto.OutputRelation}
     return nothing
 end
 
-function pretty_cdc_deletes(pp::PrettyPrinter, msg::Vector{Proto.OutputRelation})
+function pretty_cdc_deletes(pp::PrettyPrinter, msg::Vector{Proto.TargetRelation})
     flat1519 = try_flat(pp, msg, pretty_cdc_deletes)
     if !isnothing(flat1519)
         write(pp, flat1519)
@@ -4373,7 +4373,7 @@ function pretty_cdc_deletes(pp::PrettyPrinter, msg::Vector{Proto.OutputRelation}
                 if (i1518 > 0)
                     newline(pp)
                 end
-                pretty_output_relation(pp, elem1517)
+                pretty_target_relation(pp, elem1517)
             end
         end
         dedent!(pp)
@@ -5591,11 +5591,11 @@ _pprint_dispatch(pp::PrettyPrinter, x::Proto.CSVLocator) = pretty_csvlocator(pp,
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.CSVConfig) = pretty_csv_config(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Vector{Proto.GNFColumn}) = pretty_gnf_columns(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.GNFColumn) = pretty_gnf_column(pp, x)
-_pprint_dispatch(pp::PrettyPrinter, x::Proto.Relations) = pretty_relations(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.TargetRelations) = pretty_target_relations(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Vector{Proto.NamedColumn}) = pretty_relation_keys(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.NamedColumn) = pretty_named_column(pp, x)
-_pprint_dispatch(pp::PrettyPrinter, x::Vector{Proto.OutputRelation}) = pretty_non_cdc_relations(pp, x)
-_pprint_dispatch(pp::PrettyPrinter, x::Proto.OutputRelation) = pretty_output_relation(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Vector{Proto.TargetRelation}) = pretty_non_cdc_relations(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.TargetRelation) = pretty_target_relation(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.IcebergData) = pretty_iceberg_data(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.IcebergLocator) = pretty_iceberg_locator(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.IcebergCatalogConfig) = pretty_iceberg_catalog_config(pp, x)

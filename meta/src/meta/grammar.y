@@ -89,12 +89,12 @@
 %nonterm gnf_columns Sequence[logic.GNFColumn]
 %nonterm named_column logic.NamedColumn
 %nonterm relation_keys Sequence[logic.NamedColumn]
-%nonterm output_relation logic.OutputRelation
-%nonterm non_cdc_relations Sequence[logic.OutputRelation]
-%nonterm cdc_inserts Sequence[logic.OutputRelation]
-%nonterm cdc_deletes Sequence[logic.OutputRelation]
-%nonterm relation_body logic.Relations
-%nonterm relations logic.Relations
+%nonterm target_relation logic.TargetRelation
+%nonterm non_cdc_relations Sequence[logic.TargetRelation]
+%nonterm cdc_inserts Sequence[logic.TargetRelation]
+%nonterm cdc_deletes Sequence[logic.TargetRelation]
+%nonterm relation_body logic.TargetRelations
+%nonterm target_relations logic.TargetRelations
 %nonterm csv_config logic.CSVConfig
 %nonterm csv_data logic.CSVData
 %nonterm csv_locator_inline_data String
@@ -1115,13 +1115,13 @@ csv_asof
     : "(" "asof" STRING ")"
 
 csv_data
-    : "(" "csv_data" csvlocator csv_config gnf_columns? relations? csv_asof ")"
+    : "(" "csv_data" csvlocator csv_config gnf_columns? target_relations? csv_asof ")"
       construct: $$ = construct_csv_data($3, $4, $5, $6, $7)
       deconstruct:
         $3: logic.CSVLocator = $$.locator
         $4: logic.CSVConfig = $$.config
         $5: Optional[Sequence[logic.GNFColumn]] = deconstruct_csv_data_columns_optional($$)
-        $6: Optional[logic.Relations] = deconstruct_csv_data_relations_optional($$)
+        $6: Optional[logic.TargetRelations] = deconstruct_csv_data_relations_optional($$)
         $7: String = $$.asof
 
 named_column
@@ -1134,39 +1134,39 @@ named_column
 relation_keys
     : "(" "keys" named_column* ")"
 
-output_relation
+target_relation
     : "(" "relation" relation_id named_column* ")"
-      construct: $$ = logic.OutputRelation(target_id=$3, values=$4)
+      construct: $$ = logic.TargetRelation(target_id=$3, values=$4)
       deconstruct:
         $3: logic.RelationId = $$.target_id
         $4: Sequence[logic.NamedColumn] = $$.values
 
 non_cdc_relations
-    : output_relation*
+    : target_relation*
 
 cdc_inserts
-    : "(" "inserts" output_relation* ")"
+    : "(" "inserts" target_relation* ")"
 
 cdc_deletes
-    : "(" "deletes" output_relation* ")"
+    : "(" "deletes" target_relation* ")"
 
 relation_body
     : non_cdc_relations
       construct: $$ = construct_non_cdc_relations($1)
       deconstruct if builtin.is_empty($$.inserts) and builtin.is_empty($$.deletes):
-        $1: Sequence[logic.OutputRelation] = $$.relations
+        $1: Sequence[logic.TargetRelation] = $$.relations
     | cdc_inserts cdc_deletes
       construct: $$ = construct_cdc_relations($1, $2)
       deconstruct if not (builtin.is_empty($$.inserts) and builtin.is_empty($$.deletes)):
-        $1: Sequence[logic.OutputRelation] = $$.inserts
-        $2: Sequence[logic.OutputRelation] = $$.deletes
+        $1: Sequence[logic.TargetRelation] = $$.inserts
+        $2: Sequence[logic.TargetRelation] = $$.deletes
 
-relations
+target_relations
     : "(" "relations" relation_keys relation_body ")"
       construct: $$ = construct_relations($3, $4)
       deconstruct:
         $3: Sequence[logic.NamedColumn] = $$.keys
-        $4: logic.Relations = $$
+        $4: logic.TargetRelations = $$
 
 csv_locator_paths
     : "(" "paths" STRING* ")"
@@ -1527,23 +1527,23 @@ def _try_extract_value_string_list(value: Optional[logic.Value]) -> Optional[Seq
 
 
 def construct_non_cdc_relations(
-    relations: Sequence[logic.OutputRelation],
-) -> logic.Relations:
-    return logic.Relations(
+    relations: Sequence[logic.TargetRelation],
+) -> logic.TargetRelations:
+    return logic.TargetRelations(
         keys=list[logic.NamedColumn](),
         relations=relations,
-        inserts=list[logic.OutputRelation](),
-        deletes=list[logic.OutputRelation](),
+        inserts=list[logic.TargetRelation](),
+        deletes=list[logic.TargetRelation](),
     )
 
 
 def construct_cdc_relations(
-    inserts: Sequence[logic.OutputRelation],
-    deletes: Sequence[logic.OutputRelation],
-) -> logic.Relations:
-    return logic.Relations(
+    inserts: Sequence[logic.TargetRelation],
+    deletes: Sequence[logic.TargetRelation],
+) -> logic.TargetRelations:
+    return logic.TargetRelations(
         keys=list[logic.NamedColumn](),
-        relations=list[logic.OutputRelation](),
+        relations=list[logic.TargetRelation](),
         inserts=inserts,
         deletes=deletes,
     )
@@ -1551,9 +1551,9 @@ def construct_cdc_relations(
 
 def construct_relations(
     keys: Sequence[logic.NamedColumn],
-    body: logic.Relations,
-) -> logic.Relations:
-    return logic.Relations(
+    body: logic.TargetRelations,
+) -> logic.TargetRelations:
+    return logic.TargetRelations(
         keys=keys,
         relations=body.relations,
         inserts=body.inserts,
@@ -1565,7 +1565,7 @@ def construct_csv_data(
     locator: logic.CSVLocator,
     config: logic.CSVConfig,
     columns_opt: Optional[Sequence[logic.GNFColumn]],
-    relations_opt: Optional[logic.Relations],
+    relations_opt: Optional[logic.TargetRelations],
     asof: String,
 ) -> logic.CSVData:
     return logic.CSVData(
@@ -1583,7 +1583,7 @@ def deconstruct_csv_data_columns_optional(msg: logic.CSVData) -> Optional[Sequen
     return builtin.some(msg.columns)
 
 
-def deconstruct_csv_data_relations_optional(msg: logic.CSVData) -> Optional[logic.Relations]:
+def deconstruct_csv_data_relations_optional(msg: logic.CSVData) -> Optional[logic.TargetRelations]:
     if builtin.has_proto_field(msg, "relations"):
         return builtin.some(builtin.unwrap_option(msg.relations))
     return builtin.none()

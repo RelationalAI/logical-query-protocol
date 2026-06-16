@@ -735,22 +735,22 @@ func (p *Parser) _try_extract_value_uint128(value *pb.Value) *pb.UInt128Value {
 	return nil
 }
 
-func (p *Parser) construct_non_cdc_relations(relations []*pb.OutputRelation) *pb.Relations {
-	_t2209 := &pb.Relations{Keys: []*pb.NamedColumn{}, Relations: relations, Inserts: []*pb.OutputRelation{}, Deletes: []*pb.OutputRelation{}}
+func (p *Parser) construct_non_cdc_relations(relations []*pb.TargetRelation) *pb.TargetRelations {
+	_t2209 := &pb.TargetRelations{Keys: []*pb.NamedColumn{}, Relations: relations, Inserts: []*pb.TargetRelation{}, Deletes: []*pb.TargetRelation{}}
 	return _t2209
 }
 
-func (p *Parser) construct_cdc_relations(inserts []*pb.OutputRelation, deletes []*pb.OutputRelation) *pb.Relations {
-	_t2210 := &pb.Relations{Keys: []*pb.NamedColumn{}, Relations: []*pb.OutputRelation{}, Inserts: inserts, Deletes: deletes}
+func (p *Parser) construct_cdc_relations(inserts []*pb.TargetRelation, deletes []*pb.TargetRelation) *pb.TargetRelations {
+	_t2210 := &pb.TargetRelations{Keys: []*pb.NamedColumn{}, Relations: []*pb.TargetRelation{}, Inserts: inserts, Deletes: deletes}
 	return _t2210
 }
 
-func (p *Parser) construct_relations(keys []*pb.NamedColumn, body *pb.Relations) *pb.Relations {
-	_t2211 := &pb.Relations{Keys: keys, Relations: body.GetRelations(), Inserts: body.GetInserts(), Deletes: body.GetDeletes()}
+func (p *Parser) construct_relations(keys []*pb.NamedColumn, body *pb.TargetRelations) *pb.TargetRelations {
+	_t2211 := &pb.TargetRelations{Keys: keys, Relations: body.GetRelations(), Inserts: body.GetInserts(), Deletes: body.GetDeletes()}
 	return _t2211
 }
 
-func (p *Parser) construct_csv_data(locator *pb.CSVLocator, config *pb.CSVConfig, columns_opt []*pb.GNFColumn, relations_opt *pb.Relations, asof string) *pb.CSVData {
+func (p *Parser) construct_csv_data(locator *pb.CSVLocator, config *pb.CSVConfig, columns_opt []*pb.GNFColumn, relations_opt *pb.TargetRelations, asof string) *pb.CSVData {
 	_t2212 := columns_opt
 	if columns_opt == nil {
 		_t2212 = []*pb.GNFColumn{}
@@ -4266,16 +4266,16 @@ func (p *Parser) parse_csv_data() *pb.CSVData {
 		_t2041 = _t2042
 	}
 	gnf_columns1201 := _t2041
-	var _t2043 *pb.Relations
+	var _t2043 *pb.TargetRelations
 	if (p.matchLookaheadLiteral("(", 0) && p.matchLookaheadLiteral("relations", 1)) {
-		_t2044 := p.parse_relations()
+		_t2044 := p.parse_target_relations()
 		_t2043 = _t2044
 	}
-	relations1202 := _t2043
+	target_relations1202 := _t2043
 	_t2045 := p.parse_csv_asof()
 	csv_asof1203 := _t2045
 	p.consumeLiteral(")")
-	_t2046 := p.construct_csv_data(csvlocator1199, csv_config1200, gnf_columns1201, relations1202, csv_asof1203)
+	_t2046 := p.construct_csv_data(csvlocator1199, csv_config1200, gnf_columns1201, target_relations1202, csv_asof1203)
 	result1205 := _t2046
 	p.recordSpan(int(span_start1204), "CSVData")
 	return result1205
@@ -4446,7 +4446,7 @@ func (p *Parser) parse_gnf_column_path() []string {
 	return _t2066
 }
 
-func (p *Parser) parse_relations() *pb.Relations {
+func (p *Parser) parse_target_relations() *pb.TargetRelations {
 	span_start1240 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("relations")
@@ -4457,7 +4457,7 @@ func (p *Parser) parse_relations() *pb.Relations {
 	p.consumeLiteral(")")
 	_t2070 := p.construct_relations(relation_keys1238, relation_body1239)
 	result1241 := _t2070
-	p.recordSpan(int(span_start1240), "Relations")
+	p.recordSpan(int(span_start1240), "TargetRelations")
 	return result1241
 }
 
@@ -4491,7 +4491,7 @@ func (p *Parser) parse_named_column() *pb.NamedColumn {
 	return result1249
 }
 
-func (p *Parser) parse_relation_body() *pb.Relations {
+func (p *Parser) parse_relation_body() *pb.TargetRelations {
 	span_start1254 := int64(p.spanStart())
 	var _t2074 int64
 	if p.matchLookaheadLiteral("(", 0) {
@@ -4512,7 +4512,7 @@ func (p *Parser) parse_relation_body() *pb.Relations {
 		_t2074 = 0
 	}
 	prediction1250 := _t2074
-	var _t2077 *pb.Relations
+	var _t2077 *pb.TargetRelations
 	if prediction1250 == 1 {
 		_t2078 := p.parse_cdc_inserts()
 		cdc_inserts1252 := _t2078
@@ -4521,7 +4521,7 @@ func (p *Parser) parse_relation_body() *pb.Relations {
 		_t2080 := p.construct_cdc_relations(cdc_inserts1252, cdc_deletes1253)
 		_t2077 = _t2080
 	} else {
-		var _t2081 *pb.Relations
+		var _t2081 *pb.TargetRelations
 		if prediction1250 == 0 {
 			_t2082 := p.parse_non_cdc_relations()
 			non_cdc_relations1251 := _t2082
@@ -4533,15 +4533,15 @@ func (p *Parser) parse_relation_body() *pb.Relations {
 		_t2077 = _t2081
 	}
 	result1255 := _t2077
-	p.recordSpan(int(span_start1254), "Relations")
+	p.recordSpan(int(span_start1254), "TargetRelations")
 	return result1255
 }
 
-func (p *Parser) parse_non_cdc_relations() []*pb.OutputRelation {
-	xs1256 := []*pb.OutputRelation{}
+func (p *Parser) parse_non_cdc_relations() []*pb.TargetRelation {
+	xs1256 := []*pb.TargetRelation{}
 	cond1257 := p.matchLookaheadLiteral("(", 0)
 	for cond1257 {
-		_t2084 := p.parse_output_relation()
+		_t2084 := p.parse_target_relation()
 		item1258 := _t2084
 		xs1256 = append(xs1256, item1258)
 		cond1257 = p.matchLookaheadLiteral("(", 0)
@@ -4549,7 +4549,7 @@ func (p *Parser) parse_non_cdc_relations() []*pb.OutputRelation {
 	return xs1256
 }
 
-func (p *Parser) parse_output_relation() *pb.OutputRelation {
+func (p *Parser) parse_target_relation() *pb.TargetRelation {
 	span_start1264 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("relation")
@@ -4565,42 +4565,42 @@ func (p *Parser) parse_output_relation() *pb.OutputRelation {
 	}
 	named_columns1263 := xs1260
 	p.consumeLiteral(")")
-	_t2087 := &pb.OutputRelation{TargetId: relation_id1259, Values: named_columns1263}
+	_t2087 := &pb.TargetRelation{TargetId: relation_id1259, Values: named_columns1263}
 	result1265 := _t2087
-	p.recordSpan(int(span_start1264), "OutputRelation")
+	p.recordSpan(int(span_start1264), "TargetRelation")
 	return result1265
 }
 
-func (p *Parser) parse_cdc_inserts() []*pb.OutputRelation {
+func (p *Parser) parse_cdc_inserts() []*pb.TargetRelation {
 	p.consumeLiteral("(")
 	p.consumeLiteral("inserts")
-	xs1266 := []*pb.OutputRelation{}
+	xs1266 := []*pb.TargetRelation{}
 	cond1267 := p.matchLookaheadLiteral("(", 0)
 	for cond1267 {
-		_t2088 := p.parse_output_relation()
+		_t2088 := p.parse_target_relation()
 		item1268 := _t2088
 		xs1266 = append(xs1266, item1268)
 		cond1267 = p.matchLookaheadLiteral("(", 0)
 	}
-	output_relations1269 := xs1266
+	target_relations1269 := xs1266
 	p.consumeLiteral(")")
-	return output_relations1269
+	return target_relations1269
 }
 
-func (p *Parser) parse_cdc_deletes() []*pb.OutputRelation {
+func (p *Parser) parse_cdc_deletes() []*pb.TargetRelation {
 	p.consumeLiteral("(")
 	p.consumeLiteral("deletes")
-	xs1270 := []*pb.OutputRelation{}
+	xs1270 := []*pb.TargetRelation{}
 	cond1271 := p.matchLookaheadLiteral("(", 0)
 	for cond1271 {
-		_t2089 := p.parse_output_relation()
+		_t2089 := p.parse_target_relation()
 		item1272 := _t2089
 		xs1270 = append(xs1270, item1272)
 		cond1271 = p.matchLookaheadLiteral("(", 0)
 	}
-	output_relations1273 := xs1270
+	target_relations1273 := xs1270
 	p.consumeLiteral(")")
-	return output_relations1273
+	return target_relations1273
 }
 
 func (p *Parser) parse_csv_asof() string {

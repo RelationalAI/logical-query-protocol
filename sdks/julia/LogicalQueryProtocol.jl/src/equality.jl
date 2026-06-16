@@ -581,15 +581,15 @@ Base.:(==)(a::NamedColumn, b::NamedColumn) = a.name == b.name && a.var"#type" ==
 Base.hash(a::NamedColumn, h::UInt) = hash(a.var"#type", hash(a.name, h))
 Base.isequal(a::NamedColumn, b::NamedColumn) = isequal(a.name, b.name) && isequal(a.var"#type", b.var"#type")
 
-# OutputRelation
-Base.:(==)(a::OutputRelation, b::OutputRelation) = a.target_id == b.target_id && a.values == b.values
-Base.hash(a::OutputRelation, h::UInt) = hash(a.values, hash(a.target_id, h))
-Base.isequal(a::OutputRelation, b::OutputRelation) = isequal(a.target_id, b.target_id) && isequal(a.values, b.values)
+# TargetRelation
+Base.:(==)(a::TargetRelation, b::TargetRelation) = a.target_id == b.target_id && a.values == b.values
+Base.hash(a::TargetRelation, h::UInt) = hash(a.values, hash(a.target_id, h))
+Base.isequal(a::TargetRelation, b::TargetRelation) = isequal(a.target_id, b.target_id) && isequal(a.values, b.values)
 
-# Relations
-Base.:(==)(a::Relations, b::Relations) = a.keys == b.keys && a.relations == b.relations && a.inserts == b.inserts && a.deletes == b.deletes
-Base.hash(a::Relations, h::UInt) = hash(a.deletes, hash(a.inserts, hash(a.relations, hash(a.keys, h))))
-Base.isequal(a::Relations, b::Relations) = isequal(a.keys, b.keys) && isequal(a.relations, b.relations) && isequal(a.inserts, b.inserts) && isequal(a.deletes, b.deletes)
+# TargetRelations
+Base.:(==)(a::TargetRelations, b::TargetRelations) = a.keys == b.keys && a.relations == b.relations && a.inserts == b.inserts && a.deletes == b.deletes
+Base.hash(a::TargetRelations, h::UInt) = hash(a.deletes, hash(a.inserts, hash(a.relations, hash(a.keys, h))))
+Base.isequal(a::TargetRelations, b::TargetRelations) = isequal(a.keys, b.keys) && isequal(a.relations, b.relations) && isequal(a.inserts, b.inserts) && isequal(a.deletes, b.deletes)
 
 # CSVData
 Base.:(==)(a::CSVData, b::CSVData) = a.locator == b.locator && a.config == b.config && a.columns == b.columns && a.asof == b.asof && a.relations == b.relations

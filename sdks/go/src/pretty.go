@@ -351,7 +351,7 @@ func (p *PrettyPrinter) deconstruct_csv_data_columns_optional(msg *pb.CSVData) [
 	return msg.GetColumns()
 }
 
-func (p *PrettyPrinter) deconstruct_csv_data_relations_optional(msg *pb.CSVData) *pb.Relations {
+func (p *PrettyPrinter) deconstruct_csv_data_relations_optional(msg *pb.CSVData) *pb.TargetRelations {
 	var _t1833 interface{}
 	if hasProtoField(msg, "relations") {
 		return msg.GetRelations()
@@ -3838,11 +3838,11 @@ func (p *PrettyPrinter) pretty_csv_data(msg *pb.CSVData) interface{} {
 			opt_val1434 := field1433
 			p.pretty_gnf_columns(opt_val1434)
 		}
-		field1435 := unwrapped_fields1430[3].(*pb.Relations)
+		field1435 := unwrapped_fields1430[3].(*pb.TargetRelations)
 		if field1435 != nil {
 			p.newline()
 			opt_val1436 := field1435
-			p.pretty_relations(opt_val1436)
+			p.pretty_target_relations(opt_val1436)
 		}
 		p.newline()
 		field1437 := unwrapped_fields1430[4].(string)
@@ -4089,8 +4089,8 @@ func (p *PrettyPrinter) pretty_gnf_column_path(msg []string) interface{} {
 	return nil
 }
 
-func (p *PrettyPrinter) pretty_relations(msg *pb.Relations) interface{} {
-	flat1484 := p.tryFlat(msg, func() { p.pretty_relations(msg) })
+func (p *PrettyPrinter) pretty_target_relations(msg *pb.TargetRelations) interface{} {
+	flat1484 := p.tryFlat(msg, func() { p.pretty_target_relations(msg) })
 	if flat1484 != nil {
 		p.write(*flat1484)
 		return nil
@@ -4105,7 +4105,7 @@ func (p *PrettyPrinter) pretty_relations(msg *pb.Relations) interface{} {
 		field1482 := unwrapped_fields1481[0].([]*pb.NamedColumn)
 		p.pretty_relation_keys(field1482)
 		p.newline()
-		field1483 := unwrapped_fields1481[1].(*pb.Relations)
+		field1483 := unwrapped_fields1481[1].(*pb.TargetRelations)
 		p.pretty_relation_body(field1483)
 		p.dedent()
 		p.write(")")
@@ -4162,14 +4162,14 @@ func (p *PrettyPrinter) pretty_named_column(msg *pb.NamedColumn) interface{} {
 	return nil
 }
 
-func (p *PrettyPrinter) pretty_relation_body(msg *pb.Relations) interface{} {
+func (p *PrettyPrinter) pretty_relation_body(msg *pb.TargetRelations) interface{} {
 	flat1500 := p.tryFlat(msg, func() { p.pretty_relation_body(msg) })
 	if flat1500 != nil {
 		p.write(*flat1500)
 		return nil
 	} else {
 		_dollar_dollar := msg
-		var _t1812 []*pb.OutputRelation
+		var _t1812 []*pb.TargetRelation
 		if (len(_dollar_dollar.GetInserts()) == 0 && len(_dollar_dollar.GetDeletes()) == 0) {
 			_t1812 = _dollar_dollar.GetRelations()
 		}
@@ -4186,10 +4186,10 @@ func (p *PrettyPrinter) pretty_relation_body(msg *pb.Relations) interface{} {
 			deconstruct_result1494 := _t1813
 			if deconstruct_result1494 != nil {
 				unwrapped1495 := deconstruct_result1494
-				field1496 := unwrapped1495[0].([]*pb.OutputRelation)
+				field1496 := unwrapped1495[0].([]*pb.TargetRelation)
 				p.pretty_cdc_inserts(field1496)
 				p.write(" ")
-				field1497 := unwrapped1495[1].([]*pb.OutputRelation)
+				field1497 := unwrapped1495[1].([]*pb.TargetRelation)
 				p.pretty_cdc_deletes(field1497)
 			} else {
 				panic(ParseError{msg: "No matching rule for relation_body"})
@@ -4199,7 +4199,7 @@ func (p *PrettyPrinter) pretty_relation_body(msg *pb.Relations) interface{} {
 	return nil
 }
 
-func (p *PrettyPrinter) pretty_non_cdc_relations(msg []*pb.OutputRelation) interface{} {
+func (p *PrettyPrinter) pretty_non_cdc_relations(msg []*pb.TargetRelation) interface{} {
 	flat1504 := p.tryFlat(msg, func() { p.pretty_non_cdc_relations(msg) })
 	if flat1504 != nil {
 		p.write(*flat1504)
@@ -4210,14 +4210,14 @@ func (p *PrettyPrinter) pretty_non_cdc_relations(msg []*pb.OutputRelation) inter
 			if (i1503 > 0) {
 				p.newline()
 			}
-			p.pretty_output_relation(elem1502)
+			p.pretty_target_relation(elem1502)
 		}
 	}
 	return nil
 }
 
-func (p *PrettyPrinter) pretty_output_relation(msg *pb.OutputRelation) interface{} {
-	flat1511 := p.tryFlat(msg, func() { p.pretty_output_relation(msg) })
+func (p *PrettyPrinter) pretty_target_relation(msg *pb.TargetRelation) interface{} {
+	flat1511 := p.tryFlat(msg, func() { p.pretty_target_relation(msg) })
 	if flat1511 != nil {
 		p.write(*flat1511)
 		return nil
@@ -4247,7 +4247,7 @@ func (p *PrettyPrinter) pretty_output_relation(msg *pb.OutputRelation) interface
 	return nil
 }
 
-func (p *PrettyPrinter) pretty_cdc_inserts(msg []*pb.OutputRelation) interface{} {
+func (p *PrettyPrinter) pretty_cdc_inserts(msg []*pb.TargetRelation) interface{} {
 	flat1515 := p.tryFlat(msg, func() { p.pretty_cdc_inserts(msg) })
 	if flat1515 != nil {
 		p.write(*flat1515)
@@ -4263,7 +4263,7 @@ func (p *PrettyPrinter) pretty_cdc_inserts(msg []*pb.OutputRelation) interface{}
 				if (i1514 > 0) {
 					p.newline()
 				}
-				p.pretty_output_relation(elem1513)
+				p.pretty_target_relation(elem1513)
 			}
 		}
 		p.dedent()
@@ -4272,7 +4272,7 @@ func (p *PrettyPrinter) pretty_cdc_inserts(msg []*pb.OutputRelation) interface{}
 	return nil
 }
 
-func (p *PrettyPrinter) pretty_cdc_deletes(msg []*pb.OutputRelation) interface{} {
+func (p *PrettyPrinter) pretty_cdc_deletes(msg []*pb.TargetRelation) interface{} {
 	flat1519 := p.tryFlat(msg, func() { p.pretty_cdc_deletes(msg) })
 	if flat1519 != nil {
 		p.write(*flat1519)
@@ -4288,7 +4288,7 @@ func (p *PrettyPrinter) pretty_cdc_deletes(msg []*pb.OutputRelation) interface{}
 				if (i1518 > 0) {
 					p.newline()
 				}
-				p.pretty_output_relation(elem1517)
+				p.pretty_target_relation(elem1517)
 			}
 		}
 		p.dedent()
@@ -5606,16 +5606,16 @@ func (p *PrettyPrinter) pprintDispatch(msg interface{}) {
 		p.pretty_gnf_columns(m)
 	case *pb.GNFColumn:
 		p.pretty_gnf_column(m)
-	case *pb.Relations:
-		p.pretty_relations(m)
+	case *pb.TargetRelations:
+		p.pretty_target_relations(m)
 	case []*pb.NamedColumn:
 		p.pretty_relation_keys(m)
 	case *pb.NamedColumn:
 		p.pretty_named_column(m)
-	case []*pb.OutputRelation:
+	case []*pb.TargetRelation:
 		p.pretty_non_cdc_relations(m)
-	case *pb.OutputRelation:
-		p.pretty_output_relation(m)
+	case *pb.TargetRelation:
+		p.pretty_target_relation(m)
 	case *pb.IcebergData:
 		p.pretty_iceberg_data(m)
 	case *pb.IcebergLocator:
