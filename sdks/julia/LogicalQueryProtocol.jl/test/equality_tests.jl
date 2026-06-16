@@ -2128,6 +2128,135 @@ end
     @test b1 == b2 && b2 == b5 && b1 == b5
 end
 
+@testitem "Equality for NamedColumn" tags=[:ring1, :unit] begin
+    using LogicalQueryProtocol: NamedColumn, var"#Type", IntType, StringType
+    using ProtoBuf: OneOf
+
+    tint = var"#Type"(var"#type"=OneOf(:int_type, IntType()))
+    tstr = var"#Type"(var"#type"=OneOf(:string_type, StringType()))
+
+    c1 = NamedColumn(name="src", var"#type"=tint)
+    c2 = NamedColumn(name="src", var"#type"=tint)
+    c3 = NamedColumn(name="dst", var"#type"=tint)   # different name
+    c4 = NamedColumn(name="src", var"#type"=tstr)   # different type
+    c5 = NamedColumn(name="src", var"#type"=tint)
+
+    # Equality and inequality
+    @test c1 == c2
+    @test c1 != c3
+    @test c1 != c4
+    @test isequal(c1, c2)
+
+    # Hash consistency
+    @test hash(c1) == hash(c2)
+
+    # Reflexivity
+    @test c1 == c1
+    @test isequal(c1, c1)
+
+    # Symmetry
+    @test c1 == c2 && c2 == c1
+
+    # Transitivity
+    @test c1 == c2 && c2 == c5 && c1 == c5
+
+    # Works in collections
+    @test length(Set([c1, c2, c3])) == 2
+end
+
+@testitem "Equality for TargetRelation" tags=[:ring1, :unit] begin
+    using LogicalQueryProtocol: TargetRelation, NamedColumn, RelationId, var"#Type", FloatType
+    using ProtoBuf: OneOf
+
+    t1 = var"#Type"(var"#type"=OneOf(:float_type, FloatType()))
+    v1 = NamedColumn(name="weight", var"#type"=t1)
+    v2 = NamedColumn(name="label", var"#type"=t1)
+    r1 = RelationId(id_low=1, id_high=0)
+    r2 = RelationId(id_low=2, id_high=0)
+
+    tr1 = TargetRelation(target_id=r1, values=[v1])
+    tr2 = TargetRelation(target_id=r1, values=[v1])
+    tr3 = TargetRelation(target_id=r2, values=[v1])   # different target
+    tr4 = TargetRelation(target_id=r1, values=[v2])   # different values
+    tr5 = TargetRelation(target_id=r1, values=[])     # no value columns (e.g. keys-only delete)
+    tr6 = TargetRelation(target_id=r1, values=[v1])
+
+    # Equality and inequality
+    @test tr1 == tr2
+    @test tr1 != tr3
+    @test tr1 != tr4
+    @test tr1 != tr5
+    @test isequal(tr1, tr2)
+
+    # Hash consistency
+    @test hash(tr1) == hash(tr2)
+
+    # Reflexivity
+    @test tr1 == tr1
+    @test isequal(tr1, tr1)
+
+    # Symmetry
+    @test tr1 == tr2 && tr2 == tr1
+
+    # Transitivity
+    @test tr1 == tr2 && tr2 == tr6 && tr1 == tr6
+end
+
+@testitem "Equality for TargetRelations" tags=[:ring1, :unit] begin
+    using LogicalQueryProtocol: TargetRelations, TargetRelation, NamedColumn, RelationId, var"#Type", IntType, FloatType
+    using ProtoBuf: OneOf
+
+    tint = var"#Type"(var"#type"=OneOf(:int_type, IntType()))
+    tflt = var"#Type"(var"#type"=OneOf(:float_type, FloatType()))
+    key = NamedColumn(name="id", var"#type"=tint)
+    val = NamedColumn(name="weight", var"#type"=tflt)
+    r1 = RelationId(id_low=1, id_high=0)
+    r2 = RelationId(id_low=2, id_high=0)
+    rel1 = TargetRelation(target_id=r1, values=[val])
+    rel2 = TargetRelation(target_id=r2, values=[val])
+
+    # Non-CDC shape: keys + the `relations` group populated.
+    g1 = TargetRelations(keys=[key], relations=[rel1], inserts=[], deletes=[])
+    g2 = TargetRelations(keys=[key], relations=[rel1], inserts=[], deletes=[])
+    g3 = TargetRelations(keys=[], relations=[rel1], inserts=[], deletes=[])      # different keys
+    g4 = TargetRelations(keys=[key], relations=[rel2], inserts=[], deletes=[])   # different relations
+    g5 = TargetRelations(keys=[key], relations=[rel1], inserts=[], deletes=[])
+
+    # Equality and inequality
+    @test g1 == g2
+    @test g1 != g3
+    @test g1 != g4
+    @test isequal(g1, g2)
+
+    # Hash consistency
+    @test hash(g1) == hash(g2)
+
+    # Reflexivity
+    @test g1 == g1
+    @test isequal(g1, g1)
+
+    # Symmetry
+    @test g1 == g2 && g2 == g1
+
+    # Transitivity
+    @test g1 == g2 && g2 == g5 && g1 == g5
+
+    # CDC shape: the `inserts`/`deletes` groups populated; each group participates in equality.
+    cdc1 = TargetRelations(keys=[key], relations=[], inserts=[rel1], deletes=[rel1])
+    cdc2 = TargetRelations(keys=[key], relations=[], inserts=[rel1], deletes=[rel1])
+    cdc3 = TargetRelations(keys=[key], relations=[], inserts=[rel2], deletes=[rel1])  # different inserts
+    cdc4 = TargetRelations(keys=[key], relations=[], inserts=[rel1], deletes=[rel2])  # different deletes
+
+    @test cdc1 == cdc2
+    @test cdc1 != cdc3
+    @test cdc1 != cdc4
+    @test hash(cdc1) == hash(cdc2)
+    @test isequal(cdc1, cdc2)
+
+    # A non-CDC grouping differs from a CDC grouping even when they share a relation.
+    @test g1 != cdc1
+end
+
 @testitem "Equality for CSVData" tags=[:ring1, :unit] begin
     using LogicalQueryProtocol: CSVData, CSVLocator, CSVConfig, GNFColumn, RelationId, var"#Type", IntType
     using ProtoBuf: OneOf
