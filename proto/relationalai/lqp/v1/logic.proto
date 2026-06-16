@@ -288,10 +288,10 @@ message StorageIntegration {
   string s3_secret_access_key = 5;
 }
 
-// A single named CSV column with its type. Used to describe both shared key columns and
+// A single named column with its type. Used to describe both shared key columns and
 // per-relation value columns in the generalized `TargetRelations` loading construct.
 message NamedColumn {
-  string name = 1; // CSV column name (e.g. "src"); special name "METADATA$KEY" => derived hash
+  string name = 1; // Column name (e.g. "src"); special name "METADATA$KEY" => derived hash
   Type type = 2;   // Column type
 }
 
@@ -301,7 +301,7 @@ message TargetRelation {
   repeated NamedColumn values = 2; // Value columns for this relation (may be empty)
 }
 
-// Generalized CSV loading: a shared set of key columns and one or more target relations.
+// Generalized loading: a shared set of key columns and one or more target relations.
 // CDC vs non-CDC is implied by which group is populated:
 //   - `relations` populated => non-CDC outputs
 //   - `inserts`/`deletes`   => CDC insert/delete groups

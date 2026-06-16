@@ -3014,11 +3014,11 @@ func (x *StorageIntegration) GetS3SecretAccessKey() string {
 	return ""
 }
 
-// A single named CSV column with its type. Used to describe both shared key columns and
+// A single named column with its type. Used to describe both shared key columns and
 // per-relation value columns in the generalized `TargetRelations` loading construct.
 type NamedColumn struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"` // CSV column name (e.g. "src"); special name "METADATA$KEY" => derived hash
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"` // Column name (e.g. "src"); special name "METADATA$KEY" => derived hash
 	Type          *Type                  `protobuf:"bytes,2,opt,name=type,proto3" json:"type,omitempty"` // Column type
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -3121,7 +3121,7 @@ func (x *TargetRelation) GetValues() []*NamedColumn {
 	return nil
 }
 
-// Generalized CSV loading: a shared set of key columns and one or more target relations.
+// Generalized loading: a shared set of key columns and one or more target relations.
 // CDC vs non-CDC is implied by which group is populated:
 //   - `relations` populated => non-CDC outputs
 //   - `inserts`/`deletes`   => CDC insert/delete groups
