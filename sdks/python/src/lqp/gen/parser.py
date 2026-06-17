@@ -538,98 +538,105 @@ class Parser:
             _t2204 = None
         return None
 
-    def construct_non_cdc_relations(self, relations: Sequence[logic_pb2.TargetRelation]) -> logic_pb2.TargetRelations:
-        _t2205 = logic_pb2.TargetRelations(keys=[], relations=relations, inserts=[], deletes=[])
-        return _t2205
-
-    def construct_cdc_relations(self, inserts: Sequence[logic_pb2.TargetRelation], deletes: Sequence[logic_pb2.TargetRelation]) -> logic_pb2.TargetRelations:
-        _t2206 = logic_pb2.TargetRelations(keys=[], relations=[], inserts=inserts, deletes=deletes)
+    def construct_non_cdc_relations(self, targets: Sequence[logic_pb2.TargetRelation]) -> logic_pb2.TargetRelations:
+        _t2205 = logic_pb2.PlainTargets(targets=targets)
+        _t2206 = logic_pb2.TargetRelations(keys=[], plain=_t2205)
         return _t2206
 
+    def construct_cdc_relations(self, inserts: Sequence[logic_pb2.TargetRelation], deletes: Sequence[logic_pb2.TargetRelation]) -> logic_pb2.TargetRelations:
+        _t2207 = logic_pb2.CdcTargets(inserts=inserts, deletes=deletes)
+        _t2208 = logic_pb2.TargetRelations(keys=[], cdc=_t2207)
+        return _t2208
+
     def construct_relations(self, keys: Sequence[logic_pb2.NamedColumn], body: logic_pb2.TargetRelations) -> logic_pb2.TargetRelations:
-        _t2207 = logic_pb2.TargetRelations(keys=keys, relations=body.relations, inserts=body.inserts, deletes=body.deletes)
-        return _t2207
+        if body.HasField("plain"):
+            _t2210 = logic_pb2.TargetRelations(keys=keys, plain=body.plain)
+            return _t2210
+        else:
+            _t2209 = None
+        _t2211 = logic_pb2.TargetRelations(keys=keys, cdc=body.cdc)
+        return _t2211
 
     def construct_csv_data(self, locator: logic_pb2.CSVLocator, config: logic_pb2.CSVConfig, columns_opt: Sequence[logic_pb2.GNFColumn] | None, relations_opt: logic_pb2.TargetRelations | None, asof: str) -> logic_pb2.CSVData:
-        _t2208 = logic_pb2.CSVData(locator=locator, config=config, columns=(columns_opt if columns_opt is not None else []), asof=asof, relations=relations_opt)
-        return _t2208
+        _t2212 = logic_pb2.CSVData(locator=locator, config=config, columns=(columns_opt if columns_opt is not None else []), asof=asof, relations=relations_opt)
+        return _t2212
 
     def construct_csv_config(self, config_dict: Sequence[tuple[str, logic_pb2.Value]], storage_integration_opt: Sequence[tuple[str, logic_pb2.Value]] | None) -> logic_pb2.CSVConfig:
         config = dict(config_dict)
-        _t2209 = self._extract_value_int32(config.get("csv_header_row"), 1)
-        header_row = _t2209
-        _t2210 = self._extract_value_int64(config.get("csv_skip"), 0)
-        skip = _t2210
-        _t2211 = self._extract_value_string(config.get("csv_new_line"), "")
-        new_line = _t2211
-        _t2212 = self._extract_value_string(config.get("csv_delimiter"), ",")
-        delimiter = _t2212
-        _t2213 = self._extract_value_string(config.get("csv_quotechar"), '"')
-        quotechar = _t2213
-        _t2214 = self._extract_value_string(config.get("csv_escapechar"), '"')
-        escapechar = _t2214
-        _t2215 = self._extract_value_string(config.get("csv_comment"), "")
-        comment = _t2215
-        _t2216 = self._extract_value_string_list(config.get("csv_missing_strings"), [])
-        missing_strings = _t2216
-        _t2217 = self._extract_value_string(config.get("csv_decimal_separator"), ".")
-        decimal_separator = _t2217
-        _t2218 = self._extract_value_string(config.get("csv_encoding"), "utf-8")
-        encoding = _t2218
-        _t2219 = self._extract_value_string(config.get("csv_compression"), "")
-        compression = _t2219
-        _t2220 = self._extract_value_int64(config.get("csv_partition_size_mb"), 0)
-        partition_size_mb = _t2220
-        _t2221 = self.construct_csv_storage_integration(storage_integration_opt)
-        storage_integration = _t2221
-        _t2222 = logic_pb2.CSVConfig(header_row=header_row, skip=skip, new_line=new_line, delimiter=delimiter, quotechar=quotechar, escapechar=escapechar, comment=comment, missing_strings=missing_strings, decimal_separator=decimal_separator, encoding=encoding, compression=compression, partition_size_mb=partition_size_mb, storage_integration=storage_integration)
-        return _t2222
+        _t2213 = self._extract_value_int32(config.get("csv_header_row"), 1)
+        header_row = _t2213
+        _t2214 = self._extract_value_int64(config.get("csv_skip"), 0)
+        skip = _t2214
+        _t2215 = self._extract_value_string(config.get("csv_new_line"), "")
+        new_line = _t2215
+        _t2216 = self._extract_value_string(config.get("csv_delimiter"), ",")
+        delimiter = _t2216
+        _t2217 = self._extract_value_string(config.get("csv_quotechar"), '"')
+        quotechar = _t2217
+        _t2218 = self._extract_value_string(config.get("csv_escapechar"), '"')
+        escapechar = _t2218
+        _t2219 = self._extract_value_string(config.get("csv_comment"), "")
+        comment = _t2219
+        _t2220 = self._extract_value_string_list(config.get("csv_missing_strings"), [])
+        missing_strings = _t2220
+        _t2221 = self._extract_value_string(config.get("csv_decimal_separator"), ".")
+        decimal_separator = _t2221
+        _t2222 = self._extract_value_string(config.get("csv_encoding"), "utf-8")
+        encoding = _t2222
+        _t2223 = self._extract_value_string(config.get("csv_compression"), "")
+        compression = _t2223
+        _t2224 = self._extract_value_int64(config.get("csv_partition_size_mb"), 0)
+        partition_size_mb = _t2224
+        _t2225 = self.construct_csv_storage_integration(storage_integration_opt)
+        storage_integration = _t2225
+        _t2226 = logic_pb2.CSVConfig(header_row=header_row, skip=skip, new_line=new_line, delimiter=delimiter, quotechar=quotechar, escapechar=escapechar, comment=comment, missing_strings=missing_strings, decimal_separator=decimal_separator, encoding=encoding, compression=compression, partition_size_mb=partition_size_mb, storage_integration=storage_integration)
+        return _t2226
 
     def construct_csv_storage_integration(self, storage_integration_opt: Sequence[tuple[str, logic_pb2.Value]] | None) -> logic_pb2.StorageIntegration | None:
         if storage_integration_opt is None:
             return None
         else:
-            _t2223 = None
+            _t2227 = None
         assert storage_integration_opt is not None
         config = dict(storage_integration_opt)
-        _t2224 = self._extract_value_string(config.get("provider"), "")
-        _t2225 = self._extract_value_string(config.get("azure_sas_token"), "")
-        _t2226 = self._extract_value_string(config.get("s3_region"), "")
-        _t2227 = self._extract_value_string(config.get("s3_access_key_id"), "")
-        _t2228 = self._extract_value_string(config.get("s3_secret_access_key"), "")
-        _t2229 = logic_pb2.StorageIntegration(provider=_t2224, azure_sas_token=_t2225, s3_region=_t2226, s3_access_key_id=_t2227, s3_secret_access_key=_t2228)
-        return _t2229
+        _t2228 = self._extract_value_string(config.get("provider"), "")
+        _t2229 = self._extract_value_string(config.get("azure_sas_token"), "")
+        _t2230 = self._extract_value_string(config.get("s3_region"), "")
+        _t2231 = self._extract_value_string(config.get("s3_access_key_id"), "")
+        _t2232 = self._extract_value_string(config.get("s3_secret_access_key"), "")
+        _t2233 = logic_pb2.StorageIntegration(provider=_t2228, azure_sas_token=_t2229, s3_region=_t2230, s3_access_key_id=_t2231, s3_secret_access_key=_t2232)
+        return _t2233
 
     def construct_betree_info(self, key_types: Sequence[logic_pb2.Type], value_types: Sequence[logic_pb2.Type], config_dict: Sequence[tuple[str, logic_pb2.Value]]) -> logic_pb2.BeTreeInfo:
         config = dict(config_dict)
-        _t2230 = self._try_extract_value_float64(config.get("betree_config_epsilon"))
-        epsilon = _t2230
-        _t2231 = self._try_extract_value_int64(config.get("betree_config_max_pivots"))
-        max_pivots = _t2231
-        _t2232 = self._try_extract_value_int64(config.get("betree_config_max_deltas"))
-        max_deltas = _t2232
-        _t2233 = self._try_extract_value_int64(config.get("betree_config_max_leaf"))
-        max_leaf = _t2233
-        _t2234 = logic_pb2.BeTreeConfig(epsilon=epsilon, max_pivots=max_pivots, max_deltas=max_deltas, max_leaf=max_leaf)
-        storage_config = _t2234
-        _t2235 = self._try_extract_value_uint128(config.get("betree_locator_root_pageid"))
-        root_pageid = _t2235
-        _t2236 = self._try_extract_value_bytes(config.get("betree_locator_inline_data"))
-        inline_data = _t2236
-        _t2237 = self._try_extract_value_int64(config.get("betree_locator_element_count"))
-        element_count = _t2237
-        _t2238 = self._try_extract_value_int64(config.get("betree_locator_tree_height"))
-        tree_height = _t2238
-        _t2239 = logic_pb2.BeTreeLocator(root_pageid=root_pageid, inline_data=inline_data, element_count=element_count, tree_height=tree_height)
-        relation_locator = _t2239
-        _t2240 = logic_pb2.BeTreeInfo(key_types=key_types, value_types=value_types, storage_config=storage_config, relation_locator=relation_locator)
-        return _t2240
+        _t2234 = self._try_extract_value_float64(config.get("betree_config_epsilon"))
+        epsilon = _t2234
+        _t2235 = self._try_extract_value_int64(config.get("betree_config_max_pivots"))
+        max_pivots = _t2235
+        _t2236 = self._try_extract_value_int64(config.get("betree_config_max_deltas"))
+        max_deltas = _t2236
+        _t2237 = self._try_extract_value_int64(config.get("betree_config_max_leaf"))
+        max_leaf = _t2237
+        _t2238 = logic_pb2.BeTreeConfig(epsilon=epsilon, max_pivots=max_pivots, max_deltas=max_deltas, max_leaf=max_leaf)
+        storage_config = _t2238
+        _t2239 = self._try_extract_value_uint128(config.get("betree_locator_root_pageid"))
+        root_pageid = _t2239
+        _t2240 = self._try_extract_value_bytes(config.get("betree_locator_inline_data"))
+        inline_data = _t2240
+        _t2241 = self._try_extract_value_int64(config.get("betree_locator_element_count"))
+        element_count = _t2241
+        _t2242 = self._try_extract_value_int64(config.get("betree_locator_tree_height"))
+        tree_height = _t2242
+        _t2243 = logic_pb2.BeTreeLocator(root_pageid=root_pageid, inline_data=inline_data, element_count=element_count, tree_height=tree_height)
+        relation_locator = _t2243
+        _t2244 = logic_pb2.BeTreeInfo(key_types=key_types, value_types=value_types, storage_config=storage_config, relation_locator=relation_locator)
+        return _t2244
 
     def default_configure(self) -> transactions_pb2.Configure:
-        _t2241 = transactions_pb2.IVMConfig(level=transactions_pb2.MaintenanceLevel.MAINTENANCE_LEVEL_OFF)
-        ivm_config = _t2241
-        _t2242 = transactions_pb2.Configure(semantics_version=0, ivm_config=ivm_config)
-        return _t2242
+        _t2245 = transactions_pb2.IVMConfig(level=transactions_pb2.MaintenanceLevel.MAINTENANCE_LEVEL_OFF)
+        ivm_config = _t2245
+        _t2246 = transactions_pb2.Configure(semantics_version=0, ivm_config=ivm_config)
+        return _t2246
 
     def construct_configure(self, config_dict: Sequence[tuple[str, logic_pb2.Value]]) -> transactions_pb2.Configure:
         config = dict(config_dict)
@@ -646,57 +653,57 @@ class Parser:
                         maintenance_level = transactions_pb2.MaintenanceLevel.MAINTENANCE_LEVEL_ALL
                     else:
                         maintenance_level = transactions_pb2.MaintenanceLevel.MAINTENANCE_LEVEL_OFF
-        _t2243 = transactions_pb2.IVMConfig(level=maintenance_level)
-        ivm_config = _t2243
-        _t2244 = self._extract_value_int64(config.get("semantics_version"), 0)
-        semantics_version = _t2244
-        _t2245 = transactions_pb2.Configure(semantics_version=semantics_version, ivm_config=ivm_config)
-        return _t2245
+        _t2247 = transactions_pb2.IVMConfig(level=maintenance_level)
+        ivm_config = _t2247
+        _t2248 = self._extract_value_int64(config.get("semantics_version"), 0)
+        semantics_version = _t2248
+        _t2249 = transactions_pb2.Configure(semantics_version=semantics_version, ivm_config=ivm_config)
+        return _t2249
 
     def construct_export_csv_config(self, path: str, columns: Sequence[transactions_pb2.ExportCSVColumn], config_dict: Sequence[tuple[str, logic_pb2.Value]]) -> transactions_pb2.ExportCSVConfig:
         config = dict(config_dict)
-        _t2246 = self._extract_value_int64(config.get("partition_size"), 0)
-        partition_size = _t2246
-        _t2247 = self._extract_value_string(config.get("compression"), "")
-        compression = _t2247
-        _t2248 = self._extract_value_boolean(config.get("syntax_header_row"), True)
-        syntax_header_row = _t2248
-        _t2249 = self._extract_value_string(config.get("syntax_missing_string"), "")
-        syntax_missing_string = _t2249
-        _t2250 = self._extract_value_string(config.get("syntax_delim"), ",")
-        syntax_delim = _t2250
-        _t2251 = self._extract_value_string(config.get("syntax_quotechar"), '"')
-        syntax_quotechar = _t2251
-        _t2252 = self._extract_value_string(config.get("syntax_escapechar"), "\\")
-        syntax_escapechar = _t2252
-        _t2253 = transactions_pb2.ExportCSVConfig(path=path, data_columns=columns, partition_size=partition_size, compression=compression, syntax_header_row=syntax_header_row, syntax_missing_string=syntax_missing_string, syntax_delim=syntax_delim, syntax_quotechar=syntax_quotechar, syntax_escapechar=syntax_escapechar)
-        return _t2253
+        _t2250 = self._extract_value_int64(config.get("partition_size"), 0)
+        partition_size = _t2250
+        _t2251 = self._extract_value_string(config.get("compression"), "")
+        compression = _t2251
+        _t2252 = self._extract_value_boolean(config.get("syntax_header_row"), True)
+        syntax_header_row = _t2252
+        _t2253 = self._extract_value_string(config.get("syntax_missing_string"), "")
+        syntax_missing_string = _t2253
+        _t2254 = self._extract_value_string(config.get("syntax_delim"), ",")
+        syntax_delim = _t2254
+        _t2255 = self._extract_value_string(config.get("syntax_quotechar"), '"')
+        syntax_quotechar = _t2255
+        _t2256 = self._extract_value_string(config.get("syntax_escapechar"), "\\")
+        syntax_escapechar = _t2256
+        _t2257 = transactions_pb2.ExportCSVConfig(path=path, data_columns=columns, partition_size=partition_size, compression=compression, syntax_header_row=syntax_header_row, syntax_missing_string=syntax_missing_string, syntax_delim=syntax_delim, syntax_quotechar=syntax_quotechar, syntax_escapechar=syntax_escapechar)
+        return _t2257
 
     def construct_export_csv_config_with_source(self, path: str, csv_source: transactions_pb2.ExportCSVSource, csv_config: logic_pb2.CSVConfig) -> transactions_pb2.ExportCSVConfig:
-        _t2254 = transactions_pb2.ExportCSVConfig(path=path, csv_source=csv_source, csv_config=csv_config)
-        return _t2254
+        _t2258 = transactions_pb2.ExportCSVConfig(path=path, csv_source=csv_source, csv_config=csv_config)
+        return _t2258
 
     def construct_iceberg_catalog_config(self, catalog_uri: str, scope_opt: str | None, property_pairs: Sequence[tuple[str, str]], auth_property_pairs: Sequence[tuple[str, str]]) -> logic_pb2.IcebergCatalogConfig:
         props = dict(property_pairs)
         auth_props = dict(auth_property_pairs)
-        _t2255 = logic_pb2.IcebergCatalogConfig(catalog_uri=catalog_uri, scope=(scope_opt if scope_opt is not None else ""), properties=props, auth_properties=auth_props)
-        return _t2255
+        _t2259 = logic_pb2.IcebergCatalogConfig(catalog_uri=catalog_uri, scope=(scope_opt if scope_opt is not None else ""), properties=props, auth_properties=auth_props)
+        return _t2259
 
     def construct_iceberg_data(self, locator: logic_pb2.IcebergLocator, config: logic_pb2.IcebergCatalogConfig, columns: Sequence[logic_pb2.GNFColumn], from_snapshot_opt: str | None, to_snapshot_opt: str | None, returns_delta: bool) -> logic_pb2.IcebergData:
-        _t2256 = logic_pb2.IcebergData(locator=locator, config=config, columns=columns, from_snapshot=(from_snapshot_opt if from_snapshot_opt is not None else ""), to_snapshot=(to_snapshot_opt if to_snapshot_opt is not None else ""), returns_delta=returns_delta)
-        return _t2256
+        _t2260 = logic_pb2.IcebergData(locator=locator, config=config, columns=columns, from_snapshot=(from_snapshot_opt if from_snapshot_opt is not None else ""), to_snapshot=(to_snapshot_opt if to_snapshot_opt is not None else ""), returns_delta=returns_delta)
+        return _t2260
 
     def construct_export_iceberg_config_full(self, locator: logic_pb2.IcebergLocator, config: logic_pb2.IcebergCatalogConfig, table_def: logic_pb2.RelationId, table_property_pairs: Sequence[tuple[str, str]], config_dict: Sequence[tuple[str, logic_pb2.Value]] | None) -> transactions_pb2.ExportIcebergConfig:
         cfg = dict((config_dict if config_dict is not None else []))
-        _t2257 = self._extract_value_string(cfg.get("prefix"), "")
-        prefix = _t2257
-        _t2258 = self._extract_value_int64(cfg.get("target_file_size_bytes"), 0)
-        target_file_size_bytes = _t2258
-        _t2259 = self._extract_value_string(cfg.get("compression"), "")
-        compression = _t2259
+        _t2261 = self._extract_value_string(cfg.get("prefix"), "")
+        prefix = _t2261
+        _t2262 = self._extract_value_int64(cfg.get("target_file_size_bytes"), 0)
+        target_file_size_bytes = _t2262
+        _t2263 = self._extract_value_string(cfg.get("compression"), "")
+        compression = _t2263
         table_props = dict(table_property_pairs)
-        _t2260 = transactions_pb2.ExportIcebergConfig(locator=locator, config=config, table_def=table_def, prefix=prefix, target_file_size_bytes=target_file_size_bytes, compression=compression, table_properties=table_props)
-        return _t2260
+        _t2264 = transactions_pb2.ExportIcebergConfig(locator=locator, config=config, table_def=table_def, prefix=prefix, target_file_size_bytes=target_file_size_bytes, compression=compression, table_properties=table_props)
+        return _t2264
 
     # --- Parse methods ---
 

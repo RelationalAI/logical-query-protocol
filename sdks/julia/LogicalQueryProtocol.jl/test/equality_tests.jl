@@ -2202,8 +2202,78 @@ end
     @test tr1 == tr2 && tr2 == tr6 && tr1 == tr6
 end
 
+@testitem "Equality for PlainTargets" tags=[:ring1, :unit] begin
+    using LogicalQueryProtocol: PlainTargets, TargetRelation, NamedColumn, RelationId, var"#Type", FloatType
+    using ProtoBuf: OneOf
+
+    t1 = var"#Type"(var"#type"=OneOf(:float_type, FloatType()))
+    val = NamedColumn(name="weight", var"#type"=t1)
+    rel1 = TargetRelation(target_id=RelationId(id_low=1, id_high=0), values=[val])
+    rel2 = TargetRelation(target_id=RelationId(id_low=2, id_high=0), values=[val])
+
+    p1 = PlainTargets(targets=[rel1])
+    p2 = PlainTargets(targets=[rel1])
+    p3 = PlainTargets(targets=[rel2])   # different targets
+    p4 = PlainTargets(targets=[])       # empty
+    p5 = PlainTargets(targets=[rel1])
+
+    # Equality and inequality
+    @test p1 == p2
+    @test p1 != p3
+    @test p1 != p4
+    @test isequal(p1, p2)
+
+    # Hash consistency
+    @test hash(p1) == hash(p2)
+
+    # Reflexivity
+    @test p1 == p1
+    @test isequal(p1, p1)
+
+    # Symmetry
+    @test p1 == p2 && p2 == p1
+
+    # Transitivity
+    @test p1 == p2 && p2 == p5 && p1 == p5
+end
+
+@testitem "Equality for CdcTargets" tags=[:ring1, :unit] begin
+    using LogicalQueryProtocol: CdcTargets, TargetRelation, NamedColumn, RelationId, var"#Type", FloatType
+    using ProtoBuf: OneOf
+
+    t1 = var"#Type"(var"#type"=OneOf(:float_type, FloatType()))
+    val = NamedColumn(name="weight", var"#type"=t1)
+    rel1 = TargetRelation(target_id=RelationId(id_low=1, id_high=0), values=[val])
+    rel2 = TargetRelation(target_id=RelationId(id_low=2, id_high=0), values=[val])
+
+    c1 = CdcTargets(inserts=[rel1], deletes=[rel2])
+    c2 = CdcTargets(inserts=[rel1], deletes=[rel2])
+    c3 = CdcTargets(inserts=[rel2], deletes=[rel2])   # different inserts
+    c4 = CdcTargets(inserts=[rel1], deletes=[rel1])   # different deletes
+    c5 = CdcTargets(inserts=[rel1], deletes=[rel2])
+
+    # Equality and inequality
+    @test c1 == c2
+    @test c1 != c3
+    @test c1 != c4
+    @test isequal(c1, c2)
+
+    # Hash consistency
+    @test hash(c1) == hash(c2)
+
+    # Reflexivity
+    @test c1 == c1
+    @test isequal(c1, c1)
+
+    # Symmetry
+    @test c1 == c2 && c2 == c1
+
+    # Transitivity
+    @test c1 == c2 && c2 == c5 && c1 == c5
+end
+
 @testitem "Equality for TargetRelations" tags=[:ring1, :unit] begin
-    using LogicalQueryProtocol: TargetRelations, TargetRelation, NamedColumn, RelationId, var"#Type", IntType, FloatType
+    using LogicalQueryProtocol: TargetRelations, PlainTargets, CdcTargets, TargetRelation, NamedColumn, RelationId, var"#Type", IntType, FloatType
     using ProtoBuf: OneOf
 
     tint = var"#Type"(var"#type"=OneOf(:int_type, IntType()))
@@ -2215,12 +2285,15 @@ end
     rel1 = TargetRelation(target_id=r1, values=[val])
     rel2 = TargetRelation(target_id=r2, values=[val])
 
-    # Non-CDC shape: keys + the `relations` group populated.
-    g1 = TargetRelations(keys=[key], relations=[rel1], inserts=[], deletes=[])
-    g2 = TargetRelations(keys=[key], relations=[rel1], inserts=[], deletes=[])
-    g3 = TargetRelations(keys=[], relations=[rel1], inserts=[], deletes=[])      # different keys
-    g4 = TargetRelations(keys=[key], relations=[rel2], inserts=[], deletes=[])   # different relations
-    g5 = TargetRelations(keys=[key], relations=[rel1], inserts=[], deletes=[])
+    plain(rs) = OneOf(:plain, PlainTargets(targets=rs))
+    cdc(ins, dels) = OneOf(:cdc, CdcTargets(inserts=ins, deletes=dels))
+
+    # Plain (non-CDC) body.
+    g1 = TargetRelations(keys=[key], body=plain([rel1]))
+    g2 = TargetRelations(keys=[key], body=plain([rel1]))
+    g3 = TargetRelations(keys=[], body=plain([rel1]))       # different keys
+    g4 = TargetRelations(keys=[key], body=plain([rel2]))    # different body
+    g5 = TargetRelations(keys=[key], body=plain([rel1]))
 
     # Equality and inequality
     @test g1 == g2
@@ -2241,11 +2314,11 @@ end
     # Transitivity
     @test g1 == g2 && g2 == g5 && g1 == g5
 
-    # CDC shape: the `inserts`/`deletes` groups populated; each group participates in equality.
-    cdc1 = TargetRelations(keys=[key], relations=[], inserts=[rel1], deletes=[rel1])
-    cdc2 = TargetRelations(keys=[key], relations=[], inserts=[rel1], deletes=[rel1])
-    cdc3 = TargetRelations(keys=[key], relations=[], inserts=[rel2], deletes=[rel1])  # different inserts
-    cdc4 = TargetRelations(keys=[key], relations=[], inserts=[rel1], deletes=[rel2])  # different deletes
+    # CDC body.
+    cdc1 = TargetRelations(keys=[key], body=cdc([rel1], [rel1]))
+    cdc2 = TargetRelations(keys=[key], body=cdc([rel1], [rel1]))
+    cdc3 = TargetRelations(keys=[key], body=cdc([rel2], [rel1]))  # different inserts
+    cdc4 = TargetRelations(keys=[key], body=cdc([rel1], [rel2]))  # different deletes
 
     @test cdc1 == cdc2
     @test cdc1 != cdc3
@@ -2253,7 +2326,7 @@ end
     @test hash(cdc1) == hash(cdc2)
     @test isequal(cdc1, cdc2)
 
-    # A non-CDC grouping differs from a CDC grouping even when they share a relation.
+    # Different oneof arms are unequal even when they share a relation.
     @test g1 != cdc1
 end
 

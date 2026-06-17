@@ -4170,8 +4170,8 @@ func (p *PrettyPrinter) pretty_relation_body(msg *pb.TargetRelations) interface{
 	} else {
 		_dollar_dollar := msg
 		var _t1812 []*pb.TargetRelation
-		if (len(_dollar_dollar.GetInserts()) == 0 && len(_dollar_dollar.GetDeletes()) == 0) {
-			_t1812 = _dollar_dollar.GetRelations()
+		if hasProtoField(_dollar_dollar, "plain") {
+			_t1812 = _dollar_dollar.GetPlain().GetTargets()
 		}
 		deconstruct_result1498 := _t1812
 		if deconstruct_result1498 != nil {
@@ -4180,8 +4180,8 @@ func (p *PrettyPrinter) pretty_relation_body(msg *pb.TargetRelations) interface{
 		} else {
 			_dollar_dollar := msg
 			var _t1813 []interface{}
-			if !((len(_dollar_dollar.GetInserts()) == 0 && len(_dollar_dollar.GetDeletes()) == 0)) {
-				_t1813 = []interface{}{_dollar_dollar.GetInserts(), _dollar_dollar.GetDeletes()}
+			if hasProtoField(_dollar_dollar, "cdc") {
+				_t1813 = []interface{}{_dollar_dollar.GetCdc().GetInserts(), _dollar_dollar.GetCdc().GetDeletes()}
 			}
 			deconstruct_result1494 := _t1813
 			if deconstruct_result1494 != nil {
@@ -5311,6 +5311,34 @@ func (p *PrettyPrinter) pretty_be_tree_locator(msg *pb.BeTreeLocator) interface{
 	return nil
 }
 
+func (p *PrettyPrinter) pretty_cdc_targets(msg *pb.CdcTargets) interface{} {
+	p.write("(cdc_targets")
+	p.indentSexp()
+	p.newline()
+	p.write(":inserts ")
+	p.write("(")
+	for _idx, _elem := range msg.GetInserts() {
+		if (_idx > 0) {
+			p.write(" ")
+		}
+		p.pprintDispatch(_elem)
+	}
+	p.write(")")
+	p.newline()
+	p.write(":deletes ")
+	p.write("(")
+	for _idx, _elem := range msg.GetDeletes() {
+		if (_idx > 0) {
+			p.write(" ")
+		}
+		p.pprintDispatch(_elem)
+	}
+	p.write(")")
+	p.write(")")
+	p.dedent()
+	return nil
+}
+
 func (p *PrettyPrinter) pretty_decimal_value(msg *pb.DecimalValue) interface{} {
 	p.write(p.formatDecimal(msg))
 	return nil
@@ -5354,6 +5382,24 @@ func (p *PrettyPrinter) pretty_int128_value(msg *pb.Int128Value) interface{} {
 
 func (p *PrettyPrinter) pretty_missing_value(msg *pb.MissingValue) interface{} {
 	p.write("missing")
+	return nil
+}
+
+func (p *PrettyPrinter) pretty_plain_targets(msg *pb.PlainTargets) interface{} {
+	p.write("(plain_targets")
+	p.indentSexp()
+	p.newline()
+	p.write(":targets ")
+	p.write("(")
+	for _idx, _elem := range msg.GetTargets() {
+		if (_idx > 0) {
+			p.write(" ")
+		}
+		p.pprintDispatch(_elem)
+	}
+	p.write(")")
+	p.write(")")
+	p.dedent()
 	return nil
 }
 
@@ -5660,6 +5706,8 @@ func (p *PrettyPrinter) pprintDispatch(msg interface{}) {
 		p.pretty_be_tree_config(m)
 	case *pb.BeTreeLocator:
 		p.pretty_be_tree_locator(m)
+	case *pb.CdcTargets:
+		p.pretty_cdc_targets(m)
 	case *pb.DecimalValue:
 		p.pretty_decimal_value(m)
 	case *pb.FunctionalDependency:
@@ -5668,6 +5716,8 @@ func (p *PrettyPrinter) pprintDispatch(msg interface{}) {
 		p.pretty_int128_value(m)
 	case *pb.MissingValue:
 		p.pretty_missing_value(m)
+	case *pb.PlainTargets:
+		p.pretty_plain_targets(m)
 	case *pb.StorageIntegration:
 		p.pretty_storage_integration(m)
 	case *pb.UInt128Value:

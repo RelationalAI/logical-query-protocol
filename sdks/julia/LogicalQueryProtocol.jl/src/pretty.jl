@@ -4251,8 +4251,8 @@ function pretty_relation_body(pp::PrettyPrinter, msg::Proto.TargetRelations)
         return nothing
     else
         _dollar_dollar = msg
-        if (isempty(_dollar_dollar.inserts) && isempty(_dollar_dollar.deletes))
-            _t1843 = _dollar_dollar.relations
+        if _has_proto_field(_dollar_dollar, Symbol("plain"))
+            _t1843 = _get_oneof_field(_dollar_dollar, :plain).targets
         else
             _t1843 = nothing
         end
@@ -4262,8 +4262,8 @@ function pretty_relation_body(pp::PrettyPrinter, msg::Proto.TargetRelations)
             pretty_non_cdc_relations(pp, unwrapped1499)
         else
             _dollar_dollar = msg
-            if !(isempty(_dollar_dollar.inserts) && isempty(_dollar_dollar.deletes))
-                _t1844 = (_dollar_dollar.inserts, _dollar_dollar.deletes,)
+            if _has_proto_field(_dollar_dollar, Symbol("cdc"))
+                _t1844 = (_get_oneof_field(_dollar_dollar, :cdc).inserts, _get_oneof_field(_dollar_dollar, :cdc).deletes,)
             else
                 _t1844 = nothing
             end
@@ -5383,6 +5383,33 @@ function pretty_be_tree_locator(pp::PrettyPrinter, msg::Proto.BeTreeLocator)
     return nothing
 end
 
+function pretty_cdc_targets(pp::PrettyPrinter, msg::Proto.CdcTargets)
+    write(pp, "(cdc_targets")
+    indent_sexp!(pp)
+    newline(pp)
+    write(pp, ":inserts (")
+    for (i1931, _elem) in enumerate(msg.inserts)
+        _idx = i1931 - 1
+        if (_idx > 0)
+            write(pp, " ")
+        end
+        _pprint_dispatch(pp, _elem)
+    end
+    write(pp, ")")
+    newline(pp)
+    write(pp, ":deletes (")
+    for (i1932, _elem) in enumerate(msg.deletes)
+        _idx = i1932 - 1
+        if (_idx > 0)
+            write(pp, " ")
+        end
+        _pprint_dispatch(pp, _elem)
+    end
+    write(pp, "))")
+    dedent!(pp)
+    return nothing
+end
+
 function pretty_decimal_value(pp::PrettyPrinter, msg::Proto.DecimalValue)
     write(pp, format_decimal(pp, msg))
     return nothing
@@ -5396,8 +5423,8 @@ function pretty_functional_dependency(pp::PrettyPrinter, msg::Proto.FunctionalDe
     _pprint_dispatch(pp, msg.guard)
     newline(pp)
     write(pp, ":keys (")
-    for (i1931, _elem) in enumerate(msg.keys)
-        _idx = i1931 - 1
+    for (i1933, _elem) in enumerate(msg.keys)
+        _idx = i1933 - 1
         if (_idx > 0)
             write(pp, " ")
         end
@@ -5406,8 +5433,8 @@ function pretty_functional_dependency(pp::PrettyPrinter, msg::Proto.FunctionalDe
     write(pp, ")")
     newline(pp)
     write(pp, ":values (")
-    for (i1932, _elem) in enumerate(msg.values)
-        _idx = i1932 - 1
+    for (i1934, _elem) in enumerate(msg.values)
+        _idx = i1934 - 1
         if (_idx > 0)
             write(pp, " ")
         end
@@ -5425,6 +5452,23 @@ end
 
 function pretty_missing_value(pp::PrettyPrinter, msg::Proto.MissingValue)
     write(pp, "missing")
+    return nothing
+end
+
+function pretty_plain_targets(pp::PrettyPrinter, msg::Proto.PlainTargets)
+    write(pp, "(plain_targets")
+    indent_sexp!(pp)
+    newline(pp)
+    write(pp, ":targets (")
+    for (i1935, _elem) in enumerate(msg.targets)
+        _idx = i1935 - 1
+        if (_idx > 0)
+            write(pp, " ")
+        end
+        _pprint_dispatch(pp, _elem)
+    end
+    write(pp, "))")
+    dedent!(pp)
     return nothing
 end
 
@@ -5461,8 +5505,8 @@ function pretty_export_csv_columns(pp::PrettyPrinter, msg::Proto.ExportCSVColumn
     indent_sexp!(pp)
     newline(pp)
     write(pp, ":columns (")
-    for (i1933, _elem) in enumerate(msg.columns)
-        _idx = i1933 - 1
+    for (i1936, _elem) in enumerate(msg.columns)
+        _idx = i1936 - 1
         if (_idx > 0)
             write(pp, " ")
         end
@@ -5620,10 +5664,12 @@ _pprint_dispatch(pp::PrettyPrinter, x::Proto.ExportIcebergConfig) = pretty_expor
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.DebugInfo) = pretty_debug_info(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.BeTreeConfig) = pretty_be_tree_config(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.BeTreeLocator) = pretty_be_tree_locator(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.CdcTargets) = pretty_cdc_targets(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.DecimalValue) = pretty_decimal_value(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.FunctionalDependency) = pretty_functional_dependency(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.Int128Value) = pretty_int128_value(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.MissingValue) = pretty_missing_value(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.PlainTargets) = pretty_plain_targets(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.StorageIntegration) = pretty_storage_integration(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.UInt128Value) = pretty_u_int128_value(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.ExportCSVColumns) = pretty_export_csv_columns(pp, x)

@@ -1153,13 +1153,13 @@ cdc_deletes
 relation_body
     : non_cdc_relations
       construct: $$ = construct_non_cdc_relations($1)
-      deconstruct if builtin.is_empty($$.inserts) and builtin.is_empty($$.deletes):
-        $1: Sequence[logic.TargetRelation] = $$.relations
+      deconstruct if builtin.has_proto_field($$, 'plain'):
+        $1: Sequence[logic.TargetRelation] = $$.plain.targets
     | cdc_inserts cdc_deletes
       construct: $$ = construct_cdc_relations($1, $2)
-      deconstruct if not (builtin.is_empty($$.inserts) and builtin.is_empty($$.deletes)):
-        $1: Sequence[logic.TargetRelation] = $$.inserts
-        $2: Sequence[logic.TargetRelation] = $$.deletes
+      deconstruct if builtin.has_proto_field($$, 'cdc'):
+        $1: Sequence[logic.TargetRelation] = $$.cdc.inserts
+        $2: Sequence[logic.TargetRelation] = $$.cdc.deletes
 
 target_relations
     : "(" "relations" relation_keys relation_body ")"
@@ -1527,13 +1527,11 @@ def _try_extract_value_string_list(value: Optional[logic.Value]) -> Optional[Seq
 
 
 def construct_non_cdc_relations(
-    relations: Sequence[logic.TargetRelation],
+    targets: Sequence[logic.TargetRelation],
 ) -> logic.TargetRelations:
     return logic.TargetRelations(
         keys=list[logic.NamedColumn](),
-        relations=relations,
-        inserts=list[logic.TargetRelation](),
-        deletes=list[logic.TargetRelation](),
+        plain=logic.PlainTargets(targets=targets),
     )
 
 
@@ -1543,9 +1541,7 @@ def construct_cdc_relations(
 ) -> logic.TargetRelations:
     return logic.TargetRelations(
         keys=list[logic.NamedColumn](),
-        relations=list[logic.TargetRelation](),
-        inserts=inserts,
-        deletes=deletes,
+        cdc=logic.CdcTargets(inserts=inserts, deletes=deletes),
     )
 
 
@@ -1553,12 +1549,9 @@ def construct_relations(
     keys: Sequence[logic.NamedColumn],
     body: logic.TargetRelations,
 ) -> logic.TargetRelations:
-    return logic.TargetRelations(
-        keys=keys,
-        relations=body.relations,
-        inserts=body.inserts,
-        deletes=body.deletes,
-    )
+    if builtin.has_proto_field(body, "plain"):
+        return logic.TargetRelations(keys=keys, plain=body.plain)
+    return logic.TargetRelations(keys=keys, cdc=body.cdc)
 
 
 def construct_csv_data(

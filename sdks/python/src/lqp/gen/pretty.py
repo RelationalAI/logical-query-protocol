@@ -3648,8 +3648,8 @@ class PrettyPrinter:
             return None
         else:
             _dollar_dollar = msg
-            if (len(_dollar_dollar.inserts) == 0 and len(_dollar_dollar.deletes) == 0):
-                _t1812 = _dollar_dollar.relations
+            if _dollar_dollar.HasField("plain"):
+                _t1812 = _dollar_dollar.plain.targets
             else:
                 _t1812 = None
             deconstruct_result1498 = _t1812
@@ -3659,8 +3659,8 @@ class PrettyPrinter:
                 self.pretty_non_cdc_relations(unwrapped1499)
             else:
                 _dollar_dollar = msg
-                if not (len(_dollar_dollar.inserts) == 0 and len(_dollar_dollar.deletes) == 0):
-                    _t1813 = (_dollar_dollar.inserts, _dollar_dollar.deletes,)
+                if _dollar_dollar.HasField("cdc"):
+                    _t1813 = (_dollar_dollar.cdc.inserts, _dollar_dollar.cdc.deletes,)
                 else:
                     _t1813 = None
                 deconstruct_result1494 = _t1813
@@ -4642,6 +4642,25 @@ class PrettyPrinter:
         self.write(")")
         self.dedent()
 
+    def pretty_cdc_targets(self, msg: logic_pb2.CdcTargets):
+        self.write("(cdc_targets")
+        self.indent_sexp()
+        self.newline()
+        self.write(":inserts (")
+        for _idx, _elem in enumerate(msg.inserts):
+            if (_idx > 0):
+                self.write(" ")
+            self.pprint_dispatch(_elem)
+        self.write(")")
+        self.newline()
+        self.write(":deletes (")
+        for _idx, _elem in enumerate(msg.deletes):
+            if (_idx > 0):
+                self.write(" ")
+            self.pprint_dispatch(_elem)
+        self.write("))")
+        self.dedent()
+
     def pretty_decimal_value(self, msg: logic_pb2.DecimalValue):
         self.write(self.format_decimal(msg))
 
@@ -4672,6 +4691,18 @@ class PrettyPrinter:
 
     def pretty_missing_value(self, msg: logic_pb2.MissingValue):
         self.write("missing")
+
+    def pretty_plain_targets(self, msg: logic_pb2.PlainTargets):
+        self.write("(plain_targets")
+        self.indent_sexp()
+        self.newline()
+        self.write(":targets (")
+        for _idx, _elem in enumerate(msg.targets):
+            if (_idx > 0):
+                self.write(" ")
+            self.pprint_dispatch(_elem)
+        self.write("))")
+        self.dedent()
 
     def pretty_storage_integration(self, msg: logic_pb2.StorageIntegration):
         self.write("(storage_integration")
@@ -4926,6 +4957,8 @@ class PrettyPrinter:
             self.pretty_be_tree_config(msg)
         elif isinstance(msg, logic_pb2.BeTreeLocator):
             self.pretty_be_tree_locator(msg)
+        elif isinstance(msg, logic_pb2.CdcTargets):
+            self.pretty_cdc_targets(msg)
         elif isinstance(msg, logic_pb2.DecimalValue):
             self.pretty_decimal_value(msg)
         elif isinstance(msg, logic_pb2.FunctionalDependency):
@@ -4934,6 +4967,8 @@ class PrettyPrinter:
             self.pretty_int128_value(msg)
         elif isinstance(msg, logic_pb2.MissingValue):
             self.pretty_missing_value(msg)
+        elif isinstance(msg, logic_pb2.PlainTargets):
+            self.pretty_plain_targets(msg)
         elif isinstance(msg, logic_pb2.StorageIntegration):
             self.pretty_storage_integration(msg)
         elif isinstance(msg, logic_pb2.UInt128Value):

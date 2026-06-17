@@ -301,15 +301,25 @@ message TargetRelation {
   repeated NamedColumn values = 2; // Value columns for this relation (may be empty)
 }
 
-// Generalized loading: a shared set of key columns and one or more target relations.
-// CDC vs non-CDC is implied by which group is populated:
-//   - `relations` populated => non-CDC outputs
-//   - `inserts`/`deletes`   => CDC insert/delete groups
+// Plain (non-CDC) load: each input row becomes a tuple in every target relation.
+message PlainTargets {
+  repeated TargetRelation targets = 1; // Target relations (each row feeds all of them)
+}
+
+// CDC load: input rows are routed by METADATA$ACTION into insert and delete deltas.
+message CdcTargets {
+  repeated TargetRelation inserts = 1; // INSERT-action rows feed these
+  repeated TargetRelation deletes = 2; // DELETE-action rows feed these
+}
+
+// Generalized loading: shared key columns plus the target relations, loaded either as a
+// plain snapshot or as CDC insert/delete deltas. The two modes are mutually exclusive.
 message TargetRelations {
-  repeated NamedColumn keys = 1;         // Shared key columns (name "METADATA$KEY" => derived hash)
-  repeated TargetRelation relations = 2; // Non-CDC outputs
-  repeated TargetRelation inserts = 3;   // CDC insert group
-  repeated TargetRelation deletes = 4;   // CDC delete group
+  repeated NamedColumn keys = 1; // Shared key columns (name "METADATA$KEY" => derived hash)
+  oneof body {
+    PlainTargets plain = 2;
+    CdcTargets cdc = 3;
+  }
 }
 
 message CSVData {

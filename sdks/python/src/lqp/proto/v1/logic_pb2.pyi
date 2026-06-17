@@ -436,17 +436,29 @@ class TargetRelation(_message.Message):
     values: _containers.RepeatedCompositeFieldContainer[NamedColumn]
     def __init__(self, target_id: _Optional[_Union[RelationId, _Mapping]] = ..., values: _Optional[_Iterable[_Union[NamedColumn, _Mapping]]] = ...) -> None: ...
 
-class TargetRelations(_message.Message):
-    __slots__ = ("keys", "relations", "inserts", "deletes")
-    KEYS_FIELD_NUMBER: _ClassVar[int]
-    RELATIONS_FIELD_NUMBER: _ClassVar[int]
+class PlainTargets(_message.Message):
+    __slots__ = ("targets",)
+    TARGETS_FIELD_NUMBER: _ClassVar[int]
+    targets: _containers.RepeatedCompositeFieldContainer[TargetRelation]
+    def __init__(self, targets: _Optional[_Iterable[_Union[TargetRelation, _Mapping]]] = ...) -> None: ...
+
+class CdcTargets(_message.Message):
+    __slots__ = ("inserts", "deletes")
     INSERTS_FIELD_NUMBER: _ClassVar[int]
     DELETES_FIELD_NUMBER: _ClassVar[int]
-    keys: _containers.RepeatedCompositeFieldContainer[NamedColumn]
-    relations: _containers.RepeatedCompositeFieldContainer[TargetRelation]
     inserts: _containers.RepeatedCompositeFieldContainer[TargetRelation]
     deletes: _containers.RepeatedCompositeFieldContainer[TargetRelation]
-    def __init__(self, keys: _Optional[_Iterable[_Union[NamedColumn, _Mapping]]] = ..., relations: _Optional[_Iterable[_Union[TargetRelation, _Mapping]]] = ..., inserts: _Optional[_Iterable[_Union[TargetRelation, _Mapping]]] = ..., deletes: _Optional[_Iterable[_Union[TargetRelation, _Mapping]]] = ...) -> None: ...
+    def __init__(self, inserts: _Optional[_Iterable[_Union[TargetRelation, _Mapping]]] = ..., deletes: _Optional[_Iterable[_Union[TargetRelation, _Mapping]]] = ...) -> None: ...
+
+class TargetRelations(_message.Message):
+    __slots__ = ("keys", "plain", "cdc")
+    KEYS_FIELD_NUMBER: _ClassVar[int]
+    PLAIN_FIELD_NUMBER: _ClassVar[int]
+    CDC_FIELD_NUMBER: _ClassVar[int]
+    keys: _containers.RepeatedCompositeFieldContainer[NamedColumn]
+    plain: PlainTargets
+    cdc: CdcTargets
+    def __init__(self, keys: _Optional[_Iterable[_Union[NamedColumn, _Mapping]]] = ..., plain: _Optional[_Union[PlainTargets, _Mapping]] = ..., cdc: _Optional[_Union[CdcTargets, _Mapping]] = ...) -> None: ...
 
 class CSVData(_message.Message):
     __slots__ = ("locator", "config", "columns", "asof", "relations")
