@@ -178,18 +178,20 @@ class ExportIcebergConfig(_message.Message):
     def __init__(self, locator: _Optional[_Union[_logic_pb2.IcebergLocator, _Mapping]] = ..., config: _Optional[_Union[_logic_pb2.IcebergCatalogConfig, _Mapping]] = ..., table_def: _Optional[_Union[_logic_pb2.RelationId, _Mapping]] = ..., prefix: _Optional[str] = ..., target_file_size_bytes: _Optional[int] = ..., compression: _Optional[str] = ..., table_properties: _Optional[_Mapping[str, str]] = ...) -> None: ...
 
 class Read(_message.Message):
-    __slots__ = ("demand", "output", "what_if", "abort", "export")
+    __slots__ = ("demand", "output", "what_if", "abort", "export", "export_output")
     DEMAND_FIELD_NUMBER: _ClassVar[int]
     OUTPUT_FIELD_NUMBER: _ClassVar[int]
     WHAT_IF_FIELD_NUMBER: _ClassVar[int]
     ABORT_FIELD_NUMBER: _ClassVar[int]
     EXPORT_FIELD_NUMBER: _ClassVar[int]
+    EXPORT_OUTPUT_FIELD_NUMBER: _ClassVar[int]
     demand: Demand
     output: Output
     what_if: WhatIf
     abort: Abort
     export: Export
-    def __init__(self, demand: _Optional[_Union[Demand, _Mapping]] = ..., output: _Optional[_Union[Output, _Mapping]] = ..., what_if: _Optional[_Union[WhatIf, _Mapping]] = ..., abort: _Optional[_Union[Abort, _Mapping]] = ..., export: _Optional[_Union[Export, _Mapping]] = ...) -> None: ...
+    export_output: ExportOutput
+    def __init__(self, demand: _Optional[_Union[Demand, _Mapping]] = ..., output: _Optional[_Union[Output, _Mapping]] = ..., what_if: _Optional[_Union[WhatIf, _Mapping]] = ..., abort: _Optional[_Union[Abort, _Mapping]] = ..., export: _Optional[_Union[Export, _Mapping]] = ..., export_output: _Optional[_Union[ExportOutput, _Mapping]] = ...) -> None: ...
 
 class Demand(_message.Message):
     __slots__ = ("relation_id",)
@@ -228,3 +230,17 @@ class Abort(_message.Message):
     name: str
     relation_id: _logic_pb2.RelationId
     def __init__(self, name: _Optional[str] = ..., relation_id: _Optional[_Union[_logic_pb2.RelationId, _Mapping]] = ...) -> None: ...
+
+class ExportCSVOutput(_message.Message):
+    __slots__ = ("csv_source", "csv_config")
+    CSV_SOURCE_FIELD_NUMBER: _ClassVar[int]
+    CSV_CONFIG_FIELD_NUMBER: _ClassVar[int]
+    csv_source: ExportCSVSource
+    csv_config: _logic_pb2.CSVConfig
+    def __init__(self, csv_source: _Optional[_Union[ExportCSVSource, _Mapping]] = ..., csv_config: _Optional[_Union[_logic_pb2.CSVConfig, _Mapping]] = ...) -> None: ...
+
+class ExportOutput(_message.Message):
+    __slots__ = ("csv",)
+    CSV_FIELD_NUMBER: _ClassVar[int]
+    csv: ExportCSVOutput
+    def __init__(self, csv: _Optional[_Union[ExportCSVOutput, _Mapping]] = ...) -> None: ...

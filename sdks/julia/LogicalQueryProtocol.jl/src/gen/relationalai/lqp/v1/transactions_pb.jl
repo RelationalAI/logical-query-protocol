@@ -7,8 +7,8 @@ using ProtoBuf.EnumX: @enumx
 
 export ExportIcebergConfig, ExportCSVColumn, Demand, Undefine, MaintenanceLevel, Define
 export Context, Sync, SnapshotMapping, Abort, Output, ExportCSVColumns, IVMConfig, Snapshot
-export ExportCSVSource, Configure, Write, ExportCSVConfig, Export, Epoch, Read, Transaction
-export WhatIf
+export ExportCSVSource, Configure, Write, ExportCSVOutput, ExportCSVConfig, ExportOutput
+export Export, Epoch, Read, Transaction, WhatIf
 abstract type var"##Abstract#Transaction" end
 abstract type var"##Abstract#Epoch" end
 abstract type var"##Abstract#Read" end
@@ -629,6 +629,43 @@ function PB._encoded_size(x::Write)
     return encoded_size
 end
 
+struct ExportCSVOutput
+    csv_source::Union{Nothing,ExportCSVSource}
+    csv_config::Union{Nothing,CSVConfig}
+end
+ExportCSVOutput(;csv_source = nothing, csv_config = nothing) = ExportCSVOutput(csv_source, csv_config)
+PB.default_values(::Type{ExportCSVOutput}) = (;csv_source = nothing, csv_config = nothing)
+PB.field_numbers(::Type{ExportCSVOutput}) = (;csv_source = 1, csv_config = 2)
+
+function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:ExportCSVOutput}, _endpos::Int=0, _group::Bool=false)
+    csv_source = Ref{Union{Nothing,ExportCSVSource}}(nothing)
+    csv_config = Ref{Union{Nothing,CSVConfig}}(nothing)
+    while !PB.message_done(d, _endpos, _group)
+        field_number, wire_type = PB.decode_tag(d)
+        if field_number == 1
+            PB.decode!(d, csv_source)
+        elseif field_number == 2
+            PB.decode!(d, csv_config)
+        else
+            Base.skip(d, wire_type)
+        end
+    end
+    return ExportCSVOutput(csv_source[], csv_config[])
+end
+
+function PB.encode(e::PB.AbstractProtoEncoder, x::ExportCSVOutput)
+    initpos = position(e.io)
+    !isnothing(x.csv_source) && PB.encode(e, 1, x.csv_source)
+    !isnothing(x.csv_config) && PB.encode(e, 2, x.csv_config)
+    return position(e.io) - initpos
+end
+function PB._encoded_size(x::ExportCSVOutput)
+    encoded_size = 0
+    !isnothing(x.csv_source) && (encoded_size += PB._encoded_size(x.csv_source, 1))
+    !isnothing(x.csv_config) && (encoded_size += PB._encoded_size(x.csv_config, 2))
+    return encoded_size
+end
+
 struct ExportCSVConfig
     path::String
     csv_source::Union{Nothing,ExportCSVSource}
@@ -720,6 +757,46 @@ function PB._encoded_size(x::ExportCSVConfig)
     return encoded_size
 end
 
+struct ExportOutput
+    export_output::Union{Nothing,OneOf{ExportCSVOutput}}
+end
+ExportOutput(;export_output = nothing) = ExportOutput(export_output)
+PB.oneof_field_types(::Type{ExportOutput}) = (;
+    export_output = (;csv=ExportCSVOutput),
+)
+PB.default_values(::Type{ExportOutput}) = (;csv = nothing)
+PB.field_numbers(::Type{ExportOutput}) = (;csv = 1)
+
+function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:ExportOutput}, _endpos::Int=0, _group::Bool=false)
+    export_output = nothing
+    while !PB.message_done(d, _endpos, _group)
+        field_number, wire_type = PB.decode_tag(d)
+        if field_number == 1
+            export_output = OneOf(:csv, PB.decode(d, Ref{ExportCSVOutput}))
+        else
+            Base.skip(d, wire_type)
+        end
+    end
+    return ExportOutput(export_output)
+end
+
+function PB.encode(e::PB.AbstractProtoEncoder, x::ExportOutput)
+    initpos = position(e.io)
+    if isnothing(x.export_output);
+    elseif x.export_output.name === :csv
+        PB.encode(e, 1, x.export_output[]::ExportCSVOutput)
+    end
+    return position(e.io) - initpos
+end
+function PB._encoded_size(x::ExportOutput)
+    encoded_size = 0
+    if isnothing(x.export_output);
+    elseif x.export_output.name === :csv
+        encoded_size += PB._encoded_size(x.export_output[]::ExportCSVOutput, 1)
+    end
+    return encoded_size
+end
+
 struct Export
     export_config::Union{Nothing,OneOf{<:Union{ExportCSVConfig,ExportIcebergConfig}}}
 end
@@ -773,7 +850,7 @@ struct var"##Stub#Epoch"{T1<:var"##Abstract#Read"} <: var"##Abstract#Epoch"
 end
 
 struct var"##Stub#Read"{T1<:var"##Abstract#WhatIf"} <: var"##Abstract#Read"
-    read_type::Union{Nothing,OneOf{<:Union{Demand,Output,T1,Abort,Export}}}
+    read_type::Union{Nothing,OneOf{<:Union{Demand,Output,T1,Abort,Export,ExportOutput}}}
 end
 
 struct var"##Stub#Transaction"{T1<:var"##Abstract#WhatIf"} <: var"##Abstract#Transaction"
@@ -824,10 +901,10 @@ end
 const Read = var"##Stub#Read"{var"##Stub#WhatIf"}
 Read(;read_type = nothing) = Read(read_type)
 PB.oneof_field_types(::Type{Read}) = (;
-    read_type = (;demand=Demand, output=Output, what_if=WhatIf, abort=Abort, var"#export"=Export),
+    read_type = (;demand=Demand, output=Output, what_if=WhatIf, abort=Abort, var"#export"=Export, export_output=ExportOutput),
 )
-PB.default_values(::Type{Read}) = (;demand = nothing, output = nothing, what_if = nothing, abort = nothing, var"#export" = nothing)
-PB.field_numbers(::Type{Read}) = (;demand = 1, output = 2, what_if = 3, abort = 4, var"#export" = 5)
+PB.default_values(::Type{Read}) = (;demand = nothing, output = nothing, what_if = nothing, abort = nothing, var"#export" = nothing, export_output = nothing)
+PB.field_numbers(::Type{Read}) = (;demand = 1, output = 2, what_if = 3, abort = 4, var"#export" = 5, export_output = 6)
 
 function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:Read}, _endpos::Int=0, _group::Bool=false)
     read_type = nothing
@@ -843,6 +920,8 @@ function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:Read}, _endpos::Int=0, _
             read_type = OneOf(:abort, PB.decode(d, Ref{Abort}))
         elseif field_number == 5
             read_type = OneOf(:var"#export", PB.decode(d, Ref{Export}))
+        elseif field_number == 6
+            read_type = OneOf(:export_output, PB.decode(d, Ref{ExportOutput}))
         else
             Base.skip(d, wire_type)
         end
@@ -863,6 +942,8 @@ function PB.encode(e::PB.AbstractProtoEncoder, x::Read)
         PB.encode(e, 4, x.read_type[]::Abort)
     elseif x.read_type.name === :var"#export"
         PB.encode(e, 5, x.read_type[]::Export)
+    elseif x.read_type.name === :export_output
+        PB.encode(e, 6, x.read_type[]::ExportOutput)
     end
     return position(e.io) - initpos
 end
@@ -879,6 +960,8 @@ function PB._encoded_size(x::Read)
         encoded_size += PB._encoded_size(x.read_type[]::Abort, 4)
     elseif x.read_type.name === :var"#export"
         encoded_size += PB._encoded_size(x.read_type[]::Export, 5)
+    elseif x.read_type.name === :export_output
+        encoded_size += PB._encoded_size(x.read_type[]::ExportOutput, 6)
     end
     return encoded_size
 end
