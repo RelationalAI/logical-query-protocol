@@ -144,6 +144,7 @@ message Read {
     WhatIf what_if = 3;
     Abort abort = 4;
     Export export = 5;
+    ExportOutput export_output = 6;
   }
 }
 
@@ -174,3 +175,16 @@ message Abort {
   string name = 1;
   RelationId relation_id = 2;
 }
+
+message ExportCSVOutput {
+  ExportCSVSource csv_source = 1;
+  CSVConfig csv_config = 2;
+}
+
+message ExportOutput {
+  // Supports export formats e.g., CSV and Iceberg, but considered to be part of txn results
+  oneof export_output {
+    ExportCSVOutput csv = 1;
+  }
+}
+
