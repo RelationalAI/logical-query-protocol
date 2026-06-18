@@ -115,9 +115,11 @@
 %nonterm export_csv_column transactions.ExportCSVColumn
 %nonterm export_csv_columns_list Sequence[transactions.ExportCSVColumn]
 %nonterm export_csv_config transactions.ExportCSVConfig
+%nonterm export_csv_output transactions.ExportCSVOutput
 %nonterm export_csv_path String
 %nonterm export_csv_source transactions.ExportCSVSource
 %nonterm export_iceberg_config transactions.ExportIcebergConfig
+%nonterm export_output transactions.ExportOutput
 %nonterm export_iceberg_table_def logic.RelationId
 %nonterm iceberg_auth_properties Sequence[Tuple[String, String]]
 %nonterm iceberg_catalog_config logic.IcebergCatalogConfig
@@ -1293,6 +1295,10 @@ read
       construct: $$ = transactions.Read(export=$1)
       deconstruct if builtin.has_proto_field($$, 'export'):
         $1: transactions.Export = $$.export
+    | export_output
+      construct: $$ = transactions.Read(export_output=$1)
+      deconstruct if builtin.has_proto_field($$, 'export_output'):
+        $1: transactions.ExportOutput = $$.export_output
 
 demand
     : "(" "demand" relation_id ")"
@@ -1329,6 +1335,21 @@ export
       construct: $$ = transactions.Export(iceberg_config=$3)
       deconstruct if builtin.has_proto_field($$, 'iceberg_config'):
         $3: transactions.ExportIcebergConfig = $$.iceberg_config
+
+# Like `export`, but the engine treats the result as part of the transaction results
+# and chooses the output path itself (so no `path` is specified here).
+export_output
+    : "(" "output_export" export_csv_output ")"
+      construct: $$ = transactions.ExportOutput(csv=$3)
+      deconstruct if builtin.has_proto_field($$, 'csv'):
+        $3: transactions.ExportCSVOutput = $$.csv
+
+export_csv_output
+    : "(" "csv" export_csv_source csv_config ")"
+      construct: $$ = transactions.ExportCSVOutput(csv_source=$3, csv_config=$4)
+      deconstruct:
+        $3: transactions.ExportCSVSource = $$.csv_source
+        $4: logic.CSVConfig = $$.csv_config
 
 export_csv_config
     : "(" "export_csv_config_v2" export_csv_path export_csv_source csv_config ")"
