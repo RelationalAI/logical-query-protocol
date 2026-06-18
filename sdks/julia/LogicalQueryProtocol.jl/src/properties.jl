@@ -132,6 +132,8 @@ function _collect_read_ids!(ids::Set{LQPRelationId}, read::Read)
         _collect_read_ids!(ids, read.read_type[]::Abort)
     elseif read.read_type.name == :var"#export"
         _collect_read_ids!(ids, read.read_type[]::Export)
+    elseif read.read_type.name == :export_output
+        _collect_read_ids!(ids, read.read_type[]::ExportOutput)
     else
         @assert false
     end
@@ -175,6 +177,24 @@ function _collect_read_ids!(ids::Set{LQPRelationId}, _export::Export)
     elseif config.name == :iceberg_config
         iceberg_config = config[]::ExportIcebergConfig
         !isnothing(iceberg_config.table_def) && push!(ids, persistent_id(iceberg_config.table_def))
+    end
+    return nothing
+end
+function _collect_read_ids!(ids::Set{LQPRelationId}, export_output::ExportOutput)
+    isnothing(export_output.export_output) && return nothing
+    config = export_output.export_output
+    if config.name == :csv
+        csv_output = config[]::ExportCSVOutput
+        src = isnothing(csv_output.csv_source) ? nothing : csv_output.csv_source.csv_source
+        if !isnothing(src)
+            if src.name == :gnf_columns
+                for column in (src[]::ExportCSVColumns).columns
+                    !isnothing(column.column_data) && push!(ids, persistent_id(column.column_data))
+                end
+            elseif src.name == :table_def
+                push!(ids, persistent_id(src[]::RelationId))
+            end
+        end
     end
     return nothing
 end

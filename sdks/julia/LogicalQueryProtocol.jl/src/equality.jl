@@ -478,6 +478,38 @@ function Base.isequal(a::Export, b::Export)
     _isequal_oneof(a.export_config, b.export_config)
 end
 
+# ExportCSVColumns
+Base.:(==)(a::ExportCSVColumns, b::ExportCSVColumns) = a.columns == b.columns
+Base.hash(a::ExportCSVColumns, h::UInt) = hash(a.columns, h)
+Base.isequal(a::ExportCSVColumns, b::ExportCSVColumns) = isequal(a.columns, b.columns)
+
+# ExportCSVSource
+function Base.:(==)(a::ExportCSVSource, b::ExportCSVSource)
+    _isequal_oneof(a.csv_source, b.csv_source)
+end
+function Base.hash(a::ExportCSVSource, h::UInt)
+    _hash_oneof(a.csv_source, h)
+end
+function Base.isequal(a::ExportCSVSource, b::ExportCSVSource)
+    _isequal_oneof(a.csv_source, b.csv_source)
+end
+
+# ExportCSVOutput
+Base.:(==)(a::ExportCSVOutput, b::ExportCSVOutput) = a.csv_source == b.csv_source && a.csv_config == b.csv_config
+Base.hash(a::ExportCSVOutput, h::UInt) = hash(a.csv_config, hash(a.csv_source, h))
+Base.isequal(a::ExportCSVOutput, b::ExportCSVOutput) = isequal(a.csv_source, b.csv_source) && isequal(a.csv_config, b.csv_config)
+
+# ExportOutput
+function Base.:(==)(a::ExportOutput, b::ExportOutput)
+    _isequal_oneof(a.export_output, b.export_output)
+end
+function Base.hash(a::ExportOutput, h::UInt)
+    _hash_oneof(a.export_output, h)
+end
+function Base.isequal(a::ExportOutput, b::ExportOutput)
+    _isequal_oneof(a.export_output, b.export_output)
+end
+
 # IVMConfig
 Base.:(==)(a::IVMConfig, b::IVMConfig) = a.level == b.level
 Base.hash(a::IVMConfig, h::UInt) = hash(a.level, h)
