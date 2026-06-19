@@ -182,9 +182,11 @@ message ExportCSVOutput {
 }
 
 message ExportOutput {
+  string name = 1;
+
   // Supports export formats e.g., CSV and Iceberg, but considered to be part of txn results
   oneof export_output {
-    ExportCSVOutput csv = 1;
+    ExportCSVOutput csv = 2;
   }
 }
 

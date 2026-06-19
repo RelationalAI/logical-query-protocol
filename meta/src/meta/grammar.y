@@ -1339,10 +1339,11 @@ export
 # Like `export`, but the engine treats the result as part of the transaction results
 # and chooses the output path itself (so no `path` is specified here).
 export_output
-    : "(" "export_output" export_csv_output ")"
-      construct: $$ = transactions.ExportOutput(csv=$3)
+    : "(" "export_output" name export_csv_output ")"
+      construct: $$ = transactions.ExportOutput(name=$3, csv=$4)
       deconstruct if builtin.has_proto_field($$, 'csv'):
-        $3: transactions.ExportCSVOutput = $$.csv
+        $3: String = $$.name
+        $4: transactions.ExportCSVOutput = $$.csv
 
 export_csv_output
     : "(" "csv" export_csv_source csv_config ")"

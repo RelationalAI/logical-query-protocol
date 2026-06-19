@@ -501,13 +501,13 @@ Base.isequal(a::ExportCSVOutput, b::ExportCSVOutput) = isequal(a.csv_source, b.c
 
 # ExportOutput
 function Base.:(==)(a::ExportOutput, b::ExportOutput)
-    _isequal_oneof(a.export_output, b.export_output)
+    a.name == b.name && _isequal_oneof(a.export_output, b.export_output)
 end
 function Base.hash(a::ExportOutput, h::UInt)
-    _hash_oneof(a.export_output, h)
+    _hash_oneof(a.export_output, hash(a.name, h))
 end
 function Base.isequal(a::ExportOutput, b::ExportOutput)
-    _isequal_oneof(a.export_output, b.export_output)
+    isequal(a.name, b.name) && _isequal_oneof(a.export_output, b.export_output)
 end
 
 # IVMConfig

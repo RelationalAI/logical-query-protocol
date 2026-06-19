@@ -8,7 +8,7 @@
               (+ 1 1 x))))))
 
     (reads
-      (export_output
+      (export_output :my_output
         (csv
           (table_def :test)
           (csv_config {}))))))

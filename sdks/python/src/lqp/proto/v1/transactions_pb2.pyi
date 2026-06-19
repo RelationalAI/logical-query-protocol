@@ -240,7 +240,9 @@ class ExportCSVOutput(_message.Message):
     def __init__(self, csv_source: _Optional[_Union[ExportCSVSource, _Mapping]] = ..., csv_config: _Optional[_Union[_logic_pb2.CSVConfig, _Mapping]] = ...) -> None: ...
 
 class ExportOutput(_message.Message):
-    __slots__ = ("csv",)
+    __slots__ = ("name", "csv")
+    NAME_FIELD_NUMBER: _ClassVar[int]
     CSV_FIELD_NUMBER: _ClassVar[int]
+    name: str
     csv: ExportCSVOutput
-    def __init__(self, csv: _Optional[_Union[ExportCSVOutput, _Mapping]] = ...) -> None: ...
+    def __init__(self, name: _Optional[str] = ..., csv: _Optional[_Union[ExportCSVOutput, _Mapping]] = ...) -> None: ...

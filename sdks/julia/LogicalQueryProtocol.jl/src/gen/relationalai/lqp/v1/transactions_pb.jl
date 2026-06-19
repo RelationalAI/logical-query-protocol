@@ -758,41 +758,47 @@ function PB._encoded_size(x::ExportCSVConfig)
 end
 
 struct ExportOutput
+    name::String
     export_output::Union{Nothing,OneOf{ExportCSVOutput}}
 end
-ExportOutput(;export_output = nothing) = ExportOutput(export_output)
+ExportOutput(;name = "", export_output = nothing) = ExportOutput(name, export_output)
 PB.oneof_field_types(::Type{ExportOutput}) = (;
     export_output = (;csv=ExportCSVOutput),
 )
-PB.default_values(::Type{ExportOutput}) = (;csv = nothing)
-PB.field_numbers(::Type{ExportOutput}) = (;csv = 1)
+PB.default_values(::Type{ExportOutput}) = (;name = "", csv = nothing)
+PB.field_numbers(::Type{ExportOutput}) = (;name = 1, csv = 2)
 
 function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:ExportOutput}, _endpos::Int=0, _group::Bool=false)
+    name = ""
     export_output = nothing
     while !PB.message_done(d, _endpos, _group)
         field_number, wire_type = PB.decode_tag(d)
         if field_number == 1
+            name = PB.decode(d, String)
+        elseif field_number == 2
             export_output = OneOf(:csv, PB.decode(d, Ref{ExportCSVOutput}))
         else
             Base.skip(d, wire_type)
         end
     end
-    return ExportOutput(export_output)
+    return ExportOutput(name, export_output)
 end
 
 function PB.encode(e::PB.AbstractProtoEncoder, x::ExportOutput)
     initpos = position(e.io)
+    !isempty(x.name) && PB.encode(e, 1, x.name)
     if isnothing(x.export_output);
     elseif x.export_output.name === :csv
-        PB.encode(e, 1, x.export_output[]::ExportCSVOutput)
+        PB.encode(e, 2, x.export_output[]::ExportCSVOutput)
     end
     return position(e.io) - initpos
 end
 function PB._encoded_size(x::ExportOutput)
     encoded_size = 0
+    !isempty(x.name) && (encoded_size += PB._encoded_size(x.name, 1))
     if isnothing(x.export_output);
     elseif x.export_output.name === :csv
-        encoded_size += PB._encoded_size(x.export_output[]::ExportCSVOutput, 1)
+        encoded_size += PB._encoded_size(x.export_output[]::ExportCSVOutput, 2)
     end
     return encoded_size
 end

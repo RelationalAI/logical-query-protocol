@@ -6,6 +6,7 @@
         (fragment :frag (def 0xa3bf4f1b2b0b822cd15d6c15b0f00a08 ([x::INT] (+ 1 1 x))))))
     (reads
       (export_output
+        :my_output
         (csv
           (table_def 0xa3bf4f1b2b0b822cd15d6c15b0f00a08)
           (csv_config
