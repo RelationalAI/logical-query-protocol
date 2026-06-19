@@ -3664,11 +3664,11 @@ class Parser:
             if self.match_lookahead_literal("what_if", 1):
                 _t2027 = 2
             else:
-                if self.match_lookahead_literal("output_export", 1):
-                    _t2028 = 5
+                if self.match_lookahead_literal("output", 1):
+                    _t2028 = 1
                 else:
-                    if self.match_lookahead_literal("output", 1):
-                        _t2029 = 1
+                    if self.match_lookahead_literal("export_output", 1):
+                        _t2029 = 5
                     else:
                         if self.match_lookahead_literal("export_iceberg", 1):
                             _t2030 = 4
@@ -4015,7 +4015,7 @@ class Parser:
     def parse_export_output(self) -> transactions_pb2.ExportOutput:
         span_start1344 = self.span_start()
         self.consume_literal("(")
-        self.consume_literal("output_export")
+        self.consume_literal("export_output")
         _t2108 = self.parse_export_csv_output()
         export_csv_output1343 = _t2108
         self.consume_literal(")")

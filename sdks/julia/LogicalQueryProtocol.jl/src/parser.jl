@@ -4018,11 +4018,11 @@ function parse_read(parser::ParserState)::Proto.Read
         if match_lookahead_literal(parser, "what_if", 1)
             _t2027 = 2
         else
-            if match_lookahead_literal(parser, "output_export", 1)
-                _t2028 = 5
+            if match_lookahead_literal(parser, "output", 1)
+                _t2028 = 1
             else
-                if match_lookahead_literal(parser, "output", 1)
-                    _t2029 = 1
+                if match_lookahead_literal(parser, "export_output", 1)
+                    _t2029 = 5
                 else
                     if match_lookahead_literal(parser, "export_iceberg", 1)
                         _t2030 = 4
@@ -4417,7 +4417,7 @@ end
 function parse_export_output(parser::ParserState)::Proto.ExportOutput
     span_start1344 = span_start(parser)
     consume_literal!(parser, "(")
-    consume_literal!(parser, "output_export")
+    consume_literal!(parser, "export_output")
     _t2108 = parse_export_csv_output(parser)
     export_csv_output1343 = _t2108
     consume_literal!(parser, ")")

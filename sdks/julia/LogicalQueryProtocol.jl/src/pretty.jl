@@ -5101,7 +5101,7 @@ function pretty_export_output(pp::PrettyPrinter, msg::Proto.ExportOutput)
         end
         fields1610 = _t1802
         unwrapped_fields1611 = fields1610
-        write(pp, "(output_export")
+        write(pp, "(export_output")
         indent_sexp!(pp)
         newline(pp)
         pretty_export_csv_output(pp, unwrapped_fields1611)

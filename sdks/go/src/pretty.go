@@ -5030,7 +5030,7 @@ func (p *PrettyPrinter) pretty_export_output(msg *pb.ExportOutput) interface{} {
 		fields1610 := _t1763
 		unwrapped_fields1611 := fields1610
 		p.write("(")
-		p.write("output_export")
+		p.write("export_output")
 		p.indentSexp()
 		p.newline()
 		p.pretty_export_csv_output(unwrapped_fields1611)

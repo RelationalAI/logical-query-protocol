@@ -4407,7 +4407,7 @@ class PrettyPrinter:
             fields1610 = _t1763
             assert fields1610 is not None
             unwrapped_fields1611 = fields1610
-            self.write("(output_export")
+            self.write("(export_output")
             self.indent_sexp()
             self.newline()
             self.pretty_export_csv_output(unwrapped_fields1611)

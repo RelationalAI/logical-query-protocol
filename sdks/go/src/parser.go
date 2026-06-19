@@ -4696,12 +4696,12 @@ func (p *Parser) parse_read() *pb.Read {
 			_t2040 = 2
 		} else {
 			var _t2041 int64
-			if p.matchLookaheadLiteral("output_export", 1) {
-				_t2041 = 5
+			if p.matchLookaheadLiteral("output", 1) {
+				_t2041 = 1
 			} else {
 				var _t2042 int64
-				if p.matchLookaheadLiteral("output", 1) {
-					_t2042 = 1
+				if p.matchLookaheadLiteral("export_output", 1) {
+					_t2042 = 5
 				} else {
 					var _t2043 int64
 					if p.matchLookaheadLiteral("export_iceberg", 1) {
@@ -5129,7 +5129,7 @@ func (p *Parser) parse_iceberg_table_properties() [][]interface{} {
 func (p *Parser) parse_export_output() *pb.ExportOutput {
 	span_start1344 := int64(p.spanStart())
 	p.consumeLiteral("(")
-	p.consumeLiteral("output_export")
+	p.consumeLiteral("export_output")
 	_t2121 := p.parse_export_csv_output()
 	export_csv_output1343 := _t2121
 	p.consumeLiteral(")")

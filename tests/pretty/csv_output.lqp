@@ -3,7 +3,7 @@
   (epoch
     (writes (define (fragment :frag (def :test ([x::INT] (+ 1 1 x))))))
     (reads
-      (output_export
+      (export_output
         (csv
           (table_def :test)
           (csv_config
