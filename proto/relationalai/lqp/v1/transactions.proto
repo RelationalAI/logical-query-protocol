@@ -85,7 +85,13 @@ message Snapshot {
 //
 
 message ExportCSVConfig {
+  // The following two fields should be in a `oneof`, but compatibility makes that tricky.
+  // The `path` option should be used if the client needs to output a CSV file to a
+  // specific location.
+  // The `transaction_output_name` should be used if the client wants the CSV file to be
+  // returned as part of the transaction results.
   string path = 1;
+  string transaction_output_name = 12;
 
   ExportCSVSource csv_source = 10;
   CSVConfig csv_config = 11;
