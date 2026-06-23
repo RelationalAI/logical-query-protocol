@@ -1,0 +1,23 @@
+(transaction
+  (epoch
+    (writes
+      (define
+        (fragment :f1
+          ;; Generalized CSV loading: two output relations sharing the same key column `id`,
+          ;; each carrying its own value column.
+          (csv_data
+            (csv_locator
+              (paths "s3://bucket/nodes.csv"))
+            (csv_config {})
+            (relations
+              (keys
+                (column "id" INT))
+              (relation :weights
+                (column "weight" FLOAT))
+              (relation :labels
+                (column "label" STRING)))
+            (asof "2025-06-01T00:00:00Z")))))
+
+    (reads
+      (output :weights :weights)
+      (output :labels :labels))))
