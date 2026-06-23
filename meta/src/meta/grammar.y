@@ -115,6 +115,7 @@
 %nonterm export_csv_column transactions.ExportCSVColumn
 %nonterm export_csv_columns_list Sequence[transactions.ExportCSVColumn]
 %nonterm export_csv_config transactions.ExportCSVConfig
+%nonterm export_csv_output_location Tuple[String, String]
 %nonterm export_csv_path String
 %nonterm export_csv_source transactions.ExportCSVSource
 %nonterm export_iceberg_config transactions.ExportIcebergConfig
@@ -1331,10 +1332,10 @@ export
         $3: transactions.ExportIcebergConfig = $$.iceberg_config
 
 export_csv_config
-    : "(" "export_csv_config_v2" export_csv_path export_csv_source csv_config ")"
-      construct: $$ = construct_export_csv_config_with_source($3, $4, $5)
+    : "(" "export_csv_config_v2" export_csv_output_location export_csv_source csv_config ")"
+      construct: $$ = construct_export_csv_config_with_location($3, $4, $5)
       deconstruct if builtin.length($$.data_columns) == 0:
-        $3: String = $$.path
+        $3: Tuple[String, String] = deconstruct_export_csv_output_location($$)
         $4: transactions.ExportCSVSource = $$.csv_source
         $5: logic.CSVConfig = $$.csv_config
     | "(" "export_csv_config" export_csv_path export_csv_columns_list config_dict ")"
@@ -1343,6 +1344,16 @@ export_csv_config
         $3: String = $$.path
         $4: Sequence[transactions.ExportCSVColumn] = $$.data_columns
         $5: Sequence[Tuple[String, logic.Value]] = deconstruct_export_csv_config($$)
+
+export_csv_output_location
+    : "(" "path" STRING ")"
+      construct: $$ = builtin.tuple($3, "")
+      deconstruct if $$[0] != "":
+        $3: String = $$[0]
+    | "(" "transaction_output_name" name ")"
+      construct: $$ = builtin.tuple("", $3)
+      deconstruct if $$[1] != "":
+        $3: String = $$[1]
 
 export_csv_path
     : "(" "path" STRING ")"
@@ -1610,13 +1621,17 @@ def construct_export_csv_config(
         syntax_escapechar=builtin.some(syntax_escapechar),
     )
 
-def construct_export_csv_config_with_source(
-    path: String,
+def deconstruct_export_csv_output_location(msg: transactions.ExportCSVConfig) -> Tuple[String, String]:
+    return (msg.path, msg.transaction_output_name)
+
+def construct_export_csv_config_with_location(
+    location: Tuple[String, String],
     csv_source: transactions.ExportCSVSource,
     csv_config: logic.CSVConfig,
 ) -> transactions.ExportCSVConfig:
     return transactions.ExportCSVConfig(
-        path=path,
+        path=location[0],
+        transaction_output_name=location[1],
         csv_source=csv_source,
         csv_config=csv_config,
     )
