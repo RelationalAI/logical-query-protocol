@@ -591,10 +591,10 @@ Base.:(==)(a::PlainTargets, b::PlainTargets) = a.targets == b.targets
 Base.hash(a::PlainTargets, h::UInt) = hash(a.targets, h)
 Base.isequal(a::PlainTargets, b::PlainTargets) = isequal(a.targets, b.targets)
 
-# CdcTargets
-Base.:(==)(a::CdcTargets, b::CdcTargets) = a.inserts == b.inserts && a.deletes == b.deletes
-Base.hash(a::CdcTargets, h::UInt) = hash(a.deletes, hash(a.inserts, h))
-Base.isequal(a::CdcTargets, b::CdcTargets) = isequal(a.inserts, b.inserts) && isequal(a.deletes, b.deletes)
+# CDCTargets
+Base.:(==)(a::CDCTargets, b::CDCTargets) = a.inserts == b.inserts && a.deletes == b.deletes
+Base.hash(a::CDCTargets, h::UInt) = hash(a.deletes, hash(a.inserts, h))
+Base.isequal(a::CDCTargets, b::CDCTargets) = isequal(a.inserts, b.inserts) && isequal(a.deletes, b.deletes)
 
 # TargetRelations
 Base.:(==)(a::TargetRelations, b::TargetRelations) = a.keys == b.keys && _isequal_oneof(a.body, b.body)

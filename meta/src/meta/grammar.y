@@ -1541,7 +1541,7 @@ def construct_cdc_relations(
 ) -> logic.TargetRelations:
     return logic.TargetRelations(
         keys=list[logic.NamedColumn](),
-        cdc=logic.CdcTargets(inserts=inserts, deletes=deletes),
+        cdc=logic.CDCTargets(inserts=inserts, deletes=deletes),
     )
 
 

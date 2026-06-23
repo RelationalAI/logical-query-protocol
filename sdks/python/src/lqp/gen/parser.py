@@ -544,7 +544,7 @@ class Parser:
         return _t2206
 
     def construct_cdc_relations(self, inserts: Sequence[logic_pb2.TargetRelation], deletes: Sequence[logic_pb2.TargetRelation]) -> logic_pb2.TargetRelations:
-        _t2207 = logic_pb2.CdcTargets(inserts=inserts, deletes=deletes)
+        _t2207 = logic_pb2.CDCTargets(inserts=inserts, deletes=deletes)
         _t2208 = logic_pb2.TargetRelations(keys=[], cdc=_t2207)
         return _t2208
 

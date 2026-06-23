@@ -307,7 +307,7 @@ message PlainTargets {
 }
 
 // CDC load: input rows are routed by METADATA$ACTION into insert and delete deltas.
-message CdcTargets {
+message CDCTargets {
   repeated TargetRelation inserts = 1; // INSERT-action rows feed these
   repeated TargetRelation deletes = 2; // DELETE-action rows feed these
 }
@@ -318,7 +318,7 @@ message TargetRelations {
   repeated NamedColumn keys = 1; // Shared key columns (name "METADATA$KEY" => derived hash)
   oneof body {
     PlainTargets plain = 2;
-    CdcTargets cdc = 3;
+    CDCTargets cdc = 3;
   }
 }
 

@@ -3167,7 +3167,7 @@ func (x *PlainTargets) GetTargets() []*TargetRelation {
 }
 
 // CDC load: input rows are routed by METADATA$ACTION into insert and delete deltas.
-type CdcTargets struct {
+type CDCTargets struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Inserts       []*TargetRelation      `protobuf:"bytes,1,rep,name=inserts,proto3" json:"inserts,omitempty"` // INSERT-action rows feed these
 	Deletes       []*TargetRelation      `protobuf:"bytes,2,rep,name=deletes,proto3" json:"deletes,omitempty"` // DELETE-action rows feed these
@@ -3175,20 +3175,20 @@ type CdcTargets struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *CdcTargets) Reset() {
-	*x = CdcTargets{}
+func (x *CDCTargets) Reset() {
+	*x = CDCTargets{}
 	mi := &file_relationalai_lqp_v1_logic_proto_msgTypes[47]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *CdcTargets) String() string {
+func (x *CDCTargets) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*CdcTargets) ProtoMessage() {}
+func (*CDCTargets) ProtoMessage() {}
 
-func (x *CdcTargets) ProtoReflect() protoreflect.Message {
+func (x *CDCTargets) ProtoReflect() protoreflect.Message {
 	mi := &file_relationalai_lqp_v1_logic_proto_msgTypes[47]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -3200,19 +3200,19 @@ func (x *CdcTargets) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CdcTargets.ProtoReflect.Descriptor instead.
-func (*CdcTargets) Descriptor() ([]byte, []int) {
+// Deprecated: Use CDCTargets.ProtoReflect.Descriptor instead.
+func (*CDCTargets) Descriptor() ([]byte, []int) {
 	return file_relationalai_lqp_v1_logic_proto_rawDescGZIP(), []int{47}
 }
 
-func (x *CdcTargets) GetInserts() []*TargetRelation {
+func (x *CDCTargets) GetInserts() []*TargetRelation {
 	if x != nil {
 		return x.Inserts
 	}
 	return nil
 }
 
-func (x *CdcTargets) GetDeletes() []*TargetRelation {
+func (x *CDCTargets) GetDeletes() []*TargetRelation {
 	if x != nil {
 		return x.Deletes
 	}
@@ -3286,7 +3286,7 @@ func (x *TargetRelations) GetPlain() *PlainTargets {
 	return nil
 }
 
-func (x *TargetRelations) GetCdc() *CdcTargets {
+func (x *TargetRelations) GetCdc() *CDCTargets {
 	if x != nil {
 		if x, ok := x.Body.(*TargetRelations_Cdc); ok {
 			return x.Cdc
@@ -3304,7 +3304,7 @@ type TargetRelations_Plain struct {
 }
 
 type TargetRelations_Cdc struct {
-	Cdc *CdcTargets `protobuf:"bytes,3,opt,name=cdc,proto3,oneof"`
+	Cdc *CDCTargets `protobuf:"bytes,3,opt,name=cdc,proto3,oneof"`
 }
 
 func (*TargetRelations_Plain) isTargetRelations_Body() {}
@@ -5773,7 +5773,7 @@ var file_relationalai_lqp_v1_logic_proto_rawDesc = string([]byte{
 	0x0b, 0x32, 0x23, 0x2e, 0x72, 0x65, 0x6c, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x61, 0x6c, 0x61, 0x69,
 	0x2e, 0x6c, 0x71, 0x70, 0x2e, 0x76, 0x31, 0x2e, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x52, 0x65,
 	0x6c, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x07, 0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x73, 0x22,
-	0x8a, 0x01, 0x0a, 0x0a, 0x43, 0x64, 0x63, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x73, 0x12, 0x3d,
+	0x8a, 0x01, 0x0a, 0x0a, 0x43, 0x44, 0x43, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x73, 0x12, 0x3d,
 	0x0a, 0x07, 0x69, 0x6e, 0x73, 0x65, 0x72, 0x74, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32,
 	0x23, 0x2e, 0x72, 0x65, 0x6c, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x61, 0x6c, 0x61, 0x69, 0x2e, 0x6c,
 	0x71, 0x70, 0x2e, 0x76, 0x31, 0x2e, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x52, 0x65, 0x6c, 0x61,
@@ -5792,7 +5792,7 @@ var file_relationalai_lqp_v1_logic_proto_rawDesc = string([]byte{
 	0x6e, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x73, 0x48, 0x00, 0x52, 0x05, 0x70, 0x6c, 0x61, 0x69,
 	0x6e, 0x12, 0x33, 0x0a, 0x03, 0x63, 0x64, 0x63, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1f,
 	0x2e, 0x72, 0x65, 0x6c, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x61, 0x6c, 0x61, 0x69, 0x2e, 0x6c, 0x71,
-	0x70, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x64, 0x63, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x73, 0x48,
+	0x70, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x44, 0x43, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x73, 0x48,
 	0x00, 0x52, 0x03, 0x63, 0x64, 0x63, 0x42, 0x06, 0x0a, 0x04, 0x62, 0x6f, 0x64, 0x79, 0x22, 0xa1,
 	0x02, 0x0a, 0x07, 0x43, 0x53, 0x56, 0x44, 0x61, 0x74, 0x61, 0x12, 0x39, 0x0a, 0x07, 0x6c, 0x6f,
 	0x63, 0x61, 0x74, 0x6f, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1f, 0x2e, 0x72, 0x65,
@@ -6140,7 +6140,7 @@ var file_relationalai_lqp_v1_logic_proto_goTypes = []any{
 	(*NamedColumn)(nil),          // 44: relationalai.lqp.v1.NamedColumn
 	(*TargetRelation)(nil),       // 45: relationalai.lqp.v1.TargetRelation
 	(*PlainTargets)(nil),         // 46: relationalai.lqp.v1.PlainTargets
-	(*CdcTargets)(nil),           // 47: relationalai.lqp.v1.CdcTargets
+	(*CDCTargets)(nil),           // 47: relationalai.lqp.v1.CDCTargets
 	(*TargetRelations)(nil),      // 48: relationalai.lqp.v1.TargetRelations
 	(*CSVData)(nil),              // 49: relationalai.lqp.v1.CSVData
 	(*CSVLocator)(nil),           // 50: relationalai.lqp.v1.CSVLocator
@@ -6279,11 +6279,11 @@ var file_relationalai_lqp_v1_logic_proto_depIdxs = []int32{
 	56,  // 100: relationalai.lqp.v1.TargetRelation.target_id:type_name -> relationalai.lqp.v1.RelationId
 	44,  // 101: relationalai.lqp.v1.TargetRelation.values:type_name -> relationalai.lqp.v1.NamedColumn
 	45,  // 102: relationalai.lqp.v1.PlainTargets.targets:type_name -> relationalai.lqp.v1.TargetRelation
-	45,  // 103: relationalai.lqp.v1.CdcTargets.inserts:type_name -> relationalai.lqp.v1.TargetRelation
-	45,  // 104: relationalai.lqp.v1.CdcTargets.deletes:type_name -> relationalai.lqp.v1.TargetRelation
+	45,  // 103: relationalai.lqp.v1.CDCTargets.inserts:type_name -> relationalai.lqp.v1.TargetRelation
+	45,  // 104: relationalai.lqp.v1.CDCTargets.deletes:type_name -> relationalai.lqp.v1.TargetRelation
 	44,  // 105: relationalai.lqp.v1.TargetRelations.keys:type_name -> relationalai.lqp.v1.NamedColumn
 	46,  // 106: relationalai.lqp.v1.TargetRelations.plain:type_name -> relationalai.lqp.v1.PlainTargets
-	47,  // 107: relationalai.lqp.v1.TargetRelations.cdc:type_name -> relationalai.lqp.v1.CdcTargets
+	47,  // 107: relationalai.lqp.v1.TargetRelations.cdc:type_name -> relationalai.lqp.v1.CDCTargets
 	50,  // 108: relationalai.lqp.v1.CSVData.locator:type_name -> relationalai.lqp.v1.CSVLocator
 	51,  // 109: relationalai.lqp.v1.CSVData.config:type_name -> relationalai.lqp.v1.CSVConfig
 	55,  // 110: relationalai.lqp.v1.CSVData.columns:type_name -> relationalai.lqp.v1.GNFColumn

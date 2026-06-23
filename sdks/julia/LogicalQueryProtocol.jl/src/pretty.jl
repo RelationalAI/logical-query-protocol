@@ -5383,7 +5383,7 @@ function pretty_be_tree_locator(pp::PrettyPrinter, msg::Proto.BeTreeLocator)
     return nothing
 end
 
-function pretty_cdc_targets(pp::PrettyPrinter, msg::Proto.CdcTargets)
+function pretty_cdc_targets(pp::PrettyPrinter, msg::Proto.CDCTargets)
     write(pp, "(cdc_targets")
     indent_sexp!(pp)
     newline(pp)
@@ -5664,7 +5664,7 @@ _pprint_dispatch(pp::PrettyPrinter, x::Proto.ExportIcebergConfig) = pretty_expor
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.DebugInfo) = pretty_debug_info(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.BeTreeConfig) = pretty_be_tree_config(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.BeTreeLocator) = pretty_be_tree_locator(pp, x)
-_pprint_dispatch(pp::PrettyPrinter, x::Proto.CdcTargets) = pretty_cdc_targets(pp, x)
+_pprint_dispatch(pp::PrettyPrinter, x::Proto.CDCTargets) = pretty_cdc_targets(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.DecimalValue) = pretty_decimal_value(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.FunctionalDependency) = pretty_functional_dependency(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.Int128Value) = pretty_int128_value(pp, x)

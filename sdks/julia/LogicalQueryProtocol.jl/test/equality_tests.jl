@@ -2237,8 +2237,8 @@ end
     @test p1 == p2 && p2 == p5 && p1 == p5
 end
 
-@testitem "Equality for CdcTargets" tags=[:ring1, :unit] begin
-    using LogicalQueryProtocol: CdcTargets, TargetRelation, NamedColumn, RelationId, var"#Type", FloatType
+@testitem "Equality for CDCTargets" tags=[:ring1, :unit] begin
+    using LogicalQueryProtocol: CDCTargets, TargetRelation, NamedColumn, RelationId, var"#Type", FloatType
     using ProtoBuf: OneOf
 
     t1 = var"#Type"(var"#type"=OneOf(:float_type, FloatType()))
@@ -2246,11 +2246,11 @@ end
     rel1 = TargetRelation(target_id=RelationId(id_low=1, id_high=0), values=[val])
     rel2 = TargetRelation(target_id=RelationId(id_low=2, id_high=0), values=[val])
 
-    c1 = CdcTargets(inserts=[rel1], deletes=[rel2])
-    c2 = CdcTargets(inserts=[rel1], deletes=[rel2])
-    c3 = CdcTargets(inserts=[rel2], deletes=[rel2])   # different inserts
-    c4 = CdcTargets(inserts=[rel1], deletes=[rel1])   # different deletes
-    c5 = CdcTargets(inserts=[rel1], deletes=[rel2])
+    c1 = CDCTargets(inserts=[rel1], deletes=[rel2])
+    c2 = CDCTargets(inserts=[rel1], deletes=[rel2])
+    c3 = CDCTargets(inserts=[rel2], deletes=[rel2])   # different inserts
+    c4 = CDCTargets(inserts=[rel1], deletes=[rel1])   # different deletes
+    c5 = CDCTargets(inserts=[rel1], deletes=[rel2])
 
     # Equality and inequality
     @test c1 == c2
@@ -2273,7 +2273,7 @@ end
 end
 
 @testitem "Equality for TargetRelations" tags=[:ring1, :unit] begin
-    using LogicalQueryProtocol: TargetRelations, PlainTargets, CdcTargets, TargetRelation, NamedColumn, RelationId, var"#Type", IntType, FloatType
+    using LogicalQueryProtocol: TargetRelations, PlainTargets, CDCTargets, TargetRelation, NamedColumn, RelationId, var"#Type", IntType, FloatType
     using ProtoBuf: OneOf
 
     tint = var"#Type"(var"#type"=OneOf(:int_type, IntType()))
@@ -2286,7 +2286,7 @@ end
     rel2 = TargetRelation(target_id=r2, values=[val])
 
     plain(rs) = OneOf(:plain, PlainTargets(targets=rs))
-    cdc(ins, dels) = OneOf(:cdc, CdcTargets(inserts=ins, deletes=dels))
+    cdc(ins, dels) = OneOf(:cdc, CDCTargets(inserts=ins, deletes=dels))
 
     # Plain (non-CDC) body.
     g1 = TargetRelations(keys=[key], body=plain([rel1]))

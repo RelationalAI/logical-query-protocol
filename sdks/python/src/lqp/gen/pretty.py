@@ -4642,7 +4642,7 @@ class PrettyPrinter:
         self.write(")")
         self.dedent()
 
-    def pretty_cdc_targets(self, msg: logic_pb2.CdcTargets):
+    def pretty_cdc_targets(self, msg: logic_pb2.CDCTargets):
         self.write("(cdc_targets")
         self.indent_sexp()
         self.newline()
@@ -4957,7 +4957,7 @@ class PrettyPrinter:
             self.pretty_be_tree_config(msg)
         elif isinstance(msg, logic_pb2.BeTreeLocator):
             self.pretty_be_tree_locator(msg)
-        elif isinstance(msg, logic_pb2.CdcTargets):
+        elif isinstance(msg, logic_pb2.CDCTargets):
             self.pretty_cdc_targets(msg)
         elif isinstance(msg, logic_pb2.DecimalValue):
             self.pretty_decimal_value(msg)

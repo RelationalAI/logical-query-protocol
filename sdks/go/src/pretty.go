@@ -5311,7 +5311,7 @@ func (p *PrettyPrinter) pretty_be_tree_locator(msg *pb.BeTreeLocator) interface{
 	return nil
 }
 
-func (p *PrettyPrinter) pretty_cdc_targets(msg *pb.CdcTargets) interface{} {
+func (p *PrettyPrinter) pretty_cdc_targets(msg *pb.CDCTargets) interface{} {
 	p.write("(cdc_targets")
 	p.indentSexp()
 	p.newline()
@@ -5706,7 +5706,7 @@ func (p *PrettyPrinter) pprintDispatch(msg interface{}) {
 		p.pretty_be_tree_config(m)
 	case *pb.BeTreeLocator:
 		p.pretty_be_tree_locator(m)
-	case *pb.CdcTargets:
+	case *pb.CDCTargets:
 		p.pretty_cdc_targets(m)
 	case *pb.DecimalValue:
 		p.pretty_decimal_value(m)

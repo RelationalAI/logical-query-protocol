@@ -12,7 +12,7 @@ export MissingType, MissingValue, IntType, StringType, Int128Value, UInt128Value
 export StorageIntegration, BooleanType, UInt32Type, DecimalValue, BeTreeLocator, CSVConfig
 export var"#Type", Value, NamedColumn, GNFColumn, MinMonoid, SumMonoid, MaxMonoid
 export BeTreeInfo, Binding, EDB, Attribute, Term, TargetRelation, IcebergData, Monoid
-export BeTreeRelation, Cast, Pragma, Atom, RelTerm, CdcTargets, PlainTargets, Primitive
+export BeTreeRelation, Cast, Pragma, Atom, RelTerm, CDCTargets, PlainTargets, Primitive
 export RelAtom, TargetRelations, CSVData, Data, Abstraction, Algorithm, Assign, Break
 export Conjunction, Constraint, Def, Disjunction, Exists, FFI, FunctionalDependency
 export MonoidDef, MonusDef, Not, Reduce, Script, Upsert, Construct, Loop, Declaration
@@ -2018,15 +2018,15 @@ function PB._encoded_size(x::RelTerm)
     return encoded_size
 end
 
-struct CdcTargets
+struct CDCTargets
     inserts::Vector{TargetRelation}
     deletes::Vector{TargetRelation}
 end
-CdcTargets(;inserts = Vector{TargetRelation}(), deletes = Vector{TargetRelation}()) = CdcTargets(inserts, deletes)
-PB.default_values(::Type{CdcTargets}) = (;inserts = Vector{TargetRelation}(), deletes = Vector{TargetRelation}())
-PB.field_numbers(::Type{CdcTargets}) = (;inserts = 1, deletes = 2)
+CDCTargets(;inserts = Vector{TargetRelation}(), deletes = Vector{TargetRelation}()) = CDCTargets(inserts, deletes)
+PB.default_values(::Type{CDCTargets}) = (;inserts = Vector{TargetRelation}(), deletes = Vector{TargetRelation}())
+PB.field_numbers(::Type{CDCTargets}) = (;inserts = 1, deletes = 2)
 
-function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:CdcTargets}, _endpos::Int=0, _group::Bool=false)
+function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:CDCTargets}, _endpos::Int=0, _group::Bool=false)
     inserts = PB.BufferedVector{TargetRelation}()
     deletes = PB.BufferedVector{TargetRelation}()
     while !PB.message_done(d, _endpos, _group)
@@ -2039,16 +2039,16 @@ function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:CdcTargets}, _endpos::In
             Base.skip(d, wire_type)
         end
     end
-    return CdcTargets(inserts[], deletes[])
+    return CDCTargets(inserts[], deletes[])
 end
 
-function PB.encode(e::PB.AbstractProtoEncoder, x::CdcTargets)
+function PB.encode(e::PB.AbstractProtoEncoder, x::CDCTargets)
     initpos = position(e.io)
     !isempty(x.inserts) && PB.encode(e, 1, x.inserts)
     !isempty(x.deletes) && PB.encode(e, 2, x.deletes)
     return position(e.io) - initpos
 end
-function PB._encoded_size(x::CdcTargets)
+function PB._encoded_size(x::CDCTargets)
     encoded_size = 0
     !isempty(x.inserts) && (encoded_size += PB._encoded_size(x.inserts, 1))
     !isempty(x.deletes) && (encoded_size += PB._encoded_size(x.deletes, 2))
@@ -2162,11 +2162,11 @@ end
 
 struct TargetRelations
     keys::Vector{NamedColumn}
-    body::Union{Nothing,OneOf{<:Union{PlainTargets,CdcTargets}}}
+    body::Union{Nothing,OneOf{<:Union{PlainTargets,CDCTargets}}}
 end
 TargetRelations(;keys = Vector{NamedColumn}(), body = nothing) = TargetRelations(keys, body)
 PB.oneof_field_types(::Type{TargetRelations}) = (;
-    body = (;plain=PlainTargets, cdc=CdcTargets),
+    body = (;plain=PlainTargets, cdc=CDCTargets),
 )
 PB.default_values(::Type{TargetRelations}) = (;keys = Vector{NamedColumn}(), plain = nothing, cdc = nothing)
 PB.field_numbers(::Type{TargetRelations}) = (;keys = 1, plain = 2, cdc = 3)
@@ -2181,7 +2181,7 @@ function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:TargetRelations}, _endpo
         elseif field_number == 2
             body = OneOf(:plain, PB.decode(d, Ref{PlainTargets}))
         elseif field_number == 3
-            body = OneOf(:cdc, PB.decode(d, Ref{CdcTargets}))
+            body = OneOf(:cdc, PB.decode(d, Ref{CDCTargets}))
         else
             Base.skip(d, wire_type)
         end
@@ -2196,7 +2196,7 @@ function PB.encode(e::PB.AbstractProtoEncoder, x::TargetRelations)
     elseif x.body.name === :plain
         PB.encode(e, 2, x.body[]::PlainTargets)
     elseif x.body.name === :cdc
-        PB.encode(e, 3, x.body[]::CdcTargets)
+        PB.encode(e, 3, x.body[]::CDCTargets)
     end
     return position(e.io) - initpos
 end
@@ -2207,7 +2207,7 @@ function PB._encoded_size(x::TargetRelations)
     elseif x.body.name === :plain
         encoded_size += PB._encoded_size(x.body[]::PlainTargets, 2)
     elseif x.body.name === :cdc
-        encoded_size += PB._encoded_size(x.body[]::CdcTargets, 3)
+        encoded_size += PB._encoded_size(x.body[]::CDCTargets, 3)
     end
     return encoded_size
 end

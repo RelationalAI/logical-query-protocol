@@ -456,7 +456,7 @@ function construct_non_cdc_relations(parser::ParserState, targets::Vector{Proto.
 end
 
 function construct_cdc_relations(parser::ParserState, inserts::Vector{Proto.TargetRelation}, deletes::Vector{Proto.TargetRelation})::Proto.TargetRelations
-    _t2198 = Proto.CdcTargets(inserts=inserts, deletes=deletes)
+    _t2198 = Proto.CDCTargets(inserts=inserts, deletes=deletes)
     _t2199 = Proto.TargetRelations(body=OneOf(:cdc, _t2198), keys=Proto.NamedColumn[])
     return _t2199
 end

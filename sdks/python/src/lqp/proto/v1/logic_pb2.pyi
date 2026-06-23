@@ -442,7 +442,7 @@ class PlainTargets(_message.Message):
     targets: _containers.RepeatedCompositeFieldContainer[TargetRelation]
     def __init__(self, targets: _Optional[_Iterable[_Union[TargetRelation, _Mapping]]] = ...) -> None: ...
 
-class CdcTargets(_message.Message):
+class CDCTargets(_message.Message):
     __slots__ = ("inserts", "deletes")
     INSERTS_FIELD_NUMBER: _ClassVar[int]
     DELETES_FIELD_NUMBER: _ClassVar[int]
@@ -457,8 +457,8 @@ class TargetRelations(_message.Message):
     CDC_FIELD_NUMBER: _ClassVar[int]
     keys: _containers.RepeatedCompositeFieldContainer[NamedColumn]
     plain: PlainTargets
-    cdc: CdcTargets
-    def __init__(self, keys: _Optional[_Iterable[_Union[NamedColumn, _Mapping]]] = ..., plain: _Optional[_Union[PlainTargets, _Mapping]] = ..., cdc: _Optional[_Union[CdcTargets, _Mapping]] = ...) -> None: ...
+    cdc: CDCTargets
+    def __init__(self, keys: _Optional[_Iterable[_Union[NamedColumn, _Mapping]]] = ..., plain: _Optional[_Union[PlainTargets, _Mapping]] = ..., cdc: _Optional[_Union[CDCTargets, _Mapping]] = ...) -> None: ...
 
 class CSVData(_message.Message):
     __slots__ = ("locator", "config", "columns", "asof", "relations")

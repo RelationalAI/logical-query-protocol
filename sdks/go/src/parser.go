@@ -743,7 +743,7 @@ func (p *Parser) construct_non_cdc_relations(targets []*pb.TargetRelation) *pb.T
 }
 
 func (p *Parser) construct_cdc_relations(inserts []*pb.TargetRelation, deletes []*pb.TargetRelation) *pb.TargetRelations {
-	_t2211 := &pb.CdcTargets{Inserts: inserts, Deletes: deletes}
+	_t2211 := &pb.CDCTargets{Inserts: inserts, Deletes: deletes}
 	_t2212 := &pb.TargetRelations{Keys: []*pb.NamedColumn{}}
 	_t2212.Body = &pb.TargetRelations_Cdc{Cdc: _t2211}
 	return _t2212
