@@ -4,8 +4,7 @@
       (define
         (fragment :f1
           ;; Generalized CSV loading with CDC: a single `edge` relation grouped into insert
-          ;; and delete deltas. The shared key is the special METADATA$KEY (a UINT128 hash
-          ;; derived from the CSV's METADATA$ROW_ID column).
+          ;; and delete deltas under a shared UINT128 key column.
           (csv_data
             (csv_locator
               (paths "s3://bucket/edges.csv"))

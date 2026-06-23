@@ -291,7 +291,7 @@ message StorageIntegration {
 // A single named column with its type. Used to describe both shared key columns and
 // per-relation value columns in the generalized `TargetRelations` loading construct.
 message NamedColumn {
-  string name = 1; // Column name (e.g. "src"); special name "METADATA$KEY" => derived hash
+  string name = 1; // Column name (e.g. "src")
   Type type = 2;   // Column type
 }
 
@@ -315,7 +315,7 @@ message CDCTargets {
 // Generalized loading: shared key columns plus the target relations, loaded either as a
 // plain snapshot or as CDC insert/delete deltas. The two modes are mutually exclusive.
 message TargetRelations {
-  repeated NamedColumn keys = 1; // Shared key columns (name "METADATA$KEY" => derived hash)
+  repeated NamedColumn keys = 1; // Shared key columns
   oneof body {
     PlainTargets plain = 2;
     CDCTargets cdc = 3;

@@ -3018,7 +3018,7 @@ func (x *StorageIntegration) GetS3SecretAccessKey() string {
 // per-relation value columns in the generalized `TargetRelations` loading construct.
 type NamedColumn struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"` // Column name (e.g. "src"); special name "METADATA$KEY" => derived hash
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"` // Column name (e.g. "src")
 	Type          *Type                  `protobuf:"bytes,2,opt,name=type,proto3" json:"type,omitempty"` // Column type
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -3223,7 +3223,7 @@ func (x *CDCTargets) GetDeletes() []*TargetRelation {
 // plain snapshot or as CDC insert/delete deltas. The two modes are mutually exclusive.
 type TargetRelations struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Keys  []*NamedColumn         `protobuf:"bytes,1,rep,name=keys,proto3" json:"keys,omitempty"` // Shared key columns (name "METADATA$KEY" => derived hash)
+	Keys  []*NamedColumn         `protobuf:"bytes,1,rep,name=keys,proto3" json:"keys,omitempty"` // Shared key columns
 	// Types that are valid to be assigned to Body:
 	//
 	//	*TargetRelations_Plain
