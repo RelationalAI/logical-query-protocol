@@ -288,11 +288,46 @@ message StorageIntegration {
   string s3_secret_access_key = 5;
 }
 
+// A single named column with its type. Used to describe both shared key columns and
+// per-relation value columns in the generalized `TargetRelations` loading construct.
+message NamedColumn {
+  string name = 1; // Column name (e.g. "src")
+  Type type = 2;   // Column type
+}
+
+// One target relation: the shared keys plus this relation's own (possibly empty) value columns.
+message TargetRelation {
+  RelationId target_id = 1;        // Output relation path
+  repeated NamedColumn values = 2; // Value columns for this relation (may be empty)
+}
+
+// Plain (non-CDC) load: each input row becomes a tuple in every target relation.
+message PlainTargets {
+  repeated TargetRelation targets = 1; // Target relations (each row feeds all of them)
+}
+
+// CDC load: input rows are routed by METADATA$ACTION into insert and delete deltas.
+message CDCTargets {
+  repeated TargetRelation inserts = 1; // INSERT-action rows feed these
+  repeated TargetRelation deletes = 2; // DELETE-action rows feed these
+}
+
+// Generalized loading: shared key columns plus the target relations, loaded either as a
+// plain snapshot or as CDC insert/delete deltas. The two modes are mutually exclusive.
+message TargetRelations {
+  repeated NamedColumn keys = 1; // Shared key columns
+  oneof body {
+    PlainTargets plain = 2;
+    CDCTargets cdc = 3;
+  }
+}
+
 message CSVData {
   CSVLocator locator = 1;
   CSVConfig config = 2;
   repeated GNFColumn columns = 3;
   string asof = 4; // Blob storage timestamp for freshness requirements
+  optional TargetRelations relations = 5; // If present, generalized loading; mutually exclusive with columns
 }
 
 message CSVLocator {

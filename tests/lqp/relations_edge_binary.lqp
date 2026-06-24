@@ -1,0 +1,20 @@
+(transaction
+  (epoch
+    (writes
+      (define
+        (fragment :f1
+          ;; Generalized CSV loading: a binary `edge` relation whose two columns are both
+          ;; keys (no value columns). Loads (src, dst) pairs into a single relation.
+          (csv_data
+            (csv_locator
+              (paths "s3://bucket/edges.csv"))
+            (csv_config {})
+            (relations
+              (keys
+                (column "src" INT)
+                (column "dst" INT))
+              (relation :edge))
+            (asof "2025-06-01T00:00:00Z")))))
+
+    (reads
+      (output :edge :edge))))

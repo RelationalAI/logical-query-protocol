@@ -420,17 +420,59 @@ class StorageIntegration(_message.Message):
     s3_secret_access_key: str
     def __init__(self, provider: _Optional[str] = ..., azure_sas_token: _Optional[str] = ..., s3_region: _Optional[str] = ..., s3_access_key_id: _Optional[str] = ..., s3_secret_access_key: _Optional[str] = ...) -> None: ...
 
+class NamedColumn(_message.Message):
+    __slots__ = ("name", "type")
+    NAME_FIELD_NUMBER: _ClassVar[int]
+    TYPE_FIELD_NUMBER: _ClassVar[int]
+    name: str
+    type: Type
+    def __init__(self, name: _Optional[str] = ..., type: _Optional[_Union[Type, _Mapping]] = ...) -> None: ...
+
+class TargetRelation(_message.Message):
+    __slots__ = ("target_id", "values")
+    TARGET_ID_FIELD_NUMBER: _ClassVar[int]
+    VALUES_FIELD_NUMBER: _ClassVar[int]
+    target_id: RelationId
+    values: _containers.RepeatedCompositeFieldContainer[NamedColumn]
+    def __init__(self, target_id: _Optional[_Union[RelationId, _Mapping]] = ..., values: _Optional[_Iterable[_Union[NamedColumn, _Mapping]]] = ...) -> None: ...
+
+class PlainTargets(_message.Message):
+    __slots__ = ("targets",)
+    TARGETS_FIELD_NUMBER: _ClassVar[int]
+    targets: _containers.RepeatedCompositeFieldContainer[TargetRelation]
+    def __init__(self, targets: _Optional[_Iterable[_Union[TargetRelation, _Mapping]]] = ...) -> None: ...
+
+class CDCTargets(_message.Message):
+    __slots__ = ("inserts", "deletes")
+    INSERTS_FIELD_NUMBER: _ClassVar[int]
+    DELETES_FIELD_NUMBER: _ClassVar[int]
+    inserts: _containers.RepeatedCompositeFieldContainer[TargetRelation]
+    deletes: _containers.RepeatedCompositeFieldContainer[TargetRelation]
+    def __init__(self, inserts: _Optional[_Iterable[_Union[TargetRelation, _Mapping]]] = ..., deletes: _Optional[_Iterable[_Union[TargetRelation, _Mapping]]] = ...) -> None: ...
+
+class TargetRelations(_message.Message):
+    __slots__ = ("keys", "plain", "cdc")
+    KEYS_FIELD_NUMBER: _ClassVar[int]
+    PLAIN_FIELD_NUMBER: _ClassVar[int]
+    CDC_FIELD_NUMBER: _ClassVar[int]
+    keys: _containers.RepeatedCompositeFieldContainer[NamedColumn]
+    plain: PlainTargets
+    cdc: CDCTargets
+    def __init__(self, keys: _Optional[_Iterable[_Union[NamedColumn, _Mapping]]] = ..., plain: _Optional[_Union[PlainTargets, _Mapping]] = ..., cdc: _Optional[_Union[CDCTargets, _Mapping]] = ...) -> None: ...
+
 class CSVData(_message.Message):
-    __slots__ = ("locator", "config", "columns", "asof")
+    __slots__ = ("locator", "config", "columns", "asof", "relations")
     LOCATOR_FIELD_NUMBER: _ClassVar[int]
     CONFIG_FIELD_NUMBER: _ClassVar[int]
     COLUMNS_FIELD_NUMBER: _ClassVar[int]
     ASOF_FIELD_NUMBER: _ClassVar[int]
+    RELATIONS_FIELD_NUMBER: _ClassVar[int]
     locator: CSVLocator
     config: CSVConfig
     columns: _containers.RepeatedCompositeFieldContainer[GNFColumn]
     asof: str
-    def __init__(self, locator: _Optional[_Union[CSVLocator, _Mapping]] = ..., config: _Optional[_Union[CSVConfig, _Mapping]] = ..., columns: _Optional[_Iterable[_Union[GNFColumn, _Mapping]]] = ..., asof: _Optional[str] = ...) -> None: ...
+    relations: TargetRelations
+    def __init__(self, locator: _Optional[_Union[CSVLocator, _Mapping]] = ..., config: _Optional[_Union[CSVConfig, _Mapping]] = ..., columns: _Optional[_Iterable[_Union[GNFColumn, _Mapping]]] = ..., asof: _Optional[str] = ..., relations: _Optional[_Union[TargetRelations, _Mapping]] = ...) -> None: ...
 
 class CSVLocator(_message.Message):
     __slots__ = ("paths", "inline_data")
