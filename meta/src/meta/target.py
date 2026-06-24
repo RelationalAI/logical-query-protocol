@@ -345,6 +345,9 @@ class Call(TargetExpr):
     def target_type(self) -> "TargetType":
         if isinstance(self.func, (ParseNonterminal, PrintNonterminal)):
             return self.func.target_type()
+        # builtin.tuple is variadic; infer TupleType from the argument types directly.
+        if isinstance(self.func, Builtin) and self.func.name == "tuple":
+            return TupleType(tuple(a.target_type() for a in self.args))
         func_type = self.func.target_type()
         if isinstance(func_type, FunctionType):
             # Match parameter types against argument types to build type variable mapping

@@ -1695,6 +1695,17 @@ end
         data_columns=[col1, col2]
     )
 
+    # transaction_output_name distinguishes from path-based config
+    cfg_tx1 = ExportCSVConfig(transaction_output_name="my_result")
+    cfg_tx2 = ExportCSVConfig(transaction_output_name="my_result")
+    cfg_tx3 = ExportCSVConfig(transaction_output_name="other_result")
+    @test cfg_tx1 == cfg_tx2
+    @test cfg_tx1 != cfg_tx3
+    @test cfg_tx1 != cfg1
+    @test isequal(cfg_tx1, cfg_tx2)
+    @test hash(cfg_tx1) == hash(cfg_tx2)
+    @test hash(cfg_tx1) != hash(cfg_tx3)
+
     # Equality and inequality
     @test cfg1 == cfg2
     @test cfg1 != cfg3

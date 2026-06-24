@@ -342,10 +342,20 @@ Base.:(==)(a::ExportCSVColumn, b::ExportCSVColumn) = a.column_name == b.column_n
 Base.hash(a::ExportCSVColumn, h::UInt) = hash(a.column_data, hash(a.column_name, h))
 Base.isequal(a::ExportCSVColumn, b::ExportCSVColumn) = isequal(a.column_name, b.column_name) && isequal(a.column_data, b.column_data)
 
+# ExportCSVColumns
+Base.:(==)(a::ExportCSVColumns, b::ExportCSVColumns) = a.columns == b.columns
+Base.hash(a::ExportCSVColumns, h::UInt) = hash(a.columns, h)
+Base.isequal(a::ExportCSVColumns, b::ExportCSVColumns) = isequal(a.columns, b.columns)
+
+# ExportCSVSource
+Base.:(==)(a::ExportCSVSource, b::ExportCSVSource) = _isequal_oneof(a.csv_source, b.csv_source)
+Base.hash(a::ExportCSVSource, h::UInt) = _hash_oneof(a.csv_source, h)
+Base.isequal(a::ExportCSVSource, b::ExportCSVSource) = _isequal_oneof(a.csv_source, b.csv_source)
+
 # ExportCSVConfig
-Base.:(==)(a::ExportCSVConfig, b::ExportCSVConfig) = a.path == b.path && a.data_columns == b.data_columns && a.partition_size == b.partition_size && a.compression == b.compression && a.syntax_header_row == b.syntax_header_row && a.syntax_missing_string == b.syntax_missing_string && a.syntax_delim == b.syntax_delim && a.syntax_quotechar == b.syntax_quotechar && a.syntax_escapechar == b.syntax_escapechar
-Base.hash(a::ExportCSVConfig, h::UInt) = hash(a.syntax_escapechar, hash(a.syntax_quotechar, hash(a.syntax_delim, hash(a.syntax_missing_string, hash(a.syntax_header_row, hash(a.compression, hash(a.partition_size, hash(a.data_columns, hash(a.path, h)))))))))
-Base.isequal(a::ExportCSVConfig, b::ExportCSVConfig) = isequal(a.path, b.path) && isequal(a.data_columns, b.data_columns) && isequal(a.partition_size, b.partition_size) && isequal(a.compression, b.compression) && isequal(a.syntax_header_row, b.syntax_header_row) && isequal(a.syntax_missing_string, b.syntax_missing_string) && isequal(a.syntax_delim, b.syntax_delim) && isequal(a.syntax_quotechar, b.syntax_quotechar) && isequal(a.syntax_escapechar, b.syntax_escapechar)
+Base.:(==)(a::ExportCSVConfig, b::ExportCSVConfig) = a.path == b.path && a.transaction_output_name == b.transaction_output_name && a.csv_source == b.csv_source && a.csv_config == b.csv_config && a.data_columns == b.data_columns && a.partition_size == b.partition_size && a.compression == b.compression && a.syntax_header_row == b.syntax_header_row && a.syntax_missing_string == b.syntax_missing_string && a.syntax_delim == b.syntax_delim && a.syntax_quotechar == b.syntax_quotechar && a.syntax_escapechar == b.syntax_escapechar
+Base.hash(a::ExportCSVConfig, h::UInt) = hash(a.syntax_escapechar, hash(a.syntax_quotechar, hash(a.syntax_delim, hash(a.syntax_missing_string, hash(a.syntax_header_row, hash(a.compression, hash(a.partition_size, hash(a.data_columns, hash(a.csv_config, hash(a.csv_source, hash(a.transaction_output_name, hash(a.path, h))))))))))))
+Base.isequal(a::ExportCSVConfig, b::ExportCSVConfig) = isequal(a.path, b.path) && isequal(a.transaction_output_name, b.transaction_output_name) && isequal(a.csv_source, b.csv_source) && isequal(a.csv_config, b.csv_config) && isequal(a.data_columns, b.data_columns) && isequal(a.partition_size, b.partition_size) && isequal(a.compression, b.compression) && isequal(a.syntax_header_row, b.syntax_header_row) && isequal(a.syntax_missing_string, b.syntax_missing_string) && isequal(a.syntax_delim, b.syntax_delim) && isequal(a.syntax_quotechar, b.syntax_quotechar) && isequal(a.syntax_escapechar, b.syntax_escapechar)
 
 # IcebergLocator
 Base.:(==)(a::IcebergLocator, b::IcebergLocator) =
