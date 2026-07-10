@@ -161,6 +161,24 @@ end
     )
 end
 
+@testitem "Parser - int32 config field accepts bare int" setup=[ParserSetup] begin
+    # A bare integer literal parses to `int_value`, an i32-suffixed one to
+    # `int32_value`. Both must land in the int32 `header_row` field identically;
+    # regression against silently falling back to the field default (1).
+    csv_fragment(header_row) = """
+    (fragment :f
+      (csv_data
+        (csv_locator (paths "s3://bucket/data.csv"))
+        (csv_config { :csv_header_row $header_row })
+        (columns (column "c" :c [INT]))
+        (asof "2025-01-01T00:00:00Z")))
+    """
+    bare = Parser.parse_fragment(csv_fragment("-1"))
+    suffixed = Parser.parse_fragment(csv_fragment("-1i32"))
+    @test bare == suffixed
+    @test bare != Parser.parse_fragment(csv_fragment("1"))
+end
+
 @testitem "Parser - SYMBOL lexer regex" setup=[ParserSetup] begin
     # Hyphen must be a literal character, not part of a range
     lexer = Lexer("my-relation")

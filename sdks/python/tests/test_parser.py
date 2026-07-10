@@ -68,6 +68,27 @@ def test_parse_transaction_rejects_fragment():
         parse_transaction(_SIMPLE_FRAGMENT)
 
 
+def _csv_fragment(header_row: str) -> str:
+    return f"""
+    (fragment :f
+      (csv_data
+        (csv_locator (paths "s3://bucket/data.csv"))
+        (csv_config {{ :csv_header_row {header_row} }})
+        (columns (column "c" :c [INT]))
+        (asof "2025-01-01T00:00:00Z")))
+    """
+
+
+def test_int32_config_accepts_bare_int():
+    # A bare integer literal parses to `int_value`, an i32-suffixed one to
+    # `int32_value`. Both must land in the int32 `header_row` field identically;
+    # regression against silently falling back to the field default (1).
+    bare, _ = parse_fragment(_csv_fragment("-1"))
+    suffixed, _ = parse_fragment(_csv_fragment("-1i32"))
+    assert bare.declarations[0].data.csv_data.config.header_row == -1
+    assert bare == suffixed
+
+
 class TestSymbolLexing:
     """Tests for SYMBOL token regex — hyphen must be literal, not a range."""
 
