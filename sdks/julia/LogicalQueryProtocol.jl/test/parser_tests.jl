@@ -161,6 +161,31 @@ end
     )
 end
 
+@testitem "int32 config field requires i32 suffix" setup=[ParserSetup] begin
+    # Wrap a `csv_config` (whose `:csv_header_row` is an int32 field) in a
+    # minimal fragment so we can exercise int32 config extraction end-to-end.
+    csv_fragment(header_row) =
+        "(fragment :f (csv_data (csv_locator (paths \"x.csv\")) " *
+        "(csv_config { :csv_header_row " * header_row * " }) " *
+        "(columns (column \"c\" :c [INT])) (asof \"2025-01-01T00:00:00Z\")))"
+
+    header_row_of(fragment) =
+        Parser.parse_fragment(fragment).declarations[1].declaration_type.value.data_type.value.config.header_row
+
+    # A properly-typed int32 value parses.
+    @test header_row_of(csv_fragment("2i32")) == 2
+
+    # A bare int on an int32 config field errors loudly rather than silently
+    # falling back to the default.
+    @test_throws ParseError Parser.parse_fragment(csv_fragment("2"))
+
+    # Omitting the field entirely still yields the default (1).
+    empty_fragment =
+        "(fragment :f (csv_data (csv_locator (paths \"x.csv\")) (csv_config {}) " *
+        "(columns (column \"c\" :c [INT])) (asof \"2025-01-01T00:00:00Z\")))"
+    @test header_row_of(empty_fragment) == 1
+end
+
 @testitem "Parser - SYMBOL lexer regex" setup=[ParserSetup] begin
     # Hyphen must be a literal character, not part of a range
     lexer = Lexer("my-relation")

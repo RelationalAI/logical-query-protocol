@@ -369,19 +369,24 @@ end
 # --- Helper functions ---
 
 function _extract_value_int32(parser::ParserState, value::Union{Nothing, Proto.Value}, default::Int64)::Int32
-    if (!isnothing(value) && _has_proto_field(value, Symbol("int32_value")))
-        return _get_oneof_field(value, :int32_value)
+    if isnothing(value)
+        return Int32(default)
     else
         _t2199 = nothing
     end
-    return Int32(default)
+    if _has_proto_field(value, Symbol("int32_value"))
+        return _get_oneof_field(value, :int32_value)
+    else
+        _t2200 = nothing
+    end
+    throw(ParseError("expected an int32 value (e.g. `1i32`) for this config field"))
 end
 
 function _extract_value_int64(parser::ParserState, value::Union{Nothing, Proto.Value}, default::Int64)::Int64
     if (!isnothing(value) && _has_proto_field(value, Symbol("int_value")))
         return _get_oneof_field(value, :int_value)
     else
-        _t2200 = nothing
+        _t2201 = nothing
     end
     return default
 end
@@ -390,7 +395,7 @@ function _extract_value_string(parser::ParserState, value::Union{Nothing, Proto.
     if (!isnothing(value) && _has_proto_field(value, Symbol("string_value")))
         return _get_oneof_field(value, :string_value)
     else
-        _t2201 = nothing
+        _t2202 = nothing
     end
     return default
 end
@@ -399,7 +404,7 @@ function _extract_value_boolean(parser::ParserState, value::Union{Nothing, Proto
     if (!isnothing(value) && _has_proto_field(value, Symbol("boolean_value")))
         return _get_oneof_field(value, :boolean_value)
     else
-        _t2202 = nothing
+        _t2203 = nothing
     end
     return default
 end
@@ -408,7 +413,7 @@ function _extract_value_string_list(parser::ParserState, value::Union{Nothing, P
     if (!isnothing(value) && _has_proto_field(value, Symbol("string_value")))
         return String[_get_oneof_field(value, :string_value)]
     else
-        _t2203 = nothing
+        _t2204 = nothing
     end
     return default
 end
@@ -417,7 +422,7 @@ function _try_extract_value_int64(parser::ParserState, value::Union{Nothing, Pro
     if (!isnothing(value) && _has_proto_field(value, Symbol("int_value")))
         return _get_oneof_field(value, :int_value)
     else
-        _t2204 = nothing
+        _t2205 = nothing
     end
     return nothing
 end
@@ -426,7 +431,7 @@ function _try_extract_value_float64(parser::ParserState, value::Union{Nothing, P
     if (!isnothing(value) && _has_proto_field(value, Symbol("float_value")))
         return _get_oneof_field(value, :float_value)
     else
-        _t2205 = nothing
+        _t2206 = nothing
     end
     return nothing
 end
@@ -435,7 +440,7 @@ function _try_extract_value_bytes(parser::ParserState, value::Union{Nothing, Pro
     if (!isnothing(value) && _has_proto_field(value, Symbol("string_value")))
         return Vector{UInt8}(_get_oneof_field(value, :string_value))
     else
-        _t2206 = nothing
+        _t2207 = nothing
     end
     return nothing
 end
@@ -444,118 +449,118 @@ function _try_extract_value_uint128(parser::ParserState, value::Union{Nothing, P
     if (!isnothing(value) && _has_proto_field(value, Symbol("uint128_value")))
         return _get_oneof_field(value, :uint128_value)
     else
-        _t2207 = nothing
+        _t2208 = nothing
     end
     return nothing
 end
 
 function construct_non_cdc_relations(parser::ParserState, targets::Vector{Proto.TargetRelation})::Proto.TargetRelations
-    _t2208 = Proto.PlainTargets(targets=targets)
-    _t2209 = Proto.TargetRelations(body=OneOf(:plain, _t2208), keys=Proto.NamedColumn[])
-    return _t2209
+    _t2209 = Proto.PlainTargets(targets=targets)
+    _t2210 = Proto.TargetRelations(body=OneOf(:plain, _t2209), keys=Proto.NamedColumn[])
+    return _t2210
 end
 
 function construct_cdc_relations(parser::ParserState, inserts::Vector{Proto.TargetRelation}, deletes::Vector{Proto.TargetRelation})::Proto.TargetRelations
-    _t2210 = Proto.CDCTargets(inserts=inserts, deletes=deletes)
-    _t2211 = Proto.TargetRelations(body=OneOf(:cdc, _t2210), keys=Proto.NamedColumn[])
-    return _t2211
+    _t2211 = Proto.CDCTargets(inserts=inserts, deletes=deletes)
+    _t2212 = Proto.TargetRelations(body=OneOf(:cdc, _t2211), keys=Proto.NamedColumn[])
+    return _t2212
 end
 
 function construct_relations(parser::ParserState, keys::Vector{Proto.NamedColumn}, body::Proto.TargetRelations)::Proto.TargetRelations
     if _has_proto_field(body, Symbol("plain"))
-        _t2213 = Proto.TargetRelations(body=OneOf(:plain, _get_oneof_field(body, :plain)), keys=keys)
-        return _t2213
+        _t2214 = Proto.TargetRelations(body=OneOf(:plain, _get_oneof_field(body, :plain)), keys=keys)
+        return _t2214
     else
-        _t2212 = nothing
+        _t2213 = nothing
     end
-    _t2214 = Proto.TargetRelations(body=OneOf(:cdc, _get_oneof_field(body, :cdc)), keys=keys)
-    return _t2214
+    _t2215 = Proto.TargetRelations(body=OneOf(:cdc, _get_oneof_field(body, :cdc)), keys=keys)
+    return _t2215
 end
 
 function construct_csv_data(parser::ParserState, locator::Proto.CSVLocator, config::Proto.CSVConfig, columns_opt::Union{Nothing, Vector{Proto.GNFColumn}}, relations_opt::Union{Nothing, Proto.TargetRelations}, asof::String)::Proto.CSVData
-    _t2215 = Proto.CSVData(locator=locator, config=config, columns=(!isnothing(columns_opt) ? columns_opt : Proto.GNFColumn[]), asof=asof, relations=relations_opt)
-    return _t2215
+    _t2216 = Proto.CSVData(locator=locator, config=config, columns=(!isnothing(columns_opt) ? columns_opt : Proto.GNFColumn[]), asof=asof, relations=relations_opt)
+    return _t2216
 end
 
 function construct_csv_config(parser::ParserState, config_dict::Vector{Tuple{String, Proto.Value}}, storage_integration_opt::Union{Nothing, Vector{Tuple{String, Proto.Value}}})::Proto.CSVConfig
     config = Dict(config_dict)
-    _t2216 = _extract_value_int32(parser, get(config, "csv_header_row", nothing), 1)
-    header_row = _t2216
-    _t2217 = _extract_value_int64(parser, get(config, "csv_skip", nothing), 0)
-    skip = _t2217
-    _t2218 = _extract_value_string(parser, get(config, "csv_new_line", nothing), "")
-    new_line = _t2218
-    _t2219 = _extract_value_string(parser, get(config, "csv_delimiter", nothing), ",")
-    delimiter = _t2219
-    _t2220 = _extract_value_string(parser, get(config, "csv_quotechar", nothing), "\"")
-    quotechar = _t2220
-    _t2221 = _extract_value_string(parser, get(config, "csv_escapechar", nothing), "\"")
-    escapechar = _t2221
-    _t2222 = _extract_value_string(parser, get(config, "csv_comment", nothing), "")
-    comment = _t2222
-    _t2223 = _extract_value_string_list(parser, get(config, "csv_missing_strings", nothing), String[])
-    missing_strings = _t2223
-    _t2224 = _extract_value_string(parser, get(config, "csv_decimal_separator", nothing), ".")
-    decimal_separator = _t2224
-    _t2225 = _extract_value_string(parser, get(config, "csv_encoding", nothing), "utf-8")
-    encoding = _t2225
-    _t2226 = _extract_value_string(parser, get(config, "csv_compression", nothing), "")
-    compression = _t2226
-    _t2227 = _extract_value_int64(parser, get(config, "csv_partition_size_mb", nothing), 0)
-    partition_size_mb = _t2227
-    _t2228 = construct_csv_storage_integration(parser, storage_integration_opt)
-    storage_integration = _t2228
-    _t2229 = Proto.CSVConfig(header_row=header_row, skip=skip, new_line=new_line, delimiter=delimiter, quotechar=quotechar, escapechar=escapechar, comment=comment, missing_strings=missing_strings, decimal_separator=decimal_separator, encoding=encoding, compression=compression, partition_size_mb=partition_size_mb, storage_integration=storage_integration)
-    return _t2229
+    _t2217 = _extract_value_int32(parser, get(config, "csv_header_row", nothing), 1)
+    header_row = _t2217
+    _t2218 = _extract_value_int64(parser, get(config, "csv_skip", nothing), 0)
+    skip = _t2218
+    _t2219 = _extract_value_string(parser, get(config, "csv_new_line", nothing), "")
+    new_line = _t2219
+    _t2220 = _extract_value_string(parser, get(config, "csv_delimiter", nothing), ",")
+    delimiter = _t2220
+    _t2221 = _extract_value_string(parser, get(config, "csv_quotechar", nothing), "\"")
+    quotechar = _t2221
+    _t2222 = _extract_value_string(parser, get(config, "csv_escapechar", nothing), "\"")
+    escapechar = _t2222
+    _t2223 = _extract_value_string(parser, get(config, "csv_comment", nothing), "")
+    comment = _t2223
+    _t2224 = _extract_value_string_list(parser, get(config, "csv_missing_strings", nothing), String[])
+    missing_strings = _t2224
+    _t2225 = _extract_value_string(parser, get(config, "csv_decimal_separator", nothing), ".")
+    decimal_separator = _t2225
+    _t2226 = _extract_value_string(parser, get(config, "csv_encoding", nothing), "utf-8")
+    encoding = _t2226
+    _t2227 = _extract_value_string(parser, get(config, "csv_compression", nothing), "")
+    compression = _t2227
+    _t2228 = _extract_value_int64(parser, get(config, "csv_partition_size_mb", nothing), 0)
+    partition_size_mb = _t2228
+    _t2229 = construct_csv_storage_integration(parser, storage_integration_opt)
+    storage_integration = _t2229
+    _t2230 = Proto.CSVConfig(header_row=header_row, skip=skip, new_line=new_line, delimiter=delimiter, quotechar=quotechar, escapechar=escapechar, comment=comment, missing_strings=missing_strings, decimal_separator=decimal_separator, encoding=encoding, compression=compression, partition_size_mb=partition_size_mb, storage_integration=storage_integration)
+    return _t2230
 end
 
 function construct_csv_storage_integration(parser::ParserState, storage_integration_opt::Union{Nothing, Vector{Tuple{String, Proto.Value}}})::Union{Nothing, Proto.StorageIntegration}
     if isnothing(storage_integration_opt)
         return nothing
     else
-        _t2230 = nothing
+        _t2231 = nothing
     end
     config = Dict(storage_integration_opt)
-    _t2231 = _extract_value_string(parser, get(config, "provider", nothing), "")
-    _t2232 = _extract_value_string(parser, get(config, "azure_sas_token", nothing), "")
-    _t2233 = _extract_value_string(parser, get(config, "s3_region", nothing), "")
-    _t2234 = _extract_value_string(parser, get(config, "s3_access_key_id", nothing), "")
-    _t2235 = _extract_value_string(parser, get(config, "s3_secret_access_key", nothing), "")
-    _t2236 = Proto.StorageIntegration(provider=_t2231, azure_sas_token=_t2232, s3_region=_t2233, s3_access_key_id=_t2234, s3_secret_access_key=_t2235)
-    return _t2236
+    _t2232 = _extract_value_string(parser, get(config, "provider", nothing), "")
+    _t2233 = _extract_value_string(parser, get(config, "azure_sas_token", nothing), "")
+    _t2234 = _extract_value_string(parser, get(config, "s3_region", nothing), "")
+    _t2235 = _extract_value_string(parser, get(config, "s3_access_key_id", nothing), "")
+    _t2236 = _extract_value_string(parser, get(config, "s3_secret_access_key", nothing), "")
+    _t2237 = Proto.StorageIntegration(provider=_t2232, azure_sas_token=_t2233, s3_region=_t2234, s3_access_key_id=_t2235, s3_secret_access_key=_t2236)
+    return _t2237
 end
 
 function construct_betree_info(parser::ParserState, key_types::Vector{Proto.var"#Type"}, value_types::Vector{Proto.var"#Type"}, config_dict::Vector{Tuple{String, Proto.Value}})::Proto.BeTreeInfo
     config = Dict(config_dict)
-    _t2237 = _try_extract_value_float64(parser, get(config, "betree_config_epsilon", nothing))
-    epsilon = _t2237
-    _t2238 = _try_extract_value_int64(parser, get(config, "betree_config_max_pivots", nothing))
-    max_pivots = _t2238
-    _t2239 = _try_extract_value_int64(parser, get(config, "betree_config_max_deltas", nothing))
-    max_deltas = _t2239
-    _t2240 = _try_extract_value_int64(parser, get(config, "betree_config_max_leaf", nothing))
-    max_leaf = _t2240
-    _t2241 = Proto.BeTreeConfig(epsilon=epsilon, max_pivots=max_pivots, max_deltas=max_deltas, max_leaf=max_leaf)
-    storage_config = _t2241
-    _t2242 = _try_extract_value_uint128(parser, get(config, "betree_locator_root_pageid", nothing))
-    root_pageid = _t2242
-    _t2243 = _try_extract_value_bytes(parser, get(config, "betree_locator_inline_data", nothing))
-    inline_data = _t2243
-    _t2244 = _try_extract_value_int64(parser, get(config, "betree_locator_element_count", nothing))
-    element_count = _t2244
-    _t2245 = _try_extract_value_int64(parser, get(config, "betree_locator_tree_height", nothing))
-    tree_height = _t2245
-    _t2246 = Proto.BeTreeLocator(location=(!isnothing(root_pageid) ? OneOf(:root_pageid, root_pageid) : (!isnothing(inline_data) ? OneOf(:inline_data, inline_data) : nothing)), element_count=element_count, tree_height=tree_height)
-    relation_locator = _t2246
-    _t2247 = Proto.BeTreeInfo(key_types=key_types, value_types=value_types, storage_config=storage_config, relation_locator=relation_locator)
-    return _t2247
+    _t2238 = _try_extract_value_float64(parser, get(config, "betree_config_epsilon", nothing))
+    epsilon = _t2238
+    _t2239 = _try_extract_value_int64(parser, get(config, "betree_config_max_pivots", nothing))
+    max_pivots = _t2239
+    _t2240 = _try_extract_value_int64(parser, get(config, "betree_config_max_deltas", nothing))
+    max_deltas = _t2240
+    _t2241 = _try_extract_value_int64(parser, get(config, "betree_config_max_leaf", nothing))
+    max_leaf = _t2241
+    _t2242 = Proto.BeTreeConfig(epsilon=epsilon, max_pivots=max_pivots, max_deltas=max_deltas, max_leaf=max_leaf)
+    storage_config = _t2242
+    _t2243 = _try_extract_value_uint128(parser, get(config, "betree_locator_root_pageid", nothing))
+    root_pageid = _t2243
+    _t2244 = _try_extract_value_bytes(parser, get(config, "betree_locator_inline_data", nothing))
+    inline_data = _t2244
+    _t2245 = _try_extract_value_int64(parser, get(config, "betree_locator_element_count", nothing))
+    element_count = _t2245
+    _t2246 = _try_extract_value_int64(parser, get(config, "betree_locator_tree_height", nothing))
+    tree_height = _t2246
+    _t2247 = Proto.BeTreeLocator(location=(!isnothing(root_pageid) ? OneOf(:root_pageid, root_pageid) : (!isnothing(inline_data) ? OneOf(:inline_data, inline_data) : nothing)), element_count=element_count, tree_height=tree_height)
+    relation_locator = _t2247
+    _t2248 = Proto.BeTreeInfo(key_types=key_types, value_types=value_types, storage_config=storage_config, relation_locator=relation_locator)
+    return _t2248
 end
 
 function default_configure(parser::ParserState)::Proto.Configure
-    _t2248 = Proto.IVMConfig(level=Proto.MaintenanceLevel.MAINTENANCE_LEVEL_OFF)
-    ivm_config = _t2248
-    _t2249 = Proto.Configure(semantics_version=0, ivm_config=ivm_config)
-    return _t2249
+    _t2249 = Proto.IVMConfig(level=Proto.MaintenanceLevel.MAINTENANCE_LEVEL_OFF)
+    ivm_config = _t2249
+    _t2250 = Proto.Configure(semantics_version=0, ivm_config=ivm_config)
+    return _t2250
 end
 
 function construct_configure(parser::ParserState, config_dict::Vector{Tuple{String, Proto.Value}})::Proto.Configure
@@ -577,62 +582,62 @@ function construct_configure(parser::ParserState, config_dict::Vector{Tuple{Stri
             end
         end
     end
-    _t2250 = Proto.IVMConfig(level=maintenance_level)
-    ivm_config = _t2250
-    _t2251 = _extract_value_int64(parser, get(config, "semantics_version", nothing), 0)
-    semantics_version = _t2251
-    _t2252 = Proto.Configure(semantics_version=semantics_version, ivm_config=ivm_config)
-    return _t2252
+    _t2251 = Proto.IVMConfig(level=maintenance_level)
+    ivm_config = _t2251
+    _t2252 = _extract_value_int64(parser, get(config, "semantics_version", nothing), 0)
+    semantics_version = _t2252
+    _t2253 = Proto.Configure(semantics_version=semantics_version, ivm_config=ivm_config)
+    return _t2253
 end
 
 function construct_export_csv_config(parser::ParserState, path::String, columns::Vector{Proto.ExportCSVColumn}, config_dict::Vector{Tuple{String, Proto.Value}})::Proto.ExportCSVConfig
     config = Dict(config_dict)
-    _t2253 = _extract_value_int64(parser, get(config, "partition_size", nothing), 0)
-    partition_size = _t2253
-    _t2254 = _extract_value_string(parser, get(config, "compression", nothing), "")
-    compression = _t2254
-    _t2255 = _extract_value_boolean(parser, get(config, "syntax_header_row", nothing), true)
-    syntax_header_row = _t2255
-    _t2256 = _extract_value_string(parser, get(config, "syntax_missing_string", nothing), "")
-    syntax_missing_string = _t2256
-    _t2257 = _extract_value_string(parser, get(config, "syntax_delim", nothing), ",")
-    syntax_delim = _t2257
-    _t2258 = _extract_value_string(parser, get(config, "syntax_quotechar", nothing), "\"")
-    syntax_quotechar = _t2258
-    _t2259 = _extract_value_string(parser, get(config, "syntax_escapechar", nothing), "\\")
-    syntax_escapechar = _t2259
-    _t2260 = Proto.ExportCSVConfig(path=path, data_columns=columns, partition_size=partition_size, compression=compression, syntax_header_row=syntax_header_row, syntax_missing_string=syntax_missing_string, syntax_delim=syntax_delim, syntax_quotechar=syntax_quotechar, syntax_escapechar=syntax_escapechar)
-    return _t2260
+    _t2254 = _extract_value_int64(parser, get(config, "partition_size", nothing), 0)
+    partition_size = _t2254
+    _t2255 = _extract_value_string(parser, get(config, "compression", nothing), "")
+    compression = _t2255
+    _t2256 = _extract_value_boolean(parser, get(config, "syntax_header_row", nothing), true)
+    syntax_header_row = _t2256
+    _t2257 = _extract_value_string(parser, get(config, "syntax_missing_string", nothing), "")
+    syntax_missing_string = _t2257
+    _t2258 = _extract_value_string(parser, get(config, "syntax_delim", nothing), ",")
+    syntax_delim = _t2258
+    _t2259 = _extract_value_string(parser, get(config, "syntax_quotechar", nothing), "\"")
+    syntax_quotechar = _t2259
+    _t2260 = _extract_value_string(parser, get(config, "syntax_escapechar", nothing), "\\")
+    syntax_escapechar = _t2260
+    _t2261 = Proto.ExportCSVConfig(path=path, data_columns=columns, partition_size=partition_size, compression=compression, syntax_header_row=syntax_header_row, syntax_missing_string=syntax_missing_string, syntax_delim=syntax_delim, syntax_quotechar=syntax_quotechar, syntax_escapechar=syntax_escapechar)
+    return _t2261
 end
 
 function construct_export_csv_config_with_location(parser::ParserState, location::Tuple{String, String}, csv_source::Proto.ExportCSVSource, csv_config::Proto.CSVConfig)::Proto.ExportCSVConfig
-    _t2261 = Proto.ExportCSVConfig(path=location[1], transaction_output_name=location[2], csv_source=csv_source, csv_config=csv_config)
-    return _t2261
+    _t2262 = Proto.ExportCSVConfig(path=location[1], transaction_output_name=location[2], csv_source=csv_source, csv_config=csv_config)
+    return _t2262
 end
 
 function construct_iceberg_catalog_config(parser::ParserState, catalog_uri::String, scope_opt::Union{Nothing, String}, property_pairs::Vector{Tuple{String, String}}, auth_property_pairs::Vector{Tuple{String, String}})::Proto.IcebergCatalogConfig
     props = Dict(property_pairs)
     auth_props = Dict(auth_property_pairs)
-    _t2262 = Proto.IcebergCatalogConfig(catalog_uri=catalog_uri, scope=(!isnothing(scope_opt) ? scope_opt : ""), properties=props, auth_properties=auth_props)
-    return _t2262
+    _t2263 = Proto.IcebergCatalogConfig(catalog_uri=catalog_uri, scope=(!isnothing(scope_opt) ? scope_opt : ""), properties=props, auth_properties=auth_props)
+    return _t2263
 end
 
 function construct_iceberg_data(parser::ParserState, locator::Proto.IcebergLocator, config::Proto.IcebergCatalogConfig, columns::Vector{Proto.GNFColumn}, from_snapshot_opt::Union{Nothing, String}, to_snapshot_opt::Union{Nothing, String}, returns_delta::Bool)::Proto.IcebergData
-    _t2263 = Proto.IcebergData(locator=locator, config=config, columns=columns, from_snapshot=(!isnothing(from_snapshot_opt) ? from_snapshot_opt : ""), to_snapshot=(!isnothing(to_snapshot_opt) ? to_snapshot_opt : ""), returns_delta=returns_delta)
-    return _t2263
+    _t2264 = Proto.IcebergData(locator=locator, config=config, columns=columns, from_snapshot=(!isnothing(from_snapshot_opt) ? from_snapshot_opt : ""), to_snapshot=(!isnothing(to_snapshot_opt) ? to_snapshot_opt : ""), returns_delta=returns_delta)
+    return _t2264
 end
 
 function construct_export_iceberg_config_full(parser::ParserState, locator::Proto.IcebergLocator, config::Proto.IcebergCatalogConfig, table_def::Proto.RelationId, table_property_pairs::Vector{Tuple{String, String}}, config_dict::Union{Nothing, Vector{Tuple{String, Proto.Value}}})::Proto.ExportIcebergConfig
     cfg = Dict((!isnothing(config_dict) ? config_dict : Tuple{String, Proto.Value}[]))
-    _t2264 = _extract_value_string(parser, get(cfg, "prefix", nothing), "")
-    prefix = _t2264
-    _t2265 = _extract_value_int64(parser, get(cfg, "target_file_size_bytes", nothing), 0)
-    target_file_size_bytes = _t2265
-    _t2266 = _extract_value_string(parser, get(cfg, "compression", nothing), "")
-    compression = _t2266
+    _t2265 = _extract_value_string(parser, get(cfg, "prefix", nothing), "")
+    prefix = _t2265
+    _t2266 = _extract_value_int64(parser, get(cfg, "target_file_size_bytes", nothing), 0)
+    target_file_size_bytes = _t2266
+    _t2267 = _extract_value_string(parser, get(cfg, "compression", nothing), "")
+    compression = _t2267
     table_props = Dict(table_property_pairs)
-    _t2267 = Proto.ExportIcebergConfig(locator=locator, config=config, table_def=table_def, prefix=prefix, target_file_size_bytes=target_file_size_bytes, compression=compression, table_properties=table_props)
-    return _t2267
+    _t2268 = Proto.ExportIcebergConfig(locator=locator, config=config, table_def=table_def, prefix=prefix, target_file_size_bytes=target_file_size_bytes, compression=compression, table_properties=table_props)
+    return _t2268
 end
 
 # --- Parse functions ---

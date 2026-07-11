@@ -68,6 +68,38 @@ def test_parse_transaction_rejects_fragment():
         parse_transaction(_SIMPLE_FRAGMENT)
 
 
+def _csv_fragment(header_row: str) -> str:
+    # Wrap a `csv_config` (whose `:csv_header_row` is an int32 field) in a
+    # minimal fragment so we can exercise int32 config extraction end-to-end.
+    return (
+        '(fragment :f (csv_data (csv_locator (paths "x.csv")) '
+        f"(csv_config {{ :csv_header_row {header_row} }}) "
+        '(columns (column "c" :c [INT])) (asof "2025-01-01T00:00:00Z")))'
+    )
+
+
+def _header_row_of(fragment: str) -> int:
+    result, _provenance = parse_fragment(fragment)
+    return result.declarations[0].data.csv_data.config.header_row
+
+
+def test_int32_config_requires_i32_suffix():
+    # A properly-typed int32 value parses.
+    assert _header_row_of(_csv_fragment("2i32")) == 2
+
+    # A bare int on an int32 config field errors loudly rather than silently
+    # falling back to the default.
+    with pytest.raises(ParseError):
+        parse_fragment(_csv_fragment("2"))
+
+    # Omitting the field entirely still yields the default (1).
+    empty_fragment = (
+        '(fragment :f (csv_data (csv_locator (paths "x.csv")) (csv_config {}) '
+        '(columns (column "c" :c [INT])) (asof "2025-01-01T00:00:00Z")))'
+    )
+    assert _header_row_of(empty_fragment) == 1
+
+
 class TestSymbolLexing:
     """Tests for SYMBOL token regex — hyphen must be literal, not a range."""
 

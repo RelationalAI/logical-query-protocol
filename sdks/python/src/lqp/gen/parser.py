@@ -422,17 +422,17 @@ class Parser:
     # --- Helper functions ---
 
     def _extract_value_int32(self, value: logic_pb2.Value | None, default: int) -> int:
-        if value is not None:
-            assert value is not None
-            _t2199 = value.HasField("int32_value")
+        if value is None:
+            return int(default)
         else:
-            _t2199 = False
-        if _t2199:
+            _t2199 = None
+        assert value is not None
+        if value.HasField("int32_value"):
             assert value is not None
             return value.int32_value
         else:
             _t2200 = None
-        return int(default)
+        raise ParseError("expected an int32 value (e.g. `1i32`) for this config field")
 
     def _extract_value_int64(self, value: logic_pb2.Value | None, default: int) -> int:
         if value is not None:
