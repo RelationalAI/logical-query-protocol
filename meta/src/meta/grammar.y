@@ -1456,9 +1456,11 @@ export_iceberg_config
 
 
 def _extract_value_int32(value: Optional[logic.Value], default: int) -> Int32:
-    if value is not None and builtin.has_proto_field(builtin.unwrap_option(value), 'int32_value'):
+    if value is None:
+        return builtin.int64_to_int32(default)
+    if builtin.has_proto_field(builtin.unwrap_option(value), 'int32_value'):
         return builtin.unwrap_option(value).int32_value
-    return builtin.int64_to_int32(default)
+    builtin.error("expected an int32 value (e.g. `1i32`) for this config field")
 
 
 def _extract_value_int64(value: Optional[logic.Value], default: int) -> int:
