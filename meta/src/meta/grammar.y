@@ -88,7 +88,7 @@
 %nonterm gnf_column_path Sequence[String]
 %nonterm gnf_columns Sequence[logic.GNFColumn]
 %nonterm named_column logic.NamedColumn
-%nonterm relation_keys Sequence[logic.NamedColumn]
+%nonterm relation_keys Tuple[Sequence[logic.NamedColumn], Boolean]
 %nonterm target_relation logic.TargetRelation
 %nonterm non_cdc_relations Sequence[logic.TargetRelation]
 %nonterm cdc_inserts Sequence[logic.TargetRelation]
@@ -1134,6 +1134,13 @@ named_column
 
 relation_keys
     : "(" "keys" named_column* ")"
+      construct: $$ = builtin.tuple($3, False)
+      deconstruct if not $$[1]:
+        $3: Sequence[logic.NamedColumn] = $$[0]
+    | "(" "keys" ":" SYMBOL ")"
+      construct: $$ = construct_synthetic_keys($4)
+      deconstruct if $$[1]:
+        $4: String = "synthetic_key"
 
 target_relation
     : "(" "relation" relation_id named_column* ")"
@@ -1166,7 +1173,7 @@ target_relations
     : "(" "relations" relation_keys relation_body ")"
       construct: $$ = construct_relations($3, $4)
       deconstruct:
-        $3: Sequence[logic.NamedColumn] = $$.keys
+        $3: Tuple[Sequence[logic.NamedColumn], Boolean] = deconstruct_relation_keys($$)
         $4: logic.TargetRelations = $$
 
 csv_locator_paths
@@ -1558,13 +1565,27 @@ def construct_cdc_relations(
     )
 
 
+def construct_synthetic_keys(
+    marker: String,
+) -> Tuple[Sequence[logic.NamedColumn], Boolean]:
+    if marker != "synthetic_key":
+        builtin.error("expected the `:synthetic_key` marker in the relation keys clause")
+    return builtin.tuple(list[logic.NamedColumn](), True)
+
+
+def deconstruct_relation_keys(
+    msg: logic.TargetRelations,
+) -> Tuple[Sequence[logic.NamedColumn], Boolean]:
+    return builtin.tuple(msg.keys, msg.synthetic_key)
+
+
 def construct_relations(
-    keys: Sequence[logic.NamedColumn],
+    keys: Tuple[Sequence[logic.NamedColumn], Boolean],
     body: logic.TargetRelations,
 ) -> logic.TargetRelations:
     if builtin.has_proto_field(body, "plain"):
-        return logic.TargetRelations(keys=keys, plain=body.plain)
-    return logic.TargetRelations(keys=keys, cdc=body.cdc)
+        return logic.TargetRelations(keys=keys[0], synthetic_key=keys[1], plain=body.plain)
+    return logic.TargetRelations(keys=keys[0], synthetic_key=keys[1], cdc=body.cdc)
 
 
 def construct_csv_data(

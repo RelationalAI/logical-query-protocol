@@ -1,0 +1,25 @@
+(transaction
+  (epoch
+    (writes
+      (define
+        (fragment :f1
+          ;; Generalized CSV loading with CDC and a synthetic (loader-generated) shared key.
+          ;; A row's METADATA$ACTION routes it to the insert or delete deltas, which must
+          ;; target DISTINCT relations.
+          (csv_data
+            (csv_locator
+              (paths "s3://bucket/edges.csv"))
+            (csv_config {})
+            (relations
+              (keys :synthetic_key)
+              (inserts
+                (relation :weight_ins
+                  (column "weight" FLOAT)))
+              (deletes
+                (relation :weight_del
+                  (column "weight" FLOAT))))
+            (asof "2025-06-01T00:00:00Z")))))
+
+    (reads
+      (output :weight_ins :weight_ins)
+      (output :weight_del :weight_del))))

@@ -100,6 +100,39 @@ def test_int32_config_requires_i32_suffix():
     assert _header_row_of(empty_fragment) == 1
 
 
+def _relations_fragment(keys_clause: str) -> str:
+    # Minimal fragment exercising the generalized `(relations ...)` loading form
+    # with a configurable `(keys ...)` clause.
+    return (
+        '(fragment :f (csv_data (csv_locator (paths "x.csv")) (csv_config {}) '
+        f'(relations {keys_clause} (relation :r (column "v" INT))) '
+        '(asof "2025-01-01T00:00:00Z")))'
+    )
+
+
+def _relations_of(fragment: str):
+    result, _provenance = parse_fragment(fragment)
+    return result.declarations[0].data.csv_data.relations
+
+
+def test_synthetic_key_marker():
+    # `(keys :synthetic_key)` sets the synthetic_key flag and leaves keys empty.
+    relations = _relations_of(_relations_fragment("(keys :synthetic_key)"))
+    assert relations.synthetic_key is True
+    assert list(relations.keys) == []
+
+    # Explicit key columns leave synthetic_key unset.
+    relations = _relations_of(_relations_fragment('(keys (column "id" INT))'))
+    assert relations.synthetic_key is False
+    assert [c.name for c in relations.keys] == ["id"]
+
+
+def test_synthetic_key_rejects_unknown_marker():
+    # Only the `:synthetic_key` marker is accepted; anything else is a hard error.
+    with pytest.raises(ParseError):
+        parse_fragment(_relations_fragment("(keys :bogus)"))
+
+
 class TestSymbolLexing:
     """Tests for SYMBOL token regex — hyphen must be literal, not a range."""
 
