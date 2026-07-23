@@ -62,7 +62,7 @@ wheels = [
 
 [[package]]
 name = "lqp"
-version = "0.5.3"
+version = "0.5.6"
 source = { editable = "." }
 dependencies = [
     { name = "protobuf" },

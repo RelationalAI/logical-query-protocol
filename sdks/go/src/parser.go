@@ -858,8 +858,10 @@ func (p *Parser) construct_betree_info(key_types []*pb.Type, value_types []*pb.T
 func (p *Parser) default_configure() *pb.Configure {
 	_t2263 := &pb.IVMConfig{Level: pb.MaintenanceLevel_MAINTENANCE_LEVEL_OFF}
 	ivm_config := _t2263
-	_t2264 := &pb.Configure{SemanticsVersion: 0, IvmConfig: ivm_config}
-	return _t2264
+	_t2264 := &pb.ASTSizeLimit{WarningLimit: 0, ExceptionLimit: 0}
+	ast_size_limit := _t2264
+	_t2265 := &pb.Configure{SemanticsVersion: 0, IvmConfig: ivm_config, AstSizeLimit: ast_size_limit}
+	return _t2265
 }
 
 func (p *Parser) construct_configure(config_dict [][]interface{}) *pb.Configure {
@@ -881,66 +883,72 @@ func (p *Parser) construct_configure(config_dict [][]interface{}) *pb.Configure 
 			}
 		}
 	}
-	_t2265 := &pb.IVMConfig{Level: maintenance_level}
-	ivm_config := _t2265
-	_t2266 := p._extract_value_int64(dictGetValue(config, "semantics_version"), 0)
-	semantics_version := _t2266
-	_t2267 := &pb.Configure{SemanticsVersion: semantics_version, IvmConfig: ivm_config}
-	return _t2267
+	_t2266 := &pb.IVMConfig{Level: maintenance_level}
+	ivm_config := _t2266
+	_t2267 := p._extract_value_int64(dictGetValue(config, "semantics_version"), 0)
+	semantics_version := _t2267
+	_t2268 := p._extract_value_int64(dictGetValue(config, "ast_size.warning_limit"), 0)
+	warning_limit := _t2268
+	_t2269 := p._extract_value_int64(dictGetValue(config, "ast_size.exception_limit"), 0)
+	exception_limit := _t2269
+	_t2270 := &pb.ASTSizeLimit{WarningLimit: warning_limit, ExceptionLimit: exception_limit}
+	ast_size_limit := _t2270
+	_t2271 := &pb.Configure{SemanticsVersion: semantics_version, IvmConfig: ivm_config, AstSizeLimit: ast_size_limit}
+	return _t2271
 }
 
 func (p *Parser) construct_export_csv_config(path string, columns []*pb.ExportCSVColumn, config_dict [][]interface{}) *pb.ExportCSVConfig {
 	config := dictFromList(config_dict)
-	_t2268 := p._extract_value_int64(dictGetValue(config, "partition_size"), 0)
-	partition_size := _t2268
-	_t2269 := p._extract_value_string(dictGetValue(config, "compression"), "")
-	compression := _t2269
-	_t2270 := p._extract_value_boolean(dictGetValue(config, "syntax_header_row"), true)
-	syntax_header_row := _t2270
-	_t2271 := p._extract_value_string(dictGetValue(config, "syntax_missing_string"), "")
-	syntax_missing_string := _t2271
-	_t2272 := p._extract_value_string(dictGetValue(config, "syntax_delim"), ",")
-	syntax_delim := _t2272
-	_t2273 := p._extract_value_string(dictGetValue(config, "syntax_quotechar"), "\"")
-	syntax_quotechar := _t2273
-	_t2274 := p._extract_value_string(dictGetValue(config, "syntax_escapechar"), "\\")
-	syntax_escapechar := _t2274
-	_t2275 := &pb.ExportCSVConfig{Path: path, DataColumns: columns, PartitionSize: ptr(partition_size), Compression: ptr(compression), SyntaxHeaderRow: ptr(syntax_header_row), SyntaxMissingString: ptr(syntax_missing_string), SyntaxDelim: ptr(syntax_delim), SyntaxQuotechar: ptr(syntax_quotechar), SyntaxEscapechar: ptr(syntax_escapechar)}
-	return _t2275
+	_t2272 := p._extract_value_int64(dictGetValue(config, "partition_size"), 0)
+	partition_size := _t2272
+	_t2273 := p._extract_value_string(dictGetValue(config, "compression"), "")
+	compression := _t2273
+	_t2274 := p._extract_value_boolean(dictGetValue(config, "syntax_header_row"), true)
+	syntax_header_row := _t2274
+	_t2275 := p._extract_value_string(dictGetValue(config, "syntax_missing_string"), "")
+	syntax_missing_string := _t2275
+	_t2276 := p._extract_value_string(dictGetValue(config, "syntax_delim"), ",")
+	syntax_delim := _t2276
+	_t2277 := p._extract_value_string(dictGetValue(config, "syntax_quotechar"), "\"")
+	syntax_quotechar := _t2277
+	_t2278 := p._extract_value_string(dictGetValue(config, "syntax_escapechar"), "\\")
+	syntax_escapechar := _t2278
+	_t2279 := &pb.ExportCSVConfig{Path: path, DataColumns: columns, PartitionSize: ptr(partition_size), Compression: ptr(compression), SyntaxHeaderRow: ptr(syntax_header_row), SyntaxMissingString: ptr(syntax_missing_string), SyntaxDelim: ptr(syntax_delim), SyntaxQuotechar: ptr(syntax_quotechar), SyntaxEscapechar: ptr(syntax_escapechar)}
+	return _t2279
 }
 
 func (p *Parser) construct_export_csv_config_with_location(location []interface{}, csv_source *pb.ExportCSVSource, csv_config *pb.CSVConfig) *pb.ExportCSVConfig {
-	_t2276 := &pb.ExportCSVConfig{Path: location[0].(string), TransactionOutputName: location[1].(string), CsvSource: csv_source, CsvConfig: csv_config}
-	return _t2276
+	_t2280 := &pb.ExportCSVConfig{Path: location[0].(string), TransactionOutputName: location[1].(string), CsvSource: csv_source, CsvConfig: csv_config}
+	return _t2280
 }
 
 func (p *Parser) construct_iceberg_catalog_config(catalog_uri string, scope_opt *string, property_pairs [][]interface{}, auth_property_pairs [][]interface{}) *pb.IcebergCatalogConfig {
 	props := stringMapFromPairs(property_pairs)
 	auth_props := stringMapFromPairs(auth_property_pairs)
-	_t2277 := &pb.IcebergCatalogConfig{CatalogUri: catalog_uri, Scope: ptr(deref(scope_opt, "")), Properties: props, AuthProperties: auth_props}
-	return _t2277
+	_t2281 := &pb.IcebergCatalogConfig{CatalogUri: catalog_uri, Scope: ptr(deref(scope_opt, "")), Properties: props, AuthProperties: auth_props}
+	return _t2281
 }
 
 func (p *Parser) construct_iceberg_data(locator *pb.IcebergLocator, config *pb.IcebergCatalogConfig, columns []*pb.GNFColumn, from_snapshot_opt *string, to_snapshot_opt *string, returns_delta bool) *pb.IcebergData {
-	_t2278 := &pb.IcebergData{Locator: locator, Config: config, Columns: columns, FromSnapshot: ptr(deref(from_snapshot_opt, "")), ToSnapshot: ptr(deref(to_snapshot_opt, "")), ReturnsDelta: returns_delta}
-	return _t2278
+	_t2282 := &pb.IcebergData{Locator: locator, Config: config, Columns: columns, FromSnapshot: ptr(deref(from_snapshot_opt, "")), ToSnapshot: ptr(deref(to_snapshot_opt, "")), ReturnsDelta: returns_delta}
+	return _t2282
 }
 
 func (p *Parser) construct_export_iceberg_config_full(locator *pb.IcebergLocator, config *pb.IcebergCatalogConfig, table_def *pb.RelationId, table_property_pairs [][]interface{}, config_dict [][]interface{}) *pb.ExportIcebergConfig {
-	_t2279 := config_dict
+	_t2283 := config_dict
 	if config_dict == nil {
-		_t2279 = [][]interface{}{}
+		_t2283 = [][]interface{}{}
 	}
-	cfg := dictFromList(_t2279)
-	_t2280 := p._extract_value_string(dictGetValue(cfg, "prefix"), "")
-	prefix := _t2280
-	_t2281 := p._extract_value_int64(dictGetValue(cfg, "target_file_size_bytes"), 0)
-	target_file_size_bytes := _t2281
-	_t2282 := p._extract_value_string(dictGetValue(cfg, "compression"), "")
-	compression := _t2282
+	cfg := dictFromList(_t2283)
+	_t2284 := p._extract_value_string(dictGetValue(cfg, "prefix"), "")
+	prefix := _t2284
+	_t2285 := p._extract_value_int64(dictGetValue(cfg, "target_file_size_bytes"), 0)
+	target_file_size_bytes := _t2285
+	_t2286 := p._extract_value_string(dictGetValue(cfg, "compression"), "")
+	compression := _t2286
 	table_props := stringMapFromPairs(table_property_pairs)
-	_t2283 := &pb.ExportIcebergConfig{Locator: locator, Config: config, TableDef: table_def, Prefix: ptr(prefix), TargetFileSizeBytes: ptr(target_file_size_bytes), Compression: compression, TableProperties: table_props}
-	return _t2283
+	_t2287 := &pb.ExportIcebergConfig{Locator: locator, Config: config, TableDef: table_def, Prefix: ptr(prefix), TargetFileSizeBytes: ptr(target_file_size_bytes), Compression: compression, TableProperties: table_props}
+	return _t2287
 }
 
 // --- Parse functions ---
