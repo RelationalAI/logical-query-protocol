@@ -493,10 +493,15 @@ Base.:(==)(a::IVMConfig, b::IVMConfig) = a.level == b.level
 Base.hash(a::IVMConfig, h::UInt) = hash(a.level, h)
 Base.isequal(a::IVMConfig, b::IVMConfig) = isequal(a.level, b.level)
 
+# ASTSizeLimit
+Base.:(==)(a::ASTSizeLimit, b::ASTSizeLimit) = a.warning_limit == b.warning_limit && a.exception_limit == b.exception_limit
+Base.hash(a::ASTSizeLimit, h::UInt) = hash(a.exception_limit, hash(a.warning_limit, h))
+Base.isequal(a::ASTSizeLimit, b::ASTSizeLimit) = isequal(a.warning_limit, b.warning_limit) && isequal(a.exception_limit, b.exception_limit)
+
 # Configure
-Base.:(==)(a::Configure, b::Configure) = a.semantics_version == b.semantics_version && a.ivm_config == b.ivm_config
-Base.hash(a::Configure, h::UInt) = hash(a.ivm_config, hash(a.semantics_version, h))
-Base.isequal(a::Configure, b::Configure) = isequal(a.semantics_version, b.semantics_version) && isequal(a.ivm_config, b.ivm_config)
+Base.:(==)(a::Configure, b::Configure) = a.semantics_version == b.semantics_version && a.ivm_config == b.ivm_config && a.ast_size_limit == b.ast_size_limit
+Base.hash(a::Configure, h::UInt) = hash(a.ast_size_limit, hash(a.ivm_config, hash(a.semantics_version, h)))
+Base.isequal(a::Configure, b::Configure) = isequal(a.semantics_version, b.semantics_version) && isequal(a.ivm_config, b.ivm_config) && isequal(a.ast_size_limit, b.ast_size_limit)
 
 # Epoch
 Base.:(==)(a::Epoch, b::Epoch) = a.writes == b.writes && a.reads == b.reads
