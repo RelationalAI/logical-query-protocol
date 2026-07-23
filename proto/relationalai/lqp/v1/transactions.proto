@@ -16,6 +16,7 @@ message Transaction {
 message Configure {
   int64 semantics_version = 1;
   IVMConfig ivm_config = 2;
+  ASTSizeLimit = 3;
 }
 
 message IVMConfig {
@@ -27,6 +28,11 @@ enum MaintenanceLevel {
   MAINTENANCE_LEVEL_OFF = 1;
   MAINTENANCE_LEVEL_AUTO = 2;
   MAINTENANCE_LEVEL_ALL = 3;
+}
+
+message ASTSizeLimit {
+  int64 warning_limit = 1;
+  int64 exception_limit = 2;
 }
 
 message Sync {
