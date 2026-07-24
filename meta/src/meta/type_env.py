@@ -98,7 +98,18 @@ class TypeEnv:
         # Handle map fields
         if proto_field.is_map:
             key_type = _scalar_to_target(proto_field.map_key_type)
-            value_type = _scalar_to_target(proto_field.map_value_type)
+            map_value_type = proto_field.map_value_type
+            if map_value_type in _PRIMITIVE_TO_BASE_TYPE:
+                value_type: TargetType = BaseType(
+                    _PRIMITIVE_TO_BASE_TYPE[map_value_type]
+                )
+            elif map_value_type in self.parser.messages:
+                message = self.parser.messages[map_value_type]
+                value_type = MessageType(message.module, map_value_type)
+            else:
+                value_type = _scalar_to_target(
+                    map_value_type
+                )  # raises for unknown types
             return DictType(key_type, value_type)
 
         # Get base type

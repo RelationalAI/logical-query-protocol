@@ -218,7 +218,6 @@
 # or by parser internals, rather than being directly produced by grammar production rules.
 # Without these directives, the validator would report errors that these message types have
 # no grammar rules producing them.
-%validator_ignore_completeness ASTSizeLimit
 %validator_ignore_completeness DebugInfo
 %validator_ignore_completeness IVMConfig
 %validator_ignore_completeness UInt128Value
@@ -1682,11 +1681,9 @@ def construct_betree_info(
 
 def default_configure() -> transactions.Configure:
     ivm_config: transactions.IVMConfig = transactions.IVMConfig(level=transactions.MaintenanceLevel.MAINTENANCE_LEVEL_OFF)
-    ast_size_limit: transactions.ASTSizeLimit = transactions.ASTSizeLimit(warning_limit=0, exception_limit=0)
     return transactions.Configure(
         semantics_version=0,
         ivm_config=ivm_config,
-        ast_size_limit=ast_size_limit,
     )
 
 def construct_configure(config_dict: Sequence[Tuple[String, logic.Value]]) -> transactions.Configure:
@@ -1705,13 +1702,15 @@ def construct_configure(config_dict: Sequence[Tuple[String, logic.Value]]) -> tr
             maintenance_level = transactions.MaintenanceLevel.MAINTENANCE_LEVEL_OFF
     ivm_config: transactions.IVMConfig = transactions.IVMConfig(level=maintenance_level)
     semantics_version: int = _extract_value_int64(builtin.dict_get(config, "semantics_version"), 0)
-    warning_limit: int = _extract_value_int64(builtin.dict_get(config, "ast_size.warning_limit"), 0)
-    exception_limit: int = _extract_value_int64(builtin.dict_get(config, "ast_size.exception_limit"), 0)
-    ast_size_limit: transactions.ASTSizeLimit = transactions.ASTSizeLimit(warning_limit=warning_limit, exception_limit=exception_limit)
+    config_values_pairs: List[Tuple[String, logic.Value]] = list[Tuple[String, logic.Value]]()
+    for pair in config_dict:
+        if pair[0] != "semantics_version" and pair[0] != "ivm.maintenance_level":
+            builtin.list_push(config_values_pairs, pair)
+    configuration_values: Dict[String, logic.Value] = builtin.value_map_from_pairs(config_values_pairs)
     return transactions.Configure(
         semantics_version=semantics_version,
         ivm_config=ivm_config,
-        ast_size_limit=ast_size_limit,
+        configuration_values=configuration_values,
     )
 
 def construct_export_csv_config(
@@ -1784,9 +1783,7 @@ def is_default_configure(cfg: transactions.Configure) -> bool:
         return False
     if cfg.ivm_config.level != transactions.MaintenanceLevel.MAINTENANCE_LEVEL_OFF:
         return False
-    if cfg.ast_size_limit.warning_limit != 0:
-        return False
-    if cfg.ast_size_limit.exception_limit != 0:
+    if builtin.length(builtin.value_map_to_pairs(cfg.configuration_values)) != 0:
         return False
     return True
 
@@ -1800,10 +1797,8 @@ def deconstruct_configure(msg: transactions.Configure) -> List[Tuple[String, log
     elif msg.ivm_config.level == transactions.MaintenanceLevel.MAINTENANCE_LEVEL_OFF:
         builtin.list_push(result, builtin.tuple("ivm.maintenance_level", _make_value_string("off")))
     builtin.list_push(result, builtin.tuple("semantics_version", _make_value_int64(msg.semantics_version)))
-    if msg.ast_size_limit.warning_limit != 0:
-        builtin.list_push(result, builtin.tuple("ast_size.warning_limit", _make_value_int64(msg.ast_size_limit.warning_limit)))
-    if msg.ast_size_limit.exception_limit != 0:
-        builtin.list_push(result, builtin.tuple("ast_size.exception_limit", _make_value_int64(msg.ast_size_limit.exception_limit)))
+    for pair in builtin.value_map_to_pairs(msg.configuration_values):
+        builtin.list_push(result, pair)
     return builtin.list_sort(result)
 
 
