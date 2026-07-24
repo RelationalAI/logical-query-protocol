@@ -31,28 +31,27 @@ class Transaction(_message.Message):
     def __init__(self, epochs: _Optional[_Iterable[_Union[Epoch, _Mapping]]] = ..., configure: _Optional[_Union[Configure, _Mapping]] = ..., sync: _Optional[_Union[Sync, _Mapping]] = ...) -> None: ...
 
 class Configure(_message.Message):
-    __slots__ = ("semantics_version", "ivm_config", "ast_size_limit")
+    __slots__ = ("semantics_version", "ivm_config", "configuration_values")
+    class ConfigurationValuesEntry(_message.Message):
+        __slots__ = ("key", "value")
+        KEY_FIELD_NUMBER: _ClassVar[int]
+        VALUE_FIELD_NUMBER: _ClassVar[int]
+        key: str
+        value: _logic_pb2.Value
+        def __init__(self, key: _Optional[str] = ..., value: _Optional[_Union[_logic_pb2.Value, _Mapping]] = ...) -> None: ...
     SEMANTICS_VERSION_FIELD_NUMBER: _ClassVar[int]
     IVM_CONFIG_FIELD_NUMBER: _ClassVar[int]
-    AST_SIZE_LIMIT_FIELD_NUMBER: _ClassVar[int]
+    CONFIGURATION_VALUES_FIELD_NUMBER: _ClassVar[int]
     semantics_version: int
     ivm_config: IVMConfig
-    ast_size_limit: ASTSizeLimit
-    def __init__(self, semantics_version: _Optional[int] = ..., ivm_config: _Optional[_Union[IVMConfig, _Mapping]] = ..., ast_size_limit: _Optional[_Union[ASTSizeLimit, _Mapping]] = ...) -> None: ...
+    configuration_values: _containers.MessageMap[str, _logic_pb2.Value]
+    def __init__(self, semantics_version: _Optional[int] = ..., ivm_config: _Optional[_Union[IVMConfig, _Mapping]] = ..., configuration_values: _Optional[_Mapping[str, _logic_pb2.Value]] = ...) -> None: ...
 
 class IVMConfig(_message.Message):
     __slots__ = ("level",)
     LEVEL_FIELD_NUMBER: _ClassVar[int]
     level: MaintenanceLevel
     def __init__(self, level: _Optional[_Union[MaintenanceLevel, str]] = ...) -> None: ...
-
-class ASTSizeLimit(_message.Message):
-    __slots__ = ("warning_limit", "exception_limit")
-    WARNING_LIMIT_FIELD_NUMBER: _ClassVar[int]
-    EXCEPTION_LIMIT_FIELD_NUMBER: _ClassVar[int]
-    warning_limit: int
-    exception_limit: int
-    def __init__(self, warning_limit: _Optional[int] = ..., exception_limit: _Optional[int] = ...) -> None: ...
 
 class Sync(_message.Message):
     __slots__ = ("fragments",)

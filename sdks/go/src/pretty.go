@@ -264,6 +264,23 @@ func listSort(pairs [][]interface{}) [][]interface{} {
 	return pairs
 }
 
+// valueMapToPairs converts map[string]*pb.Value to sorted key/value rows for pretty printing.
+func valueMapToPairs(m map[string]*pb.Value) [][]interface{} {
+	if len(m) == 0 {
+		return nil
+	}
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	out := make([][]interface{}, 0, len(keys))
+	for _, k := range keys {
+		out = append(out, []interface{}{k, m[k]})
+	}
+	return out
+}
+
 // dictToPairs converts map[string]string to sorted key/value rows for pretty printing.
 func dictToPairs(m map[string]string) [][]interface{} {
 	if len(m) == 0 {
@@ -418,143 +435,138 @@ func (p *PrettyPrinter) deconstruct_configure(msg *pb.Configure) [][]interface{}
 	}
 	_t1856 := p._make_value_int64(msg.GetSemanticsVersion())
 	result = append(result, []interface{}{"semantics_version", _t1856})
-	if msg.GetAstSizeLimit().GetWarningLimit() != 0 {
-		_t1857 := p._make_value_int64(msg.GetAstSizeLimit().GetWarningLimit())
-		result = append(result, []interface{}{"ast_size.warning_limit", _t1857})
-	}
-	if msg.GetAstSizeLimit().GetExceptionLimit() != 0 {
-		_t1858 := p._make_value_int64(msg.GetAstSizeLimit().GetExceptionLimit())
-		result = append(result, []interface{}{"ast_size.exception_limit", _t1858})
+	for _, pair := range valueMapToPairs(msg.GetConfigurationValues()) {
+		result = append(result, pair)
 	}
 	return listSort(result)
 }
 
 func (p *PrettyPrinter) deconstruct_csv_config(msg *pb.CSVConfig) [][]interface{} {
 	result := [][]interface{}{}
-	_t1859 := p._make_value_int32(msg.GetHeaderRow())
-	result = append(result, []interface{}{"csv_header_row", _t1859})
-	_t1860 := p._make_value_int64(msg.GetSkip())
-	result = append(result, []interface{}{"csv_skip", _t1860})
+	_t1857 := p._make_value_int32(msg.GetHeaderRow())
+	result = append(result, []interface{}{"csv_header_row", _t1857})
+	_t1858 := p._make_value_int64(msg.GetSkip())
+	result = append(result, []interface{}{"csv_skip", _t1858})
 	if msg.GetNewLine() != "" {
-		_t1861 := p._make_value_string(msg.GetNewLine())
-		result = append(result, []interface{}{"csv_new_line", _t1861})
+		_t1859 := p._make_value_string(msg.GetNewLine())
+		result = append(result, []interface{}{"csv_new_line", _t1859})
 	}
-	_t1862 := p._make_value_string(msg.GetDelimiter())
-	result = append(result, []interface{}{"csv_delimiter", _t1862})
-	_t1863 := p._make_value_string(msg.GetQuotechar())
-	result = append(result, []interface{}{"csv_quotechar", _t1863})
-	_t1864 := p._make_value_string(msg.GetEscapechar())
-	result = append(result, []interface{}{"csv_escapechar", _t1864})
+	_t1860 := p._make_value_string(msg.GetDelimiter())
+	result = append(result, []interface{}{"csv_delimiter", _t1860})
+	_t1861 := p._make_value_string(msg.GetQuotechar())
+	result = append(result, []interface{}{"csv_quotechar", _t1861})
+	_t1862 := p._make_value_string(msg.GetEscapechar())
+	result = append(result, []interface{}{"csv_escapechar", _t1862})
 	if msg.GetComment() != "" {
-		_t1865 := p._make_value_string(msg.GetComment())
-		result = append(result, []interface{}{"csv_comment", _t1865})
+		_t1863 := p._make_value_string(msg.GetComment())
+		result = append(result, []interface{}{"csv_comment", _t1863})
 	}
 	for _, missing_string := range msg.GetMissingStrings() {
-		_t1866 := p._make_value_string(missing_string)
-		result = append(result, []interface{}{"csv_missing_strings", _t1866})
+		_t1864 := p._make_value_string(missing_string)
+		result = append(result, []interface{}{"csv_missing_strings", _t1864})
 	}
-	_t1867 := p._make_value_string(msg.GetDecimalSeparator())
-	result = append(result, []interface{}{"csv_decimal_separator", _t1867})
-	_t1868 := p._make_value_string(msg.GetEncoding())
-	result = append(result, []interface{}{"csv_encoding", _t1868})
-	_t1869 := p._make_value_string(msg.GetCompression())
-	result = append(result, []interface{}{"csv_compression", _t1869})
+	_t1865 := p._make_value_string(msg.GetDecimalSeparator())
+	result = append(result, []interface{}{"csv_decimal_separator", _t1865})
+	_t1866 := p._make_value_string(msg.GetEncoding())
+	result = append(result, []interface{}{"csv_encoding", _t1866})
+	_t1867 := p._make_value_string(msg.GetCompression())
+	result = append(result, []interface{}{"csv_compression", _t1867})
 	if msg.GetPartitionSizeMb() != 0 {
-		_t1870 := p._make_value_int64(msg.GetPartitionSizeMb())
-		result = append(result, []interface{}{"csv_partition_size_mb", _t1870})
+		_t1868 := p._make_value_int64(msg.GetPartitionSizeMb())
+		result = append(result, []interface{}{"csv_partition_size_mb", _t1868})
 	}
 	return listSort(result)
 }
 
 func (p *PrettyPrinter) deconstruct_csv_storage_integration_optional(msg *pb.CSVConfig) [][]interface{} {
-	var _t1871 interface{}
+	var _t1869 interface{}
 	if !(hasProtoField(msg, "storage_integration")) {
 		return nil
 	}
-	_ = _t1871
+	_ = _t1869
 	si := msg.GetStorageIntegration()
 	result := [][]interface{}{}
 	if si.GetProvider() != "" {
-		_t1872 := p._make_value_string(si.GetProvider())
-		result = append(result, []interface{}{"provider", _t1872})
+		_t1870 := p._make_value_string(si.GetProvider())
+		result = append(result, []interface{}{"provider", _t1870})
 	}
 	if si.GetAzureSasToken() != "" {
-		_t1873 := p._make_value_string("***")
-		result = append(result, []interface{}{"azure_sas_token", _t1873})
+		_t1871 := p._make_value_string("***")
+		result = append(result, []interface{}{"azure_sas_token", _t1871})
 	}
 	if si.GetS3Region() != "" {
-		_t1874 := p._make_value_string(si.GetS3Region())
-		result = append(result, []interface{}{"s3_region", _t1874})
+		_t1872 := p._make_value_string(si.GetS3Region())
+		result = append(result, []interface{}{"s3_region", _t1872})
 	}
 	if si.GetS3AccessKeyId() != "" {
-		_t1875 := p._make_value_string("***")
-		result = append(result, []interface{}{"s3_access_key_id", _t1875})
+		_t1873 := p._make_value_string("***")
+		result = append(result, []interface{}{"s3_access_key_id", _t1873})
 	}
 	if si.GetS3SecretAccessKey() != "" {
-		_t1876 := p._make_value_string("***")
-		result = append(result, []interface{}{"s3_secret_access_key", _t1876})
+		_t1874 := p._make_value_string("***")
+		result = append(result, []interface{}{"s3_secret_access_key", _t1874})
 	}
 	return listSort(result)
 }
 
 func (p *PrettyPrinter) deconstruct_betree_info_config(msg *pb.BeTreeInfo) [][]interface{} {
 	result := [][]interface{}{}
-	_t1877 := p._make_value_float64(msg.GetStorageConfig().GetEpsilon())
-	result = append(result, []interface{}{"betree_config_epsilon", _t1877})
-	_t1878 := p._make_value_int64(msg.GetStorageConfig().GetMaxPivots())
-	result = append(result, []interface{}{"betree_config_max_pivots", _t1878})
-	_t1879 := p._make_value_int64(msg.GetStorageConfig().GetMaxDeltas())
-	result = append(result, []interface{}{"betree_config_max_deltas", _t1879})
-	_t1880 := p._make_value_int64(msg.GetStorageConfig().GetMaxLeaf())
-	result = append(result, []interface{}{"betree_config_max_leaf", _t1880})
+	_t1875 := p._make_value_float64(msg.GetStorageConfig().GetEpsilon())
+	result = append(result, []interface{}{"betree_config_epsilon", _t1875})
+	_t1876 := p._make_value_int64(msg.GetStorageConfig().GetMaxPivots())
+	result = append(result, []interface{}{"betree_config_max_pivots", _t1876})
+	_t1877 := p._make_value_int64(msg.GetStorageConfig().GetMaxDeltas())
+	result = append(result, []interface{}{"betree_config_max_deltas", _t1877})
+	_t1878 := p._make_value_int64(msg.GetStorageConfig().GetMaxLeaf())
+	result = append(result, []interface{}{"betree_config_max_leaf", _t1878})
 	if hasProtoField(msg.GetRelationLocator(), "root_pageid") {
 		if msg.GetRelationLocator().GetRootPageid() != nil {
-			_t1881 := p._make_value_uint128(msg.GetRelationLocator().GetRootPageid())
-			result = append(result, []interface{}{"betree_locator_root_pageid", _t1881})
+			_t1879 := p._make_value_uint128(msg.GetRelationLocator().GetRootPageid())
+			result = append(result, []interface{}{"betree_locator_root_pageid", _t1879})
 		}
 	}
 	if hasProtoField(msg.GetRelationLocator(), "inline_data") {
 		if msg.GetRelationLocator().GetInlineData() != nil {
-			_t1882 := p._make_value_string(string(msg.GetRelationLocator().GetInlineData()))
-			result = append(result, []interface{}{"betree_locator_inline_data", _t1882})
+			_t1880 := p._make_value_string(string(msg.GetRelationLocator().GetInlineData()))
+			result = append(result, []interface{}{"betree_locator_inline_data", _t1880})
 		}
 	}
-	_t1883 := p._make_value_int64(msg.GetRelationLocator().GetElementCount())
-	result = append(result, []interface{}{"betree_locator_element_count", _t1883})
-	_t1884 := p._make_value_int64(msg.GetRelationLocator().GetTreeHeight())
-	result = append(result, []interface{}{"betree_locator_tree_height", _t1884})
+	_t1881 := p._make_value_int64(msg.GetRelationLocator().GetElementCount())
+	result = append(result, []interface{}{"betree_locator_element_count", _t1881})
+	_t1882 := p._make_value_int64(msg.GetRelationLocator().GetTreeHeight())
+	result = append(result, []interface{}{"betree_locator_tree_height", _t1882})
 	return listSort(result)
 }
 
 func (p *PrettyPrinter) deconstruct_export_csv_config(msg *pb.ExportCSVConfig) [][]interface{} {
 	result := [][]interface{}{}
 	if msg.PartitionSize != nil {
-		_t1885 := p._make_value_int64(*msg.PartitionSize)
-		result = append(result, []interface{}{"partition_size", _t1885})
+		_t1883 := p._make_value_int64(*msg.PartitionSize)
+		result = append(result, []interface{}{"partition_size", _t1883})
 	}
 	if msg.Compression != nil {
-		_t1886 := p._make_value_string(*msg.Compression)
-		result = append(result, []interface{}{"compression", _t1886})
+		_t1884 := p._make_value_string(*msg.Compression)
+		result = append(result, []interface{}{"compression", _t1884})
 	}
 	if msg.SyntaxHeaderRow != nil {
-		_t1887 := p._make_value_boolean(*msg.SyntaxHeaderRow)
-		result = append(result, []interface{}{"syntax_header_row", _t1887})
+		_t1885 := p._make_value_boolean(*msg.SyntaxHeaderRow)
+		result = append(result, []interface{}{"syntax_header_row", _t1885})
 	}
 	if msg.SyntaxMissingString != nil {
-		_t1888 := p._make_value_string(*msg.SyntaxMissingString)
-		result = append(result, []interface{}{"syntax_missing_string", _t1888})
+		_t1886 := p._make_value_string(*msg.SyntaxMissingString)
+		result = append(result, []interface{}{"syntax_missing_string", _t1886})
 	}
 	if msg.SyntaxDelim != nil {
-		_t1889 := p._make_value_string(*msg.SyntaxDelim)
-		result = append(result, []interface{}{"syntax_delim", _t1889})
+		_t1887 := p._make_value_string(*msg.SyntaxDelim)
+		result = append(result, []interface{}{"syntax_delim", _t1887})
 	}
 	if msg.SyntaxQuotechar != nil {
-		_t1890 := p._make_value_string(*msg.SyntaxQuotechar)
-		result = append(result, []interface{}{"syntax_quotechar", _t1890})
+		_t1888 := p._make_value_string(*msg.SyntaxQuotechar)
+		result = append(result, []interface{}{"syntax_quotechar", _t1888})
 	}
 	if msg.SyntaxEscapechar != nil {
-		_t1891 := p._make_value_string(*msg.SyntaxEscapechar)
-		result = append(result, []interface{}{"syntax_escapechar", _t1891})
+		_t1889 := p._make_value_string(*msg.SyntaxEscapechar)
+		result = append(result, []interface{}{"syntax_escapechar", _t1889})
 	}
 	return listSort(result)
 }
@@ -564,51 +576,51 @@ func (p *PrettyPrinter) mask_secret_value(pair []interface{}) string {
 }
 
 func (p *PrettyPrinter) deconstruct_iceberg_catalog_config_scope_optional(msg *pb.IcebergCatalogConfig) *string {
-	var _t1892 interface{}
+	var _t1890 interface{}
 	if *msg.Scope != "" {
 		return ptr(*msg.Scope)
 	}
-	_ = _t1892
+	_ = _t1890
 	return nil
 }
 
 func (p *PrettyPrinter) deconstruct_iceberg_data_from_snapshot_optional(msg *pb.IcebergData) *string {
-	var _t1893 interface{}
+	var _t1891 interface{}
 	if *msg.FromSnapshot != "" {
 		return ptr(*msg.FromSnapshot)
 	}
-	_ = _t1893
+	_ = _t1891
 	return nil
 }
 
 func (p *PrettyPrinter) deconstruct_iceberg_data_to_snapshot_optional(msg *pb.IcebergData) *string {
-	var _t1894 interface{}
+	var _t1892 interface{}
 	if *msg.ToSnapshot != "" {
 		return ptr(*msg.ToSnapshot)
 	}
-	_ = _t1894
+	_ = _t1892
 	return nil
 }
 
 func (p *PrettyPrinter) deconstruct_export_iceberg_config_optional(msg *pb.ExportIcebergConfig) [][]interface{} {
 	result := [][]interface{}{}
 	if *msg.Prefix != "" {
-		_t1895 := p._make_value_string(*msg.Prefix)
-		result = append(result, []interface{}{"prefix", _t1895})
+		_t1893 := p._make_value_string(*msg.Prefix)
+		result = append(result, []interface{}{"prefix", _t1893})
 	}
 	if *msg.TargetFileSizeBytes != 0 {
-		_t1896 := p._make_value_int64(*msg.TargetFileSizeBytes)
-		result = append(result, []interface{}{"target_file_size_bytes", _t1896})
+		_t1894 := p._make_value_int64(*msg.TargetFileSizeBytes)
+		result = append(result, []interface{}{"target_file_size_bytes", _t1894})
 	}
 	if msg.GetCompression() != "" {
-		_t1897 := p._make_value_string(msg.GetCompression())
-		result = append(result, []interface{}{"compression", _t1897})
+		_t1895 := p._make_value_string(msg.GetCompression())
+		result = append(result, []interface{}{"compression", _t1895})
 	}
-	var _t1898 interface{}
+	var _t1896 interface{}
 	if int64(len(result)) == 0 {
 		return nil
 	}
-	_ = _t1898
+	_ = _t1896
 	return listSort(result)
 }
 
@@ -619,11 +631,11 @@ func (p *PrettyPrinter) deconstruct_relation_id_string(msg *pb.RelationId) strin
 
 func (p *PrettyPrinter) deconstruct_relation_id_uint128(msg *pb.RelationId) *pb.UInt128Value {
 	name := p.relationIdToString(msg)
-	var _t1899 interface{}
+	var _t1897 interface{}
 	if name == nil {
 		return p.relationIdToUint128(msg)
 	}
-	_ = _t1899
+	_ = _t1897
 	return nil
 }
 
@@ -5309,8 +5321,8 @@ func (p *PrettyPrinter) pretty_debug_info(msg *pb.DebugInfo) interface{} {
 	for _idx, _rid := range msg.GetIds() {
 		p.newline()
 		p.write("(")
-		_t1900 := &pb.UInt128Value{Low: _rid.GetIdLow(), High: _rid.GetIdHigh()}
-		p.pprintDispatch(_t1900)
+		_t1898 := &pb.UInt128Value{Low: _rid.GetIdLow(), High: _rid.GetIdHigh()}
+		p.pprintDispatch(_t1898)
 		p.write(" ")
 		p.write(p.formatStringValue(msg.GetOrigNames()[_idx]))
 		p.write(")")
@@ -5486,20 +5498,6 @@ func (p *PrettyPrinter) pretty_storage_integration(msg *pb.StorageIntegration) i
 
 func (p *PrettyPrinter) pretty_u_int128_value(msg *pb.UInt128Value) interface{} {
 	p.write(p.formatUint128(msg))
-	return nil
-}
-
-func (p *PrettyPrinter) pretty_ast_size_limit(msg *pb.ASTSizeLimit) interface{} {
-	p.write("(ast_size_limit")
-	p.indentSexp()
-	p.newline()
-	p.write(":warning_limit ")
-	p.write(fmt.Sprintf("%d", msg.GetWarningLimit()))
-	p.newline()
-	p.write(":exception_limit ")
-	p.write(fmt.Sprintf("%d", msg.GetExceptionLimit()))
-	p.write(")")
-	p.dedent()
 	return nil
 }
 
@@ -5794,8 +5792,6 @@ func (p *PrettyPrinter) pprintDispatch(msg interface{}) {
 		p.pretty_storage_integration(m)
 	case *pb.UInt128Value:
 		p.pretty_u_int128_value(m)
-	case *pb.ASTSizeLimit:
-		p.pretty_ast_size_limit(m)
 	case *pb.ExportCSVColumns:
 		p.pretty_export_csv_columns(m)
 	case *pb.IVMConfig:

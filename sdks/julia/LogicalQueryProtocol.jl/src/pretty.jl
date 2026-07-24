@@ -446,50 +446,45 @@ function deconstruct_configure(pp::PrettyPrinter, msg::Proto.Configure)::Vector{
     end
     _t1900 = _make_value_int64(pp, msg.semantics_version)
     push!(result, ("semantics_version", _t1900,))
-    if msg.ast_size_limit.warning_limit != 0
-        _t1901 = _make_value_int64(pp, msg.ast_size_limit.warning_limit)
-        push!(result, ("ast_size.warning_limit", _t1901,))
-    end
-    if msg.ast_size_limit.exception_limit != 0
-        _t1902 = _make_value_int64(pp, msg.ast_size_limit.exception_limit)
-        push!(result, ("ast_size.exception_limit", _t1902,))
+    for pair in sort([(k, v) for (k, v) in msg.configuration_values])
+        push!(result, pair)
     end
     return sort(result)
 end
 
 function deconstruct_csv_config(pp::PrettyPrinter, msg::Proto.CSVConfig)::Vector{Tuple{String, Proto.Value}}
     result = Tuple{String, Proto.Value}[]
-    _t1903 = _make_value_int32(pp, msg.header_row)
-    push!(result, ("csv_header_row", _t1903,))
-    _t1904 = _make_value_int64(pp, msg.skip)
-    push!(result, ("csv_skip", _t1904,))
+    _t1901 = _make_value_int32(pp, msg.header_row)
+    push!(result, ("csv_header_row", _t1901,))
+    _t1902 = _make_value_int64(pp, msg.skip)
+    push!(result, ("csv_skip", _t1902,))
     if msg.new_line != ""
-        _t1905 = _make_value_string(pp, msg.new_line)
-        push!(result, ("csv_new_line", _t1905,))
+        _t1903 = _make_value_string(pp, msg.new_line)
+        push!(result, ("csv_new_line", _t1903,))
     end
-    _t1906 = _make_value_string(pp, msg.delimiter)
-    push!(result, ("csv_delimiter", _t1906,))
-    _t1907 = _make_value_string(pp, msg.quotechar)
-    push!(result, ("csv_quotechar", _t1907,))
-    _t1908 = _make_value_string(pp, msg.escapechar)
-    push!(result, ("csv_escapechar", _t1908,))
+    _t1904 = _make_value_string(pp, msg.delimiter)
+    push!(result, ("csv_delimiter", _t1904,))
+    _t1905 = _make_value_string(pp, msg.quotechar)
+    push!(result, ("csv_quotechar", _t1905,))
+    _t1906 = _make_value_string(pp, msg.escapechar)
+    push!(result, ("csv_escapechar", _t1906,))
     if msg.comment != ""
-        _t1909 = _make_value_string(pp, msg.comment)
-        push!(result, ("csv_comment", _t1909,))
+        _t1907 = _make_value_string(pp, msg.comment)
+        push!(result, ("csv_comment", _t1907,))
     end
     for missing_string in msg.missing_strings
-        _t1910 = _make_value_string(pp, missing_string)
-        push!(result, ("csv_missing_strings", _t1910,))
+        _t1908 = _make_value_string(pp, missing_string)
+        push!(result, ("csv_missing_strings", _t1908,))
     end
-    _t1911 = _make_value_string(pp, msg.decimal_separator)
-    push!(result, ("csv_decimal_separator", _t1911,))
-    _t1912 = _make_value_string(pp, msg.encoding)
-    push!(result, ("csv_encoding", _t1912,))
-    _t1913 = _make_value_string(pp, msg.compression)
-    push!(result, ("csv_compression", _t1913,))
+    _t1909 = _make_value_string(pp, msg.decimal_separator)
+    push!(result, ("csv_decimal_separator", _t1909,))
+    _t1910 = _make_value_string(pp, msg.encoding)
+    push!(result, ("csv_encoding", _t1910,))
+    _t1911 = _make_value_string(pp, msg.compression)
+    push!(result, ("csv_compression", _t1911,))
     if msg.partition_size_mb != 0
-        _t1914 = _make_value_int64(pp, msg.partition_size_mb)
-        push!(result, ("csv_partition_size_mb", _t1914,))
+        _t1912 = _make_value_int64(pp, msg.partition_size_mb)
+        push!(result, ("csv_partition_size_mb", _t1912,))
     end
     return sort(result)
 end
@@ -498,91 +493,91 @@ function deconstruct_csv_storage_integration_optional(pp::PrettyPrinter, msg::Pr
     if !_has_proto_field(msg, Symbol("storage_integration"))
         return nothing
     else
-        _t1915 = nothing
+        _t1913 = nothing
     end
     si = msg.storage_integration
     result = Tuple{String, Proto.Value}[]
     if si.provider != ""
-        _t1916 = _make_value_string(pp, si.provider)
-        push!(result, ("provider", _t1916,))
+        _t1914 = _make_value_string(pp, si.provider)
+        push!(result, ("provider", _t1914,))
     end
     if si.azure_sas_token != ""
-        _t1917 = _make_value_string(pp, "***")
-        push!(result, ("azure_sas_token", _t1917,))
+        _t1915 = _make_value_string(pp, "***")
+        push!(result, ("azure_sas_token", _t1915,))
     end
     if si.s3_region != ""
-        _t1918 = _make_value_string(pp, si.s3_region)
-        push!(result, ("s3_region", _t1918,))
+        _t1916 = _make_value_string(pp, si.s3_region)
+        push!(result, ("s3_region", _t1916,))
     end
     if si.s3_access_key_id != ""
-        _t1919 = _make_value_string(pp, "***")
-        push!(result, ("s3_access_key_id", _t1919,))
+        _t1917 = _make_value_string(pp, "***")
+        push!(result, ("s3_access_key_id", _t1917,))
     end
     if si.s3_secret_access_key != ""
-        _t1920 = _make_value_string(pp, "***")
-        push!(result, ("s3_secret_access_key", _t1920,))
+        _t1918 = _make_value_string(pp, "***")
+        push!(result, ("s3_secret_access_key", _t1918,))
     end
     return sort(result)
 end
 
 function deconstruct_betree_info_config(pp::PrettyPrinter, msg::Proto.BeTreeInfo)::Vector{Tuple{String, Proto.Value}}
     result = Tuple{String, Proto.Value}[]
-    _t1921 = _make_value_float64(pp, msg.storage_config.epsilon)
-    push!(result, ("betree_config_epsilon", _t1921,))
-    _t1922 = _make_value_int64(pp, msg.storage_config.max_pivots)
-    push!(result, ("betree_config_max_pivots", _t1922,))
-    _t1923 = _make_value_int64(pp, msg.storage_config.max_deltas)
-    push!(result, ("betree_config_max_deltas", _t1923,))
-    _t1924 = _make_value_int64(pp, msg.storage_config.max_leaf)
-    push!(result, ("betree_config_max_leaf", _t1924,))
+    _t1919 = _make_value_float64(pp, msg.storage_config.epsilon)
+    push!(result, ("betree_config_epsilon", _t1919,))
+    _t1920 = _make_value_int64(pp, msg.storage_config.max_pivots)
+    push!(result, ("betree_config_max_pivots", _t1920,))
+    _t1921 = _make_value_int64(pp, msg.storage_config.max_deltas)
+    push!(result, ("betree_config_max_deltas", _t1921,))
+    _t1922 = _make_value_int64(pp, msg.storage_config.max_leaf)
+    push!(result, ("betree_config_max_leaf", _t1922,))
     if _has_proto_field(msg.relation_locator, Symbol("root_pageid"))
         if !isnothing(_get_oneof_field(msg.relation_locator, :root_pageid))
-            _t1925 = _make_value_uint128(pp, _get_oneof_field(msg.relation_locator, :root_pageid))
-            push!(result, ("betree_locator_root_pageid", _t1925,))
+            _t1923 = _make_value_uint128(pp, _get_oneof_field(msg.relation_locator, :root_pageid))
+            push!(result, ("betree_locator_root_pageid", _t1923,))
         end
     end
     if _has_proto_field(msg.relation_locator, Symbol("inline_data"))
         if !isnothing(_get_oneof_field(msg.relation_locator, :inline_data))
-            _t1926 = _make_value_string(pp, String(copy(_get_oneof_field(msg.relation_locator, :inline_data))))
-            push!(result, ("betree_locator_inline_data", _t1926,))
+            _t1924 = _make_value_string(pp, String(copy(_get_oneof_field(msg.relation_locator, :inline_data))))
+            push!(result, ("betree_locator_inline_data", _t1924,))
         end
     end
-    _t1927 = _make_value_int64(pp, msg.relation_locator.element_count)
-    push!(result, ("betree_locator_element_count", _t1927,))
-    _t1928 = _make_value_int64(pp, msg.relation_locator.tree_height)
-    push!(result, ("betree_locator_tree_height", _t1928,))
+    _t1925 = _make_value_int64(pp, msg.relation_locator.element_count)
+    push!(result, ("betree_locator_element_count", _t1925,))
+    _t1926 = _make_value_int64(pp, msg.relation_locator.tree_height)
+    push!(result, ("betree_locator_tree_height", _t1926,))
     return sort(result)
 end
 
 function deconstruct_export_csv_config(pp::PrettyPrinter, msg::Proto.ExportCSVConfig)::Vector{Tuple{String, Proto.Value}}
     result = Tuple{String, Proto.Value}[]
     if !isnothing(msg.partition_size)
-        _t1929 = _make_value_int64(pp, msg.partition_size)
-        push!(result, ("partition_size", _t1929,))
+        _t1927 = _make_value_int64(pp, msg.partition_size)
+        push!(result, ("partition_size", _t1927,))
     end
     if !isnothing(msg.compression)
-        _t1930 = _make_value_string(pp, msg.compression)
-        push!(result, ("compression", _t1930,))
+        _t1928 = _make_value_string(pp, msg.compression)
+        push!(result, ("compression", _t1928,))
     end
     if !isnothing(msg.syntax_header_row)
-        _t1931 = _make_value_boolean(pp, msg.syntax_header_row)
-        push!(result, ("syntax_header_row", _t1931,))
+        _t1929 = _make_value_boolean(pp, msg.syntax_header_row)
+        push!(result, ("syntax_header_row", _t1929,))
     end
     if !isnothing(msg.syntax_missing_string)
-        _t1932 = _make_value_string(pp, msg.syntax_missing_string)
-        push!(result, ("syntax_missing_string", _t1932,))
+        _t1930 = _make_value_string(pp, msg.syntax_missing_string)
+        push!(result, ("syntax_missing_string", _t1930,))
     end
     if !isnothing(msg.syntax_delim)
-        _t1933 = _make_value_string(pp, msg.syntax_delim)
-        push!(result, ("syntax_delim", _t1933,))
+        _t1931 = _make_value_string(pp, msg.syntax_delim)
+        push!(result, ("syntax_delim", _t1931,))
     end
     if !isnothing(msg.syntax_quotechar)
-        _t1934 = _make_value_string(pp, msg.syntax_quotechar)
-        push!(result, ("syntax_quotechar", _t1934,))
+        _t1932 = _make_value_string(pp, msg.syntax_quotechar)
+        push!(result, ("syntax_quotechar", _t1932,))
     end
     if !isnothing(msg.syntax_escapechar)
-        _t1935 = _make_value_string(pp, msg.syntax_escapechar)
-        push!(result, ("syntax_escapechar", _t1935,))
+        _t1933 = _make_value_string(pp, msg.syntax_escapechar)
+        push!(result, ("syntax_escapechar", _t1933,))
     end
     return sort(result)
 end
@@ -595,7 +590,7 @@ function deconstruct_iceberg_catalog_config_scope_optional(pp::PrettyPrinter, ms
     if msg.scope != ""
         return msg.scope
     else
-        _t1936 = nothing
+        _t1934 = nothing
     end
     return nothing
 end
@@ -604,7 +599,7 @@ function deconstruct_iceberg_data_from_snapshot_optional(pp::PrettyPrinter, msg:
     if msg.from_snapshot != ""
         return msg.from_snapshot
     else
-        _t1937 = nothing
+        _t1935 = nothing
     end
     return nothing
 end
@@ -613,7 +608,7 @@ function deconstruct_iceberg_data_to_snapshot_optional(pp::PrettyPrinter, msg::P
     if msg.to_snapshot != ""
         return msg.to_snapshot
     else
-        _t1938 = nothing
+        _t1936 = nothing
     end
     return nothing
 end
@@ -621,21 +616,21 @@ end
 function deconstruct_export_iceberg_config_optional(pp::PrettyPrinter, msg::Proto.ExportIcebergConfig)::Union{Nothing, Vector{Tuple{String, Proto.Value}}}
     result = Tuple{String, Proto.Value}[]
     if msg.prefix != ""
-        _t1939 = _make_value_string(pp, msg.prefix)
-        push!(result, ("prefix", _t1939,))
+        _t1937 = _make_value_string(pp, msg.prefix)
+        push!(result, ("prefix", _t1937,))
     end
     if msg.target_file_size_bytes != 0
-        _t1940 = _make_value_int64(pp, msg.target_file_size_bytes)
-        push!(result, ("target_file_size_bytes", _t1940,))
+        _t1938 = _make_value_int64(pp, msg.target_file_size_bytes)
+        push!(result, ("target_file_size_bytes", _t1938,))
     end
     if msg.compression != ""
-        _t1941 = _make_value_string(pp, msg.compression)
-        push!(result, ("compression", _t1941,))
+        _t1939 = _make_value_string(pp, msg.compression)
+        push!(result, ("compression", _t1939,))
     end
     if length(result) == 0
         return nothing
     else
-        _t1942 = nothing
+        _t1940 = nothing
     end
     return sort(result)
 end
@@ -650,7 +645,7 @@ function deconstruct_relation_id_uint128(pp::PrettyPrinter, msg::Proto.RelationI
     if isnothing(name)
         return relation_id_to_uint128(pp, msg)
     else
-        _t1943 = nothing
+        _t1941 = nothing
     end
     return nothing
 end
@@ -5377,12 +5372,12 @@ end
 function pretty_debug_info(pp::PrettyPrinter, msg::Proto.DebugInfo)
     write(pp, "(debug_info")
     indent_sexp!(pp)
-    for (i1944, _rid) in enumerate(msg.ids)
-        _idx = i1944 - 1
+    for (i1942, _rid) in enumerate(msg.ids)
+        _idx = i1942 - 1
         newline(pp)
         write(pp, "(")
-        _t1945 = Proto.UInt128Value(low=_rid.id_low, high=_rid.id_high)
-        _pprint_dispatch(pp, _t1945)
+        _t1943 = Proto.UInt128Value(low=_rid.id_low, high=_rid.id_high)
+        _pprint_dispatch(pp, _t1943)
         write(pp, " ")
         write(pp, format_string(DEFAULT_CONSTANT_FORMATTER, pp, msg.orig_names[_idx + 1]))
         write(pp, ")")
@@ -5446,8 +5441,8 @@ function pretty_cdc_targets(pp::PrettyPrinter, msg::Proto.CDCTargets)
     indent_sexp!(pp)
     newline(pp)
     write(pp, ":inserts (")
-    for (i1946, _elem) in enumerate(msg.inserts)
-        _idx = i1946 - 1
+    for (i1944, _elem) in enumerate(msg.inserts)
+        _idx = i1944 - 1
         if (_idx > 0)
             write(pp, " ")
         end
@@ -5456,8 +5451,8 @@ function pretty_cdc_targets(pp::PrettyPrinter, msg::Proto.CDCTargets)
     write(pp, ")")
     newline(pp)
     write(pp, ":deletes (")
-    for (i1947, _elem) in enumerate(msg.deletes)
-        _idx = i1947 - 1
+    for (i1945, _elem) in enumerate(msg.deletes)
+        _idx = i1945 - 1
         if (_idx > 0)
             write(pp, " ")
         end
@@ -5481,8 +5476,8 @@ function pretty_functional_dependency(pp::PrettyPrinter, msg::Proto.FunctionalDe
     _pprint_dispatch(pp, msg.guard)
     newline(pp)
     write(pp, ":keys (")
-    for (i1948, _elem) in enumerate(msg.keys)
-        _idx = i1948 - 1
+    for (i1946, _elem) in enumerate(msg.keys)
+        _idx = i1946 - 1
         if (_idx > 0)
             write(pp, " ")
         end
@@ -5491,8 +5486,8 @@ function pretty_functional_dependency(pp::PrettyPrinter, msg::Proto.FunctionalDe
     write(pp, ")")
     newline(pp)
     write(pp, ":values (")
-    for (i1949, _elem) in enumerate(msg.values)
-        _idx = i1949 - 1
+    for (i1947, _elem) in enumerate(msg.values)
+        _idx = i1947 - 1
         if (_idx > 0)
             write(pp, " ")
         end
@@ -5518,8 +5513,8 @@ function pretty_plain_targets(pp::PrettyPrinter, msg::Proto.PlainTargets)
     indent_sexp!(pp)
     newline(pp)
     write(pp, ":targets (")
-    for (i1950, _elem) in enumerate(msg.targets)
-        _idx = i1950 - 1
+    for (i1948, _elem) in enumerate(msg.targets)
+        _idx = i1948 - 1
         if (_idx > 0)
             write(pp, " ")
         end
@@ -5558,27 +5553,13 @@ function pretty_u_int128_value(pp::PrettyPrinter, msg::Proto.UInt128Value)
     return nothing
 end
 
-function pretty_ast_size_limit(pp::PrettyPrinter, msg::Proto.ASTSizeLimit)
-    write(pp, "(ast_size_limit")
-    indent_sexp!(pp)
-    newline(pp)
-    write(pp, ":warning_limit ")
-    write(pp, string(msg.warning_limit))
-    newline(pp)
-    write(pp, ":exception_limit ")
-    write(pp, string(msg.exception_limit))
-    write(pp, ")")
-    dedent!(pp)
-    return nothing
-end
-
 function pretty_export_csv_columns(pp::PrettyPrinter, msg::Proto.ExportCSVColumns)
     write(pp, "(export_csv_columns")
     indent_sexp!(pp)
     newline(pp)
     write(pp, ":columns (")
-    for (i1951, _elem) in enumerate(msg.columns)
-        _idx = i1951 - 1
+    for (i1949, _elem) in enumerate(msg.columns)
+        _idx = i1949 - 1
         if (_idx > 0)
             write(pp, " ")
         end
@@ -5744,7 +5725,6 @@ _pprint_dispatch(pp::PrettyPrinter, x::Proto.MissingValue) = pretty_missing_valu
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.PlainTargets) = pretty_plain_targets(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.StorageIntegration) = pretty_storage_integration(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.UInt128Value) = pretty_u_int128_value(pp, x)
-_pprint_dispatch(pp::PrettyPrinter, x::Proto.ASTSizeLimit) = pretty_ast_size_limit(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.ExportCSVColumns) = pretty_export_csv_columns(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.IVMConfig) = pretty_ivm_config(pp, x)
 _pprint_dispatch(pp::PrettyPrinter, x::Proto.MaintenanceLevel.T) = pretty_maintenance_level(pp, x)

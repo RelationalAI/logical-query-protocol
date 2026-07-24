@@ -6,9 +6,9 @@ using ProtoBuf: OneOf
 using ProtoBuf.EnumX: @enumx
 
 export ExportIcebergConfig, ExportCSVColumn, Demand, Undefine, MaintenanceLevel, Define
-export Context, Sync, SnapshotMapping, Abort, Output, ASTSizeLimit, ExportCSVColumns
-export IVMConfig, Snapshot, ExportCSVSource, Configure, Write, ExportCSVConfig, Export
-export Epoch, Read, Transaction, WhatIf
+export Context, Sync, SnapshotMapping, Abort, Output, ExportCSVColumns, IVMConfig, Snapshot
+export ExportCSVSource, Configure, Write, ExportCSVConfig, Export, Epoch, Read, Transaction
+export WhatIf
 abstract type var"##Abstract#Transaction" end
 abstract type var"##Abstract#Epoch" end
 abstract type var"##Abstract#Read" end
@@ -388,43 +388,6 @@ function PB._encoded_size(x::Output)
     return encoded_size
 end
 
-struct ASTSizeLimit
-    warning_limit::Int64
-    exception_limit::Int64
-end
-ASTSizeLimit(;warning_limit = zero(Int64), exception_limit = zero(Int64)) = ASTSizeLimit(warning_limit, exception_limit)
-PB.default_values(::Type{ASTSizeLimit}) = (;warning_limit = zero(Int64), exception_limit = zero(Int64))
-PB.field_numbers(::Type{ASTSizeLimit}) = (;warning_limit = 1, exception_limit = 2)
-
-function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:ASTSizeLimit}, _endpos::Int=0, _group::Bool=false)
-    warning_limit = zero(Int64)
-    exception_limit = zero(Int64)
-    while !PB.message_done(d, _endpos, _group)
-        field_number, wire_type = PB.decode_tag(d)
-        if field_number == 1
-            warning_limit = PB.decode(d, Int64)
-        elseif field_number == 2
-            exception_limit = PB.decode(d, Int64)
-        else
-            Base.skip(d, wire_type)
-        end
-    end
-    return ASTSizeLimit(warning_limit, exception_limit)
-end
-
-function PB.encode(e::PB.AbstractProtoEncoder, x::ASTSizeLimit)
-    initpos = position(e.io)
-    x.warning_limit != zero(Int64) && PB.encode(e, 1, x.warning_limit)
-    x.exception_limit != zero(Int64) && PB.encode(e, 2, x.exception_limit)
-    return position(e.io) - initpos
-end
-function PB._encoded_size(x::ASTSizeLimit)
-    encoded_size = 0
-    x.warning_limit != zero(Int64) && (encoded_size += PB._encoded_size(x.warning_limit, 1))
-    x.exception_limit != zero(Int64) && (encoded_size += PB._encoded_size(x.exception_limit, 2))
-    return encoded_size
-end
-
 struct ExportCSVColumns
     columns::Vector{ExportCSVColumn}
 end
@@ -573,16 +536,16 @@ end
 struct Configure
     semantics_version::Int64
     ivm_config::Union{Nothing,IVMConfig}
-    ast_size_limit::Union{Nothing,ASTSizeLimit}
+    configuration_values::Dict{String,Value}
 end
-Configure(;semantics_version = zero(Int64), ivm_config = nothing, ast_size_limit = nothing) = Configure(semantics_version, ivm_config, ast_size_limit)
-PB.default_values(::Type{Configure}) = (;semantics_version = zero(Int64), ivm_config = nothing, ast_size_limit = nothing)
-PB.field_numbers(::Type{Configure}) = (;semantics_version = 1, ivm_config = 2, ast_size_limit = 3)
+Configure(;semantics_version = zero(Int64), ivm_config = nothing, configuration_values = Dict{String,Value}()) = Configure(semantics_version, ivm_config, configuration_values)
+PB.default_values(::Type{Configure}) = (;semantics_version = zero(Int64), ivm_config = nothing, configuration_values = Dict{String,Value}())
+PB.field_numbers(::Type{Configure}) = (;semantics_version = 1, ivm_config = 2, configuration_values = 3)
 
 function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:Configure}, _endpos::Int=0, _group::Bool=false)
     semantics_version = zero(Int64)
     ivm_config = Ref{Union{Nothing,IVMConfig}}(nothing)
-    ast_size_limit = Ref{Union{Nothing,ASTSizeLimit}}(nothing)
+    configuration_values = Dict{String,Value}()
     while !PB.message_done(d, _endpos, _group)
         field_number, wire_type = PB.decode_tag(d)
         if field_number == 1
@@ -590,26 +553,26 @@ function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:Configure}, _endpos::Int
         elseif field_number == 2
             PB.decode!(d, ivm_config)
         elseif field_number == 3
-            PB.decode!(d, ast_size_limit)
+            PB.decode!(d, configuration_values)
         else
             Base.skip(d, wire_type)
         end
     end
-    return Configure(semantics_version, ivm_config[], ast_size_limit[])
+    return Configure(semantics_version, ivm_config[], configuration_values)
 end
 
 function PB.encode(e::PB.AbstractProtoEncoder, x::Configure)
     initpos = position(e.io)
     x.semantics_version != zero(Int64) && PB.encode(e, 1, x.semantics_version)
     !isnothing(x.ivm_config) && PB.encode(e, 2, x.ivm_config)
-    !isnothing(x.ast_size_limit) && PB.encode(e, 3, x.ast_size_limit)
+    !isempty(x.configuration_values) && PB.encode(e, 3, x.configuration_values)
     return position(e.io) - initpos
 end
 function PB._encoded_size(x::Configure)
     encoded_size = 0
     x.semantics_version != zero(Int64) && (encoded_size += PB._encoded_size(x.semantics_version, 1))
     !isnothing(x.ivm_config) && (encoded_size += PB._encoded_size(x.ivm_config, 2))
-    !isnothing(x.ast_size_limit) && (encoded_size += PB._encoded_size(x.ast_size_limit, 3))
+    !isempty(x.configuration_values) && (encoded_size += PB._encoded_size(x.configuration_values, 3))
     return encoded_size
 end
 
