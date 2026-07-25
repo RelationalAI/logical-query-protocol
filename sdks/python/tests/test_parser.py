@@ -127,6 +127,21 @@ def test_synthetic_key_marker():
     assert [c.name for c in relations.keys] == ["id"]
 
 
+def test_synthetic_key_with_unary_keyless_relation():
+    # A synthetic key with a single relation that has no value columns: the
+    # relation holds just the (synthetic) key.
+    fragment = (
+        '(fragment :f (csv_data (csv_locator (paths "x.csv")) (csv_config {}) '
+        "(relations (keys synthetic) (relation :keys)) "
+        '(asof "2025-01-01T00:00:00Z")))'
+    )
+    relations = _relations_of(fragment)
+    assert relations.synthetic_key is True
+    assert list(relations.keys) == []
+    assert len(relations.plain.targets) == 1
+    assert list(relations.plain.targets[0].values) == []
+
+
 def test_synthetic_key_rejects_unknown_marker():
     # Only the `synthetic` marker is accepted; anything else is a hard error.
     with pytest.raises(ParseError):
