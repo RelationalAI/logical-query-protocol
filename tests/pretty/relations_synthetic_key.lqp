@@ -18,7 +18,7 @@
                :csv_quotechar "\""
                :csv_skip 0})
             (relations
-              (keys :synthetic_key)
+              (keys synthetic)
               (relation :weights (column "weight" FLOAT))
               (relation :labels (column "label" STRING)))
             (asof "2025-06-01T00:00:00Z")))))

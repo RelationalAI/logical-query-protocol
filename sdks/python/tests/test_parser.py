@@ -116,8 +116,8 @@ def _relations_of(fragment: str):
 
 
 def test_synthetic_key_marker():
-    # `(keys :synthetic_key)` sets the synthetic_key flag and leaves keys empty.
-    relations = _relations_of(_relations_fragment("(keys :synthetic_key)"))
+    # `(keys synthetic)` sets the synthetic_key flag and leaves keys empty.
+    relations = _relations_of(_relations_fragment("(keys synthetic)"))
     assert relations.synthetic_key is True
     assert list(relations.keys) == []
 
@@ -128,9 +128,9 @@ def test_synthetic_key_marker():
 
 
 def test_synthetic_key_rejects_unknown_marker():
-    # Only the `:synthetic_key` marker is accepted; anything else is a hard error.
+    # Only the `synthetic` marker is accepted; anything else is a hard error.
     with pytest.raises(ParseError):
-        parse_fragment(_relations_fragment("(keys :bogus)"))
+        parse_fragment(_relations_fragment("(keys bogus)"))
 
 
 class TestSymbolLexing:

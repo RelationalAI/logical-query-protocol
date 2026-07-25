@@ -11,7 +11,7 @@
               (paths "s3://bucket/nodes.csv"))
             (csv_config {})
             (relations
-              (keys :synthetic_key)
+              (keys synthetic)
               (relation :weights
                 (column "weight" FLOAT))
               (relation :labels

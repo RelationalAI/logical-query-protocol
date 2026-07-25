@@ -655,220 +655,211 @@ func toPascalCase(s string) string {
 // --- Helper functions ---
 
 func (p *Parser) _extract_value_int32(value *pb.Value, default_ int64) int32 {
-	var _t2224 interface{}
+	var _t2221 interface{}
 	if value == nil {
 		return int32(default_)
 	}
-	_ = _t2224
-	var _t2225 interface{}
+	_ = _t2221
+	var _t2222 interface{}
 	if hasProtoField(value, "int32_value") {
 		return value.GetInt32Value()
 	}
-	_ = _t2225
+	_ = _t2222
 	panic(ParseError{msg: "expected an int32 value (e.g. `1i32`) for this config field"})
 }
 
 func (p *Parser) _extract_value_int64(value *pb.Value, default_ int64) int64 {
-	var _t2226 interface{}
+	var _t2223 interface{}
 	if (value != nil && hasProtoField(value, "int_value")) {
 		return value.GetIntValue()
+	}
+	_ = _t2223
+	return default_
+}
+
+func (p *Parser) _extract_value_string(value *pb.Value, default_ string) string {
+	var _t2224 interface{}
+	if (value != nil && hasProtoField(value, "string_value")) {
+		return value.GetStringValue()
+	}
+	_ = _t2224
+	return default_
+}
+
+func (p *Parser) _extract_value_boolean(value *pb.Value, default_ bool) bool {
+	var _t2225 interface{}
+	if (value != nil && hasProtoField(value, "boolean_value")) {
+		return value.GetBooleanValue()
+	}
+	_ = _t2225
+	return default_
+}
+
+func (p *Parser) _extract_value_string_list(value *pb.Value, default_ []string) []string {
+	var _t2226 interface{}
+	if (value != nil && hasProtoField(value, "string_value")) {
+		return []string{value.GetStringValue()}
 	}
 	_ = _t2226
 	return default_
 }
 
-func (p *Parser) _extract_value_string(value *pb.Value, default_ string) string {
-	var _t2227 interface{}
-	if (value != nil && hasProtoField(value, "string_value")) {
-		return value.GetStringValue()
-	}
-	_ = _t2227
-	return default_
-}
-
-func (p *Parser) _extract_value_boolean(value *pb.Value, default_ bool) bool {
-	var _t2228 interface{}
-	if (value != nil && hasProtoField(value, "boolean_value")) {
-		return value.GetBooleanValue()
-	}
-	_ = _t2228
-	return default_
-}
-
-func (p *Parser) _extract_value_string_list(value *pb.Value, default_ []string) []string {
-	var _t2229 interface{}
-	if (value != nil && hasProtoField(value, "string_value")) {
-		return []string{value.GetStringValue()}
-	}
-	_ = _t2229
-	return default_
-}
-
 func (p *Parser) _try_extract_value_int64(value *pb.Value) *int64 {
-	var _t2230 interface{}
+	var _t2227 interface{}
 	if (value != nil && hasProtoField(value, "int_value")) {
 		return ptr(value.GetIntValue())
+	}
+	_ = _t2227
+	return nil
+}
+
+func (p *Parser) _try_extract_value_float64(value *pb.Value) *float64 {
+	var _t2228 interface{}
+	if (value != nil && hasProtoField(value, "float_value")) {
+		return ptr(value.GetFloatValue())
+	}
+	_ = _t2228
+	return nil
+}
+
+func (p *Parser) _try_extract_value_bytes(value *pb.Value) []byte {
+	var _t2229 interface{}
+	if (value != nil && hasProtoField(value, "string_value")) {
+		return []byte(value.GetStringValue())
+	}
+	_ = _t2229
+	return nil
+}
+
+func (p *Parser) _try_extract_value_uint128(value *pb.Value) *pb.UInt128Value {
+	var _t2230 interface{}
+	if (value != nil && hasProtoField(value, "uint128_value")) {
+		return value.GetUint128Value()
 	}
 	_ = _t2230
 	return nil
 }
 
-func (p *Parser) _try_extract_value_float64(value *pb.Value) *float64 {
-	var _t2231 interface{}
-	if (value != nil && hasProtoField(value, "float_value")) {
-		return ptr(value.GetFloatValue())
-	}
-	_ = _t2231
-	return nil
-}
-
-func (p *Parser) _try_extract_value_bytes(value *pb.Value) []byte {
-	var _t2232 interface{}
-	if (value != nil && hasProtoField(value, "string_value")) {
-		return []byte(value.GetStringValue())
-	}
-	_ = _t2232
-	return nil
-}
-
-func (p *Parser) _try_extract_value_uint128(value *pb.Value) *pb.UInt128Value {
-	var _t2233 interface{}
-	if (value != nil && hasProtoField(value, "uint128_value")) {
-		return value.GetUint128Value()
-	}
-	_ = _t2233
-	return nil
-}
-
 func (p *Parser) construct_non_cdc_relations(targets []*pb.TargetRelation) *pb.TargetRelations {
-	_t2234 := &pb.PlainTargets{Targets: targets}
-	_t2235 := &pb.TargetRelations{Keys: []*pb.NamedColumn{}}
-	_t2235.Body = &pb.TargetRelations_Plain{Plain: _t2234}
-	return _t2235
+	_t2231 := &pb.PlainTargets{Targets: targets}
+	_t2232 := &pb.TargetRelations{Keys: []*pb.NamedColumn{}}
+	_t2232.Body = &pb.TargetRelations_Plain{Plain: _t2231}
+	return _t2232
 }
 
 func (p *Parser) construct_cdc_relations(inserts []*pb.TargetRelation, deletes []*pb.TargetRelation) *pb.TargetRelations {
-	_t2236 := &pb.CDCTargets{Inserts: inserts, Deletes: deletes}
-	_t2237 := &pb.TargetRelations{Keys: []*pb.NamedColumn{}}
-	_t2237.Body = &pb.TargetRelations_Cdc{Cdc: _t2236}
-	return _t2237
-}
-
-func (p *Parser) construct_synthetic_keys(marker string) []interface{} {
-	var _t2238 interface{}
-	if marker != "synthetic_key" {
-		panic(ParseError{msg: "expected the `:synthetic_key` marker in the relation keys clause"})
-	}
-	_ = _t2238
-	return []interface{}{[]*pb.NamedColumn{}, true}
+	_t2233 := &pb.CDCTargets{Inserts: inserts, Deletes: deletes}
+	_t2234 := &pb.TargetRelations{Keys: []*pb.NamedColumn{}}
+	_t2234.Body = &pb.TargetRelations_Cdc{Cdc: _t2233}
+	return _t2234
 }
 
 func (p *Parser) construct_relations(keys []interface{}, body *pb.TargetRelations) *pb.TargetRelations {
-	var _t2239 interface{}
+	var _t2235 interface{}
 	if hasProtoField(body, "plain") {
-		_t2240 := &pb.TargetRelations{Keys: keys[0].([]*pb.NamedColumn), SyntheticKey: keys[1].(bool)}
-		_t2240.Body = &pb.TargetRelations_Plain{Plain: body.GetPlain()}
-		return _t2240
+		_t2236 := &pb.TargetRelations{Keys: keys[0].([]*pb.NamedColumn), SyntheticKey: keys[1].(bool)}
+		_t2236.Body = &pb.TargetRelations_Plain{Plain: body.GetPlain()}
+		return _t2236
 	}
-	_ = _t2239
-	_t2241 := &pb.TargetRelations{Keys: keys[0].([]*pb.NamedColumn), SyntheticKey: keys[1].(bool)}
-	_t2241.Body = &pb.TargetRelations_Cdc{Cdc: body.GetCdc()}
-	return _t2241
+	_ = _t2235
+	_t2237 := &pb.TargetRelations{Keys: keys[0].([]*pb.NamedColumn), SyntheticKey: keys[1].(bool)}
+	_t2237.Body = &pb.TargetRelations_Cdc{Cdc: body.GetCdc()}
+	return _t2237
 }
 
 func (p *Parser) construct_csv_data(locator *pb.CSVLocator, config *pb.CSVConfig, columns_opt []*pb.GNFColumn, relations_opt *pb.TargetRelations, asof string) *pb.CSVData {
-	_t2242 := columns_opt
+	_t2238 := columns_opt
 	if columns_opt == nil {
-		_t2242 = []*pb.GNFColumn{}
+		_t2238 = []*pb.GNFColumn{}
 	}
-	_t2243 := &pb.CSVData{Locator: locator, Config: config, Columns: _t2242, Asof: asof, Relations: relations_opt}
-	return _t2243
+	_t2239 := &pb.CSVData{Locator: locator, Config: config, Columns: _t2238, Asof: asof, Relations: relations_opt}
+	return _t2239
 }
 
 func (p *Parser) construct_csv_config(config_dict [][]interface{}, storage_integration_opt [][]interface{}) *pb.CSVConfig {
 	config := dictFromList(config_dict)
-	_t2244 := p._extract_value_int32(dictGetValue(config, "csv_header_row"), 1)
-	header_row := _t2244
-	_t2245 := p._extract_value_int64(dictGetValue(config, "csv_skip"), 0)
-	skip := _t2245
-	_t2246 := p._extract_value_string(dictGetValue(config, "csv_new_line"), "")
-	new_line := _t2246
-	_t2247 := p._extract_value_string(dictGetValue(config, "csv_delimiter"), ",")
-	delimiter := _t2247
-	_t2248 := p._extract_value_string(dictGetValue(config, "csv_quotechar"), "\"")
-	quotechar := _t2248
-	_t2249 := p._extract_value_string(dictGetValue(config, "csv_escapechar"), "\"")
-	escapechar := _t2249
-	_t2250 := p._extract_value_string(dictGetValue(config, "csv_comment"), "")
-	comment := _t2250
-	_t2251 := p._extract_value_string_list(dictGetValue(config, "csv_missing_strings"), []string{})
-	missing_strings := _t2251
-	_t2252 := p._extract_value_string(dictGetValue(config, "csv_decimal_separator"), ".")
-	decimal_separator := _t2252
-	_t2253 := p._extract_value_string(dictGetValue(config, "csv_encoding"), "utf-8")
-	encoding := _t2253
-	_t2254 := p._extract_value_string(dictGetValue(config, "csv_compression"), "")
-	compression := _t2254
-	_t2255 := p._extract_value_int64(dictGetValue(config, "csv_partition_size_mb"), 0)
-	partition_size_mb := _t2255
-	_t2256 := p.construct_csv_storage_integration(storage_integration_opt)
-	storage_integration := _t2256
-	_t2257 := &pb.CSVConfig{HeaderRow: header_row, Skip: skip, NewLine: new_line, Delimiter: delimiter, Quotechar: quotechar, Escapechar: escapechar, Comment: comment, MissingStrings: missing_strings, DecimalSeparator: decimal_separator, Encoding: encoding, Compression: compression, PartitionSizeMb: partition_size_mb, StorageIntegration: storage_integration}
-	return _t2257
+	_t2240 := p._extract_value_int32(dictGetValue(config, "csv_header_row"), 1)
+	header_row := _t2240
+	_t2241 := p._extract_value_int64(dictGetValue(config, "csv_skip"), 0)
+	skip := _t2241
+	_t2242 := p._extract_value_string(dictGetValue(config, "csv_new_line"), "")
+	new_line := _t2242
+	_t2243 := p._extract_value_string(dictGetValue(config, "csv_delimiter"), ",")
+	delimiter := _t2243
+	_t2244 := p._extract_value_string(dictGetValue(config, "csv_quotechar"), "\"")
+	quotechar := _t2244
+	_t2245 := p._extract_value_string(dictGetValue(config, "csv_escapechar"), "\"")
+	escapechar := _t2245
+	_t2246 := p._extract_value_string(dictGetValue(config, "csv_comment"), "")
+	comment := _t2246
+	_t2247 := p._extract_value_string_list(dictGetValue(config, "csv_missing_strings"), []string{})
+	missing_strings := _t2247
+	_t2248 := p._extract_value_string(dictGetValue(config, "csv_decimal_separator"), ".")
+	decimal_separator := _t2248
+	_t2249 := p._extract_value_string(dictGetValue(config, "csv_encoding"), "utf-8")
+	encoding := _t2249
+	_t2250 := p._extract_value_string(dictGetValue(config, "csv_compression"), "")
+	compression := _t2250
+	_t2251 := p._extract_value_int64(dictGetValue(config, "csv_partition_size_mb"), 0)
+	partition_size_mb := _t2251
+	_t2252 := p.construct_csv_storage_integration(storage_integration_opt)
+	storage_integration := _t2252
+	_t2253 := &pb.CSVConfig{HeaderRow: header_row, Skip: skip, NewLine: new_line, Delimiter: delimiter, Quotechar: quotechar, Escapechar: escapechar, Comment: comment, MissingStrings: missing_strings, DecimalSeparator: decimal_separator, Encoding: encoding, Compression: compression, PartitionSizeMb: partition_size_mb, StorageIntegration: storage_integration}
+	return _t2253
 }
 
 func (p *Parser) construct_csv_storage_integration(storage_integration_opt [][]interface{}) *pb.StorageIntegration {
-	var _t2258 interface{}
+	var _t2254 interface{}
 	if storage_integration_opt == nil {
 		return nil
 	}
-	_ = _t2258
+	_ = _t2254
 	config := dictFromList(storage_integration_opt)
-	_t2259 := p._extract_value_string(dictGetValue(config, "provider"), "")
-	_t2260 := p._extract_value_string(dictGetValue(config, "azure_sas_token"), "")
-	_t2261 := p._extract_value_string(dictGetValue(config, "s3_region"), "")
-	_t2262 := p._extract_value_string(dictGetValue(config, "s3_access_key_id"), "")
-	_t2263 := p._extract_value_string(dictGetValue(config, "s3_secret_access_key"), "")
-	_t2264 := &pb.StorageIntegration{Provider: _t2259, AzureSasToken: _t2260, S3Region: _t2261, S3AccessKeyId: _t2262, S3SecretAccessKey: _t2263}
-	return _t2264
+	_t2255 := p._extract_value_string(dictGetValue(config, "provider"), "")
+	_t2256 := p._extract_value_string(dictGetValue(config, "azure_sas_token"), "")
+	_t2257 := p._extract_value_string(dictGetValue(config, "s3_region"), "")
+	_t2258 := p._extract_value_string(dictGetValue(config, "s3_access_key_id"), "")
+	_t2259 := p._extract_value_string(dictGetValue(config, "s3_secret_access_key"), "")
+	_t2260 := &pb.StorageIntegration{Provider: _t2255, AzureSasToken: _t2256, S3Region: _t2257, S3AccessKeyId: _t2258, S3SecretAccessKey: _t2259}
+	return _t2260
 }
 
 func (p *Parser) construct_betree_info(key_types []*pb.Type, value_types []*pb.Type, config_dict [][]interface{}) *pb.BeTreeInfo {
 	config := dictFromList(config_dict)
-	_t2265 := p._try_extract_value_float64(dictGetValue(config, "betree_config_epsilon"))
-	epsilon := _t2265
-	_t2266 := p._try_extract_value_int64(dictGetValue(config, "betree_config_max_pivots"))
-	max_pivots := _t2266
-	_t2267 := p._try_extract_value_int64(dictGetValue(config, "betree_config_max_deltas"))
-	max_deltas := _t2267
-	_t2268 := p._try_extract_value_int64(dictGetValue(config, "betree_config_max_leaf"))
-	max_leaf := _t2268
-	_t2269 := &pb.BeTreeConfig{Epsilon: deref(epsilon, 0.0), MaxPivots: deref(max_pivots, 0), MaxDeltas: deref(max_deltas, 0), MaxLeaf: deref(max_leaf, 0)}
-	storage_config := _t2269
-	_t2270 := p._try_extract_value_uint128(dictGetValue(config, "betree_locator_root_pageid"))
-	root_pageid := _t2270
-	_t2271 := p._try_extract_value_bytes(dictGetValue(config, "betree_locator_inline_data"))
-	inline_data := _t2271
-	_t2272 := p._try_extract_value_int64(dictGetValue(config, "betree_locator_element_count"))
-	element_count := _t2272
-	_t2273 := p._try_extract_value_int64(dictGetValue(config, "betree_locator_tree_height"))
-	tree_height := _t2273
-	_t2274 := &pb.BeTreeLocator{ElementCount: deref(element_count, 0), TreeHeight: deref(tree_height, 0)}
+	_t2261 := p._try_extract_value_float64(dictGetValue(config, "betree_config_epsilon"))
+	epsilon := _t2261
+	_t2262 := p._try_extract_value_int64(dictGetValue(config, "betree_config_max_pivots"))
+	max_pivots := _t2262
+	_t2263 := p._try_extract_value_int64(dictGetValue(config, "betree_config_max_deltas"))
+	max_deltas := _t2263
+	_t2264 := p._try_extract_value_int64(dictGetValue(config, "betree_config_max_leaf"))
+	max_leaf := _t2264
+	_t2265 := &pb.BeTreeConfig{Epsilon: deref(epsilon, 0.0), MaxPivots: deref(max_pivots, 0), MaxDeltas: deref(max_deltas, 0), MaxLeaf: deref(max_leaf, 0)}
+	storage_config := _t2265
+	_t2266 := p._try_extract_value_uint128(dictGetValue(config, "betree_locator_root_pageid"))
+	root_pageid := _t2266
+	_t2267 := p._try_extract_value_bytes(dictGetValue(config, "betree_locator_inline_data"))
+	inline_data := _t2267
+	_t2268 := p._try_extract_value_int64(dictGetValue(config, "betree_locator_element_count"))
+	element_count := _t2268
+	_t2269 := p._try_extract_value_int64(dictGetValue(config, "betree_locator_tree_height"))
+	tree_height := _t2269
+	_t2270 := &pb.BeTreeLocator{ElementCount: deref(element_count, 0), TreeHeight: deref(tree_height, 0)}
 	if root_pageid != nil {
-		_t2274.Location = &pb.BeTreeLocator_RootPageid{RootPageid: root_pageid}
+		_t2270.Location = &pb.BeTreeLocator_RootPageid{RootPageid: root_pageid}
 	} else {
-		_t2274.Location = &pb.BeTreeLocator_InlineData{InlineData: inline_data}
+		_t2270.Location = &pb.BeTreeLocator_InlineData{InlineData: inline_data}
 	}
-	relation_locator := _t2274
-	_t2275 := &pb.BeTreeInfo{KeyTypes: key_types, ValueTypes: value_types, StorageConfig: storage_config, RelationLocator: relation_locator}
-	return _t2275
+	relation_locator := _t2270
+	_t2271 := &pb.BeTreeInfo{KeyTypes: key_types, ValueTypes: value_types, StorageConfig: storage_config, RelationLocator: relation_locator}
+	return _t2271
 }
 
 func (p *Parser) default_configure() *pb.Configure {
-	_t2276 := &pb.IVMConfig{Level: pb.MaintenanceLevel_MAINTENANCE_LEVEL_OFF}
-	ivm_config := _t2276
-	_t2277 := &pb.Configure{SemanticsVersion: 0, IvmConfig: ivm_config}
-	return _t2277
+	_t2272 := &pb.IVMConfig{Level: pb.MaintenanceLevel_MAINTENANCE_LEVEL_OFF}
+	ivm_config := _t2272
+	_t2273 := &pb.Configure{SemanticsVersion: 0, IvmConfig: ivm_config}
+	return _t2273
 }
 
 func (p *Parser) construct_configure(config_dict [][]interface{}) *pb.Configure {
@@ -890,4534 +881,4532 @@ func (p *Parser) construct_configure(config_dict [][]interface{}) *pb.Configure 
 			}
 		}
 	}
-	_t2278 := &pb.IVMConfig{Level: maintenance_level}
-	ivm_config := _t2278
-	_t2279 := p._extract_value_int64(dictGetValue(config, "semantics_version"), 0)
-	semantics_version := _t2279
-	_t2280 := &pb.Configure{SemanticsVersion: semantics_version, IvmConfig: ivm_config}
-	return _t2280
+	_t2274 := &pb.IVMConfig{Level: maintenance_level}
+	ivm_config := _t2274
+	_t2275 := p._extract_value_int64(dictGetValue(config, "semantics_version"), 0)
+	semantics_version := _t2275
+	_t2276 := &pb.Configure{SemanticsVersion: semantics_version, IvmConfig: ivm_config}
+	return _t2276
 }
 
 func (p *Parser) construct_export_csv_config(path string, columns []*pb.ExportCSVColumn, config_dict [][]interface{}) *pb.ExportCSVConfig {
 	config := dictFromList(config_dict)
-	_t2281 := p._extract_value_int64(dictGetValue(config, "partition_size"), 0)
-	partition_size := _t2281
-	_t2282 := p._extract_value_string(dictGetValue(config, "compression"), "")
-	compression := _t2282
-	_t2283 := p._extract_value_boolean(dictGetValue(config, "syntax_header_row"), true)
-	syntax_header_row := _t2283
-	_t2284 := p._extract_value_string(dictGetValue(config, "syntax_missing_string"), "")
-	syntax_missing_string := _t2284
-	_t2285 := p._extract_value_string(dictGetValue(config, "syntax_delim"), ",")
-	syntax_delim := _t2285
-	_t2286 := p._extract_value_string(dictGetValue(config, "syntax_quotechar"), "\"")
-	syntax_quotechar := _t2286
-	_t2287 := p._extract_value_string(dictGetValue(config, "syntax_escapechar"), "\\")
-	syntax_escapechar := _t2287
-	_t2288 := &pb.ExportCSVConfig{Path: path, DataColumns: columns, PartitionSize: ptr(partition_size), Compression: ptr(compression), SyntaxHeaderRow: ptr(syntax_header_row), SyntaxMissingString: ptr(syntax_missing_string), SyntaxDelim: ptr(syntax_delim), SyntaxQuotechar: ptr(syntax_quotechar), SyntaxEscapechar: ptr(syntax_escapechar)}
-	return _t2288
+	_t2277 := p._extract_value_int64(dictGetValue(config, "partition_size"), 0)
+	partition_size := _t2277
+	_t2278 := p._extract_value_string(dictGetValue(config, "compression"), "")
+	compression := _t2278
+	_t2279 := p._extract_value_boolean(dictGetValue(config, "syntax_header_row"), true)
+	syntax_header_row := _t2279
+	_t2280 := p._extract_value_string(dictGetValue(config, "syntax_missing_string"), "")
+	syntax_missing_string := _t2280
+	_t2281 := p._extract_value_string(dictGetValue(config, "syntax_delim"), ",")
+	syntax_delim := _t2281
+	_t2282 := p._extract_value_string(dictGetValue(config, "syntax_quotechar"), "\"")
+	syntax_quotechar := _t2282
+	_t2283 := p._extract_value_string(dictGetValue(config, "syntax_escapechar"), "\\")
+	syntax_escapechar := _t2283
+	_t2284 := &pb.ExportCSVConfig{Path: path, DataColumns: columns, PartitionSize: ptr(partition_size), Compression: ptr(compression), SyntaxHeaderRow: ptr(syntax_header_row), SyntaxMissingString: ptr(syntax_missing_string), SyntaxDelim: ptr(syntax_delim), SyntaxQuotechar: ptr(syntax_quotechar), SyntaxEscapechar: ptr(syntax_escapechar)}
+	return _t2284
 }
 
 func (p *Parser) construct_export_csv_config_with_location(location []interface{}, csv_source *pb.ExportCSVSource, csv_config *pb.CSVConfig) *pb.ExportCSVConfig {
-	_t2289 := &pb.ExportCSVConfig{Path: location[0].(string), TransactionOutputName: location[1].(string), CsvSource: csv_source, CsvConfig: csv_config}
-	return _t2289
+	_t2285 := &pb.ExportCSVConfig{Path: location[0].(string), TransactionOutputName: location[1].(string), CsvSource: csv_source, CsvConfig: csv_config}
+	return _t2285
 }
 
 func (p *Parser) construct_iceberg_catalog_config(catalog_uri string, scope_opt *string, property_pairs [][]interface{}, auth_property_pairs [][]interface{}) *pb.IcebergCatalogConfig {
 	props := stringMapFromPairs(property_pairs)
 	auth_props := stringMapFromPairs(auth_property_pairs)
-	_t2290 := &pb.IcebergCatalogConfig{CatalogUri: catalog_uri, Scope: ptr(deref(scope_opt, "")), Properties: props, AuthProperties: auth_props}
-	return _t2290
+	_t2286 := &pb.IcebergCatalogConfig{CatalogUri: catalog_uri, Scope: ptr(deref(scope_opt, "")), Properties: props, AuthProperties: auth_props}
+	return _t2286
 }
 
 func (p *Parser) construct_iceberg_data(locator *pb.IcebergLocator, config *pb.IcebergCatalogConfig, columns []*pb.GNFColumn, from_snapshot_opt *string, to_snapshot_opt *string, returns_delta bool) *pb.IcebergData {
-	_t2291 := &pb.IcebergData{Locator: locator, Config: config, Columns: columns, FromSnapshot: ptr(deref(from_snapshot_opt, "")), ToSnapshot: ptr(deref(to_snapshot_opt, "")), ReturnsDelta: returns_delta}
-	return _t2291
+	_t2287 := &pb.IcebergData{Locator: locator, Config: config, Columns: columns, FromSnapshot: ptr(deref(from_snapshot_opt, "")), ToSnapshot: ptr(deref(to_snapshot_opt, "")), ReturnsDelta: returns_delta}
+	return _t2287
 }
 
 func (p *Parser) construct_export_iceberg_config_full(locator *pb.IcebergLocator, config *pb.IcebergCatalogConfig, table_def *pb.RelationId, table_property_pairs [][]interface{}, config_dict [][]interface{}) *pb.ExportIcebergConfig {
-	_t2292 := config_dict
+	_t2288 := config_dict
 	if config_dict == nil {
-		_t2292 = [][]interface{}{}
+		_t2288 = [][]interface{}{}
 	}
-	cfg := dictFromList(_t2292)
-	_t2293 := p._extract_value_string(dictGetValue(cfg, "prefix"), "")
-	prefix := _t2293
-	_t2294 := p._extract_value_int64(dictGetValue(cfg, "target_file_size_bytes"), 0)
-	target_file_size_bytes := _t2294
-	_t2295 := p._extract_value_string(dictGetValue(cfg, "compression"), "")
-	compression := _t2295
+	cfg := dictFromList(_t2288)
+	_t2289 := p._extract_value_string(dictGetValue(cfg, "prefix"), "")
+	prefix := _t2289
+	_t2290 := p._extract_value_int64(dictGetValue(cfg, "target_file_size_bytes"), 0)
+	target_file_size_bytes := _t2290
+	_t2291 := p._extract_value_string(dictGetValue(cfg, "compression"), "")
+	compression := _t2291
 	table_props := stringMapFromPairs(table_property_pairs)
-	_t2296 := &pb.ExportIcebergConfig{Locator: locator, Config: config, TableDef: table_def, Prefix: ptr(prefix), TargetFileSizeBytes: ptr(target_file_size_bytes), Compression: compression, TableProperties: table_props}
-	return _t2296
+	_t2292 := &pb.ExportIcebergConfig{Locator: locator, Config: config, TableDef: table_def, Prefix: ptr(prefix), TargetFileSizeBytes: ptr(target_file_size_bytes), Compression: compression, TableProperties: table_props}
+	return _t2292
 }
 
 // --- Parse functions ---
 
 func (p *Parser) parse_transaction() *pb.Transaction {
-	span_start715 := int64(p.spanStart())
+	span_start714 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("transaction")
-	var _t1418 *pb.Configure
+	var _t1416 *pb.Configure
 	if (p.matchLookaheadLiteral("(", 0) && p.matchLookaheadLiteral("configure", 1)) {
-		_t1419 := p.parse_configure()
+		_t1417 := p.parse_configure()
+		_t1416 = _t1417
+	}
+	configure708 := _t1416
+	var _t1418 *pb.Sync
+	if (p.matchLookaheadLiteral("(", 0) && p.matchLookaheadLiteral("sync", 1)) {
+		_t1419 := p.parse_sync()
 		_t1418 = _t1419
 	}
-	configure709 := _t1418
-	var _t1420 *pb.Sync
-	if (p.matchLookaheadLiteral("(", 0) && p.matchLookaheadLiteral("sync", 1)) {
-		_t1421 := p.parse_sync()
-		_t1420 = _t1421
+	sync709 := _t1418
+	xs710 := []*pb.Epoch{}
+	cond711 := p.matchLookaheadLiteral("(", 0)
+	for cond711 {
+		_t1420 := p.parse_epoch()
+		item712 := _t1420
+		xs710 = append(xs710, item712)
+		cond711 = p.matchLookaheadLiteral("(", 0)
 	}
-	sync710 := _t1420
-	xs711 := []*pb.Epoch{}
-	cond712 := p.matchLookaheadLiteral("(", 0)
-	for cond712 {
-		_t1422 := p.parse_epoch()
-		item713 := _t1422
-		xs711 = append(xs711, item713)
-		cond712 = p.matchLookaheadLiteral("(", 0)
-	}
-	epochs714 := xs711
+	epochs713 := xs710
 	p.consumeLiteral(")")
-	_t1423 := p.default_configure()
-	_t1424 := configure709
-	if configure709 == nil {
-		_t1424 = _t1423
+	_t1421 := p.default_configure()
+	_t1422 := configure708
+	if configure708 == nil {
+		_t1422 = _t1421
 	}
-	_t1425 := &pb.Transaction{Epochs: epochs714, Configure: _t1424, Sync: sync710}
-	result716 := _t1425
-	p.recordSpan(int(span_start715), "Transaction")
-	return result716
+	_t1423 := &pb.Transaction{Epochs: epochs713, Configure: _t1422, Sync: sync709}
+	result715 := _t1423
+	p.recordSpan(int(span_start714), "Transaction")
+	return result715
 }
 
 func (p *Parser) parse_configure() *pb.Configure {
-	span_start718 := int64(p.spanStart())
+	span_start717 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("configure")
-	_t1426 := p.parse_config_dict()
-	config_dict717 := _t1426
+	_t1424 := p.parse_config_dict()
+	config_dict716 := _t1424
 	p.consumeLiteral(")")
-	_t1427 := p.construct_configure(config_dict717)
-	result719 := _t1427
-	p.recordSpan(int(span_start718), "Configure")
-	return result719
+	_t1425 := p.construct_configure(config_dict716)
+	result718 := _t1425
+	p.recordSpan(int(span_start717), "Configure")
+	return result718
 }
 
 func (p *Parser) parse_config_dict() [][]interface{} {
 	p.consumeLiteral("{")
-	xs720 := [][]interface{}{}
-	cond721 := p.matchLookaheadLiteral(":", 0)
-	for cond721 {
-		_t1428 := p.parse_config_key_value()
-		item722 := _t1428
-		xs720 = append(xs720, item722)
-		cond721 = p.matchLookaheadLiteral(":", 0)
+	xs719 := [][]interface{}{}
+	cond720 := p.matchLookaheadLiteral(":", 0)
+	for cond720 {
+		_t1426 := p.parse_config_key_value()
+		item721 := _t1426
+		xs719 = append(xs719, item721)
+		cond720 = p.matchLookaheadLiteral(":", 0)
 	}
-	config_key_values723 := xs720
+	config_key_values722 := xs719
 	p.consumeLiteral("}")
-	return config_key_values723
+	return config_key_values722
 }
 
 func (p *Parser) parse_config_key_value() []interface{} {
 	p.consumeLiteral(":")
-	symbol724 := p.consumeTerminal("SYMBOL").Value.str
-	_t1429 := p.parse_raw_value()
-	raw_value725 := _t1429
-	return []interface{}{symbol724, raw_value725}
+	symbol723 := p.consumeTerminal("SYMBOL").Value.str
+	_t1427 := p.parse_raw_value()
+	raw_value724 := _t1427
+	return []interface{}{symbol723, raw_value724}
 }
 
 func (p *Parser) parse_raw_value() *pb.Value {
-	span_start739 := int64(p.spanStart())
-	var _t1430 int64
+	span_start738 := int64(p.spanStart())
+	var _t1428 int64
 	if p.matchLookaheadLiteral("true", 0) {
-		_t1430 = 12
+		_t1428 = 12
 	} else {
-		var _t1431 int64
+		var _t1429 int64
 		if p.matchLookaheadLiteral("missing", 0) {
-			_t1431 = 11
+			_t1429 = 11
 		} else {
-			var _t1432 int64
+			var _t1430 int64
 			if p.matchLookaheadLiteral("false", 0) {
-				_t1432 = 12
+				_t1430 = 12
 			} else {
-				var _t1433 int64
+				var _t1431 int64
 				if p.matchLookaheadLiteral("(", 0) {
-					var _t1434 int64
+					var _t1432 int64
 					if p.matchLookaheadLiteral("datetime", 1) {
-						_t1434 = 1
+						_t1432 = 1
+					} else {
+						var _t1433 int64
+						if p.matchLookaheadLiteral("date", 1) {
+							_t1433 = 0
+						} else {
+							_t1433 = -1
+						}
+						_t1432 = _t1433
+					}
+					_t1431 = _t1432
+				} else {
+					var _t1434 int64
+					if p.matchLookaheadTerminal("UINT32", 0) {
+						_t1434 = 7
 					} else {
 						var _t1435 int64
-						if p.matchLookaheadLiteral("date", 1) {
-							_t1435 = 0
+						if p.matchLookaheadTerminal("UINT128", 0) {
+							_t1435 = 8
 						} else {
-							_t1435 = -1
+							var _t1436 int64
+							if p.matchLookaheadTerminal("STRING", 0) {
+								_t1436 = 2
+							} else {
+								var _t1437 int64
+								if p.matchLookaheadTerminal("INT32", 0) {
+									_t1437 = 3
+								} else {
+									var _t1438 int64
+									if p.matchLookaheadTerminal("INT128", 0) {
+										_t1438 = 9
+									} else {
+										var _t1439 int64
+										if p.matchLookaheadTerminal("INT", 0) {
+											_t1439 = 4
+										} else {
+											var _t1440 int64
+											if p.matchLookaheadTerminal("FLOAT32", 0) {
+												_t1440 = 5
+											} else {
+												var _t1441 int64
+												if p.matchLookaheadTerminal("FLOAT", 0) {
+													_t1441 = 6
+												} else {
+													var _t1442 int64
+													if p.matchLookaheadTerminal("DECIMAL", 0) {
+														_t1442 = 10
+													} else {
+														_t1442 = -1
+													}
+													_t1441 = _t1442
+												}
+												_t1440 = _t1441
+											}
+											_t1439 = _t1440
+										}
+										_t1438 = _t1439
+									}
+									_t1437 = _t1438
+								}
+								_t1436 = _t1437
+							}
+							_t1435 = _t1436
 						}
 						_t1434 = _t1435
 					}
-					_t1433 = _t1434
-				} else {
-					var _t1436 int64
-					if p.matchLookaheadTerminal("UINT32", 0) {
-						_t1436 = 7
-					} else {
-						var _t1437 int64
-						if p.matchLookaheadTerminal("UINT128", 0) {
-							_t1437 = 8
-						} else {
-							var _t1438 int64
-							if p.matchLookaheadTerminal("STRING", 0) {
-								_t1438 = 2
-							} else {
-								var _t1439 int64
-								if p.matchLookaheadTerminal("INT32", 0) {
-									_t1439 = 3
-								} else {
-									var _t1440 int64
-									if p.matchLookaheadTerminal("INT128", 0) {
-										_t1440 = 9
-									} else {
-										var _t1441 int64
-										if p.matchLookaheadTerminal("INT", 0) {
-											_t1441 = 4
-										} else {
-											var _t1442 int64
-											if p.matchLookaheadTerminal("FLOAT32", 0) {
-												_t1442 = 5
-											} else {
-												var _t1443 int64
-												if p.matchLookaheadTerminal("FLOAT", 0) {
-													_t1443 = 6
-												} else {
-													var _t1444 int64
-													if p.matchLookaheadTerminal("DECIMAL", 0) {
-														_t1444 = 10
-													} else {
-														_t1444 = -1
-													}
-													_t1443 = _t1444
-												}
-												_t1442 = _t1443
-											}
-											_t1441 = _t1442
-										}
-										_t1440 = _t1441
-									}
-									_t1439 = _t1440
-								}
-								_t1438 = _t1439
-							}
-							_t1437 = _t1438
-						}
-						_t1436 = _t1437
-					}
-					_t1433 = _t1436
+					_t1431 = _t1434
 				}
-				_t1432 = _t1433
+				_t1430 = _t1431
 			}
-			_t1431 = _t1432
+			_t1429 = _t1430
 		}
-		_t1430 = _t1431
+		_t1428 = _t1429
 	}
-	prediction726 := _t1430
-	var _t1445 *pb.Value
-	if prediction726 == 12 {
-		_t1446 := p.parse_boolean_value()
-		boolean_value738 := _t1446
-		_t1447 := &pb.Value{}
-		_t1447.Value = &pb.Value_BooleanValue{BooleanValue: boolean_value738}
-		_t1445 = _t1447
+	prediction725 := _t1428
+	var _t1443 *pb.Value
+	if prediction725 == 12 {
+		_t1444 := p.parse_boolean_value()
+		boolean_value737 := _t1444
+		_t1445 := &pb.Value{}
+		_t1445.Value = &pb.Value_BooleanValue{BooleanValue: boolean_value737}
+		_t1443 = _t1445
 	} else {
-		var _t1448 *pb.Value
-		if prediction726 == 11 {
+		var _t1446 *pb.Value
+		if prediction725 == 11 {
 			p.consumeLiteral("missing")
-			_t1449 := &pb.MissingValue{}
-			_t1450 := &pb.Value{}
-			_t1450.Value = &pb.Value_MissingValue{MissingValue: _t1449}
-			_t1448 = _t1450
+			_t1447 := &pb.MissingValue{}
+			_t1448 := &pb.Value{}
+			_t1448.Value = &pb.Value_MissingValue{MissingValue: _t1447}
+			_t1446 = _t1448
 		} else {
-			var _t1451 *pb.Value
-			if prediction726 == 10 {
-				decimal737 := p.consumeTerminal("DECIMAL").Value.decimal
-				_t1452 := &pb.Value{}
-				_t1452.Value = &pb.Value_DecimalValue{DecimalValue: decimal737}
-				_t1451 = _t1452
+			var _t1449 *pb.Value
+			if prediction725 == 10 {
+				decimal736 := p.consumeTerminal("DECIMAL").Value.decimal
+				_t1450 := &pb.Value{}
+				_t1450.Value = &pb.Value_DecimalValue{DecimalValue: decimal736}
+				_t1449 = _t1450
 			} else {
-				var _t1453 *pb.Value
-				if prediction726 == 9 {
-					int128736 := p.consumeTerminal("INT128").Value.int128
-					_t1454 := &pb.Value{}
-					_t1454.Value = &pb.Value_Int128Value{Int128Value: int128736}
-					_t1453 = _t1454
+				var _t1451 *pb.Value
+				if prediction725 == 9 {
+					int128735 := p.consumeTerminal("INT128").Value.int128
+					_t1452 := &pb.Value{}
+					_t1452.Value = &pb.Value_Int128Value{Int128Value: int128735}
+					_t1451 = _t1452
 				} else {
-					var _t1455 *pb.Value
-					if prediction726 == 8 {
-						uint128735 := p.consumeTerminal("UINT128").Value.uint128
-						_t1456 := &pb.Value{}
-						_t1456.Value = &pb.Value_Uint128Value{Uint128Value: uint128735}
-						_t1455 = _t1456
+					var _t1453 *pb.Value
+					if prediction725 == 8 {
+						uint128734 := p.consumeTerminal("UINT128").Value.uint128
+						_t1454 := &pb.Value{}
+						_t1454.Value = &pb.Value_Uint128Value{Uint128Value: uint128734}
+						_t1453 = _t1454
 					} else {
-						var _t1457 *pb.Value
-						if prediction726 == 7 {
-							uint32734 := p.consumeTerminal("UINT32").Value.u32
-							_t1458 := &pb.Value{}
-							_t1458.Value = &pb.Value_Uint32Value{Uint32Value: uint32734}
-							_t1457 = _t1458
+						var _t1455 *pb.Value
+						if prediction725 == 7 {
+							uint32733 := p.consumeTerminal("UINT32").Value.u32
+							_t1456 := &pb.Value{}
+							_t1456.Value = &pb.Value_Uint32Value{Uint32Value: uint32733}
+							_t1455 = _t1456
 						} else {
-							var _t1459 *pb.Value
-							if prediction726 == 6 {
-								float733 := p.consumeTerminal("FLOAT").Value.f64
-								_t1460 := &pb.Value{}
-								_t1460.Value = &pb.Value_FloatValue{FloatValue: float733}
-								_t1459 = _t1460
+							var _t1457 *pb.Value
+							if prediction725 == 6 {
+								float732 := p.consumeTerminal("FLOAT").Value.f64
+								_t1458 := &pb.Value{}
+								_t1458.Value = &pb.Value_FloatValue{FloatValue: float732}
+								_t1457 = _t1458
 							} else {
-								var _t1461 *pb.Value
-								if prediction726 == 5 {
-									float32732 := p.consumeTerminal("FLOAT32").Value.f32
-									_t1462 := &pb.Value{}
-									_t1462.Value = &pb.Value_Float32Value{Float32Value: float32732}
-									_t1461 = _t1462
+								var _t1459 *pb.Value
+								if prediction725 == 5 {
+									float32731 := p.consumeTerminal("FLOAT32").Value.f32
+									_t1460 := &pb.Value{}
+									_t1460.Value = &pb.Value_Float32Value{Float32Value: float32731}
+									_t1459 = _t1460
 								} else {
-									var _t1463 *pb.Value
-									if prediction726 == 4 {
-										int731 := p.consumeTerminal("INT").Value.i64
-										_t1464 := &pb.Value{}
-										_t1464.Value = &pb.Value_IntValue{IntValue: int731}
-										_t1463 = _t1464
+									var _t1461 *pb.Value
+									if prediction725 == 4 {
+										int730 := p.consumeTerminal("INT").Value.i64
+										_t1462 := &pb.Value{}
+										_t1462.Value = &pb.Value_IntValue{IntValue: int730}
+										_t1461 = _t1462
 									} else {
-										var _t1465 *pb.Value
-										if prediction726 == 3 {
-											int32730 := p.consumeTerminal("INT32").Value.i32
-											_t1466 := &pb.Value{}
-											_t1466.Value = &pb.Value_Int32Value{Int32Value: int32730}
-											_t1465 = _t1466
+										var _t1463 *pb.Value
+										if prediction725 == 3 {
+											int32729 := p.consumeTerminal("INT32").Value.i32
+											_t1464 := &pb.Value{}
+											_t1464.Value = &pb.Value_Int32Value{Int32Value: int32729}
+											_t1463 = _t1464
 										} else {
-											var _t1467 *pb.Value
-											if prediction726 == 2 {
-												string729 := p.consumeTerminal("STRING").Value.str
-												_t1468 := &pb.Value{}
-												_t1468.Value = &pb.Value_StringValue{StringValue: string729}
-												_t1467 = _t1468
+											var _t1465 *pb.Value
+											if prediction725 == 2 {
+												string728 := p.consumeTerminal("STRING").Value.str
+												_t1466 := &pb.Value{}
+												_t1466.Value = &pb.Value_StringValue{StringValue: string728}
+												_t1465 = _t1466
 											} else {
-												var _t1469 *pb.Value
-												if prediction726 == 1 {
-													_t1470 := p.parse_raw_datetime()
-													raw_datetime728 := _t1470
-													_t1471 := &pb.Value{}
-													_t1471.Value = &pb.Value_DatetimeValue{DatetimeValue: raw_datetime728}
-													_t1469 = _t1471
+												var _t1467 *pb.Value
+												if prediction725 == 1 {
+													_t1468 := p.parse_raw_datetime()
+													raw_datetime727 := _t1468
+													_t1469 := &pb.Value{}
+													_t1469.Value = &pb.Value_DatetimeValue{DatetimeValue: raw_datetime727}
+													_t1467 = _t1469
 												} else {
-													var _t1472 *pb.Value
-													if prediction726 == 0 {
-														_t1473 := p.parse_raw_date()
-														raw_date727 := _t1473
-														_t1474 := &pb.Value{}
-														_t1474.Value = &pb.Value_DateValue{DateValue: raw_date727}
-														_t1472 = _t1474
+													var _t1470 *pb.Value
+													if prediction725 == 0 {
+														_t1471 := p.parse_raw_date()
+														raw_date726 := _t1471
+														_t1472 := &pb.Value{}
+														_t1472.Value = &pb.Value_DateValue{DateValue: raw_date726}
+														_t1470 = _t1472
 													} else {
 														panic(ParseError{msg: fmt.Sprintf("%s: %s=`%v`", "Unexpected token in raw_value", p.lookahead(0).Type, p.lookahead(0).Value)})
 													}
-													_t1469 = _t1472
+													_t1467 = _t1470
 												}
-												_t1467 = _t1469
+												_t1465 = _t1467
 											}
-											_t1465 = _t1467
+											_t1463 = _t1465
 										}
-										_t1463 = _t1465
+										_t1461 = _t1463
 									}
-									_t1461 = _t1463
+									_t1459 = _t1461
 								}
-								_t1459 = _t1461
+								_t1457 = _t1459
 							}
-							_t1457 = _t1459
+							_t1455 = _t1457
 						}
-						_t1455 = _t1457
+						_t1453 = _t1455
 					}
-					_t1453 = _t1455
+					_t1451 = _t1453
 				}
-				_t1451 = _t1453
+				_t1449 = _t1451
 			}
-			_t1448 = _t1451
+			_t1446 = _t1449
 		}
-		_t1445 = _t1448
+		_t1443 = _t1446
 	}
-	result740 := _t1445
-	p.recordSpan(int(span_start739), "Value")
-	return result740
+	result739 := _t1443
+	p.recordSpan(int(span_start738), "Value")
+	return result739
 }
 
 func (p *Parser) parse_raw_date() *pb.DateValue {
-	span_start744 := int64(p.spanStart())
+	span_start743 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("date")
-	int741 := p.consumeTerminal("INT").Value.i64
-	int_3742 := p.consumeTerminal("INT").Value.i64
-	int_4743 := p.consumeTerminal("INT").Value.i64
+	int740 := p.consumeTerminal("INT").Value.i64
+	int_3741 := p.consumeTerminal("INT").Value.i64
+	int_4742 := p.consumeTerminal("INT").Value.i64
 	p.consumeLiteral(")")
-	_t1475 := &pb.DateValue{Year: int32(int741), Month: int32(int_3742), Day: int32(int_4743)}
-	result745 := _t1475
-	p.recordSpan(int(span_start744), "DateValue")
-	return result745
+	_t1473 := &pb.DateValue{Year: int32(int740), Month: int32(int_3741), Day: int32(int_4742)}
+	result744 := _t1473
+	p.recordSpan(int(span_start743), "DateValue")
+	return result744
 }
 
 func (p *Parser) parse_raw_datetime() *pb.DateTimeValue {
-	span_start753 := int64(p.spanStart())
+	span_start752 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("datetime")
-	int746 := p.consumeTerminal("INT").Value.i64
-	int_3747 := p.consumeTerminal("INT").Value.i64
-	int_4748 := p.consumeTerminal("INT").Value.i64
-	int_5749 := p.consumeTerminal("INT").Value.i64
-	int_6750 := p.consumeTerminal("INT").Value.i64
-	int_7751 := p.consumeTerminal("INT").Value.i64
-	var _t1476 *int64
+	int745 := p.consumeTerminal("INT").Value.i64
+	int_3746 := p.consumeTerminal("INT").Value.i64
+	int_4747 := p.consumeTerminal("INT").Value.i64
+	int_5748 := p.consumeTerminal("INT").Value.i64
+	int_6749 := p.consumeTerminal("INT").Value.i64
+	int_7750 := p.consumeTerminal("INT").Value.i64
+	var _t1474 *int64
 	if p.matchLookaheadTerminal("INT", 0) {
-		_t1476 = ptr(p.consumeTerminal("INT").Value.i64)
+		_t1474 = ptr(p.consumeTerminal("INT").Value.i64)
 	}
-	int_8752 := _t1476
+	int_8751 := _t1474
 	p.consumeLiteral(")")
-	_t1477 := &pb.DateTimeValue{Year: int32(int746), Month: int32(int_3747), Day: int32(int_4748), Hour: int32(int_5749), Minute: int32(int_6750), Second: int32(int_7751), Microsecond: int32(deref(int_8752, 0))}
-	result754 := _t1477
-	p.recordSpan(int(span_start753), "DateTimeValue")
-	return result754
+	_t1475 := &pb.DateTimeValue{Year: int32(int745), Month: int32(int_3746), Day: int32(int_4747), Hour: int32(int_5748), Minute: int32(int_6749), Second: int32(int_7750), Microsecond: int32(deref(int_8751, 0))}
+	result753 := _t1475
+	p.recordSpan(int(span_start752), "DateTimeValue")
+	return result753
 }
 
 func (p *Parser) parse_boolean_value() bool {
-	var _t1478 int64
+	var _t1476 int64
 	if p.matchLookaheadLiteral("true", 0) {
-		_t1478 = 0
+		_t1476 = 0
 	} else {
-		var _t1479 int64
+		var _t1477 int64
 		if p.matchLookaheadLiteral("false", 0) {
-			_t1479 = 1
+			_t1477 = 1
 		} else {
-			_t1479 = -1
+			_t1477 = -1
 		}
-		_t1478 = _t1479
+		_t1476 = _t1477
 	}
-	prediction755 := _t1478
-	var _t1480 bool
-	if prediction755 == 1 {
+	prediction754 := _t1476
+	var _t1478 bool
+	if prediction754 == 1 {
 		p.consumeLiteral("false")
-		_t1480 = false
+		_t1478 = false
 	} else {
-		var _t1481 bool
-		if prediction755 == 0 {
+		var _t1479 bool
+		if prediction754 == 0 {
 			p.consumeLiteral("true")
-			_t1481 = true
+			_t1479 = true
 		} else {
 			panic(ParseError{msg: fmt.Sprintf("%s: %s=`%v`", "Unexpected token in boolean_value", p.lookahead(0).Type, p.lookahead(0).Value)})
 		}
-		_t1480 = _t1481
+		_t1478 = _t1479
 	}
-	return _t1480
+	return _t1478
 }
 
 func (p *Parser) parse_sync() *pb.Sync {
-	span_start760 := int64(p.spanStart())
+	span_start759 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("sync")
-	xs756 := []*pb.FragmentId{}
-	cond757 := p.matchLookaheadLiteral(":", 0)
-	for cond757 {
-		_t1482 := p.parse_fragment_id()
-		item758 := _t1482
-		xs756 = append(xs756, item758)
-		cond757 = p.matchLookaheadLiteral(":", 0)
+	xs755 := []*pb.FragmentId{}
+	cond756 := p.matchLookaheadLiteral(":", 0)
+	for cond756 {
+		_t1480 := p.parse_fragment_id()
+		item757 := _t1480
+		xs755 = append(xs755, item757)
+		cond756 = p.matchLookaheadLiteral(":", 0)
 	}
-	fragment_ids759 := xs756
+	fragment_ids758 := xs755
 	p.consumeLiteral(")")
-	_t1483 := &pb.Sync{Fragments: fragment_ids759}
-	result761 := _t1483
-	p.recordSpan(int(span_start760), "Sync")
-	return result761
+	_t1481 := &pb.Sync{Fragments: fragment_ids758}
+	result760 := _t1481
+	p.recordSpan(int(span_start759), "Sync")
+	return result760
 }
 
 func (p *Parser) parse_fragment_id() *pb.FragmentId {
-	span_start763 := int64(p.spanStart())
+	span_start762 := int64(p.spanStart())
 	p.consumeLiteral(":")
-	symbol762 := p.consumeTerminal("SYMBOL").Value.str
-	result764 := &pb.FragmentId{Id: []byte(symbol762)}
-	p.recordSpan(int(span_start763), "FragmentId")
-	return result764
+	symbol761 := p.consumeTerminal("SYMBOL").Value.str
+	result763 := &pb.FragmentId{Id: []byte(symbol761)}
+	p.recordSpan(int(span_start762), "FragmentId")
+	return result763
 }
 
 func (p *Parser) parse_epoch() *pb.Epoch {
-	span_start767 := int64(p.spanStart())
+	span_start766 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("epoch")
-	var _t1484 []*pb.Write
+	var _t1482 []*pb.Write
 	if (p.matchLookaheadLiteral("(", 0) && p.matchLookaheadLiteral("writes", 1)) {
-		_t1485 := p.parse_epoch_writes()
+		_t1483 := p.parse_epoch_writes()
+		_t1482 = _t1483
+	}
+	epoch_writes764 := _t1482
+	var _t1484 []*pb.Read
+	if p.matchLookaheadLiteral("(", 0) {
+		_t1485 := p.parse_epoch_reads()
 		_t1484 = _t1485
 	}
-	epoch_writes765 := _t1484
-	var _t1486 []*pb.Read
-	if p.matchLookaheadLiteral("(", 0) {
-		_t1487 := p.parse_epoch_reads()
-		_t1486 = _t1487
-	}
-	epoch_reads766 := _t1486
+	epoch_reads765 := _t1484
 	p.consumeLiteral(")")
-	_t1488 := epoch_writes765
-	if epoch_writes765 == nil {
-		_t1488 = []*pb.Write{}
+	_t1486 := epoch_writes764
+	if epoch_writes764 == nil {
+		_t1486 = []*pb.Write{}
 	}
-	_t1489 := epoch_reads766
-	if epoch_reads766 == nil {
-		_t1489 = []*pb.Read{}
+	_t1487 := epoch_reads765
+	if epoch_reads765 == nil {
+		_t1487 = []*pb.Read{}
 	}
-	_t1490 := &pb.Epoch{Writes: _t1488, Reads: _t1489}
-	result768 := _t1490
-	p.recordSpan(int(span_start767), "Epoch")
-	return result768
+	_t1488 := &pb.Epoch{Writes: _t1486, Reads: _t1487}
+	result767 := _t1488
+	p.recordSpan(int(span_start766), "Epoch")
+	return result767
 }
 
 func (p *Parser) parse_epoch_writes() []*pb.Write {
 	p.consumeLiteral("(")
 	p.consumeLiteral("writes")
-	xs769 := []*pb.Write{}
-	cond770 := p.matchLookaheadLiteral("(", 0)
-	for cond770 {
-		_t1491 := p.parse_write()
-		item771 := _t1491
-		xs769 = append(xs769, item771)
-		cond770 = p.matchLookaheadLiteral("(", 0)
+	xs768 := []*pb.Write{}
+	cond769 := p.matchLookaheadLiteral("(", 0)
+	for cond769 {
+		_t1489 := p.parse_write()
+		item770 := _t1489
+		xs768 = append(xs768, item770)
+		cond769 = p.matchLookaheadLiteral("(", 0)
 	}
-	writes772 := xs769
+	writes771 := xs768
 	p.consumeLiteral(")")
-	return writes772
+	return writes771
 }
 
 func (p *Parser) parse_write() *pb.Write {
-	span_start778 := int64(p.spanStart())
-	var _t1492 int64
+	span_start777 := int64(p.spanStart())
+	var _t1490 int64
 	if p.matchLookaheadLiteral("(", 0) {
-		var _t1493 int64
+		var _t1491 int64
 		if p.matchLookaheadLiteral("undefine", 1) {
-			_t1493 = 1
+			_t1491 = 1
 		} else {
-			var _t1494 int64
+			var _t1492 int64
 			if p.matchLookaheadLiteral("snapshot", 1) {
-				_t1494 = 3
+				_t1492 = 3
 			} else {
-				var _t1495 int64
+				var _t1493 int64
 				if p.matchLookaheadLiteral("define", 1) {
-					_t1495 = 0
+					_t1493 = 0
 				} else {
-					var _t1496 int64
+					var _t1494 int64
 					if p.matchLookaheadLiteral("context", 1) {
-						_t1496 = 2
+						_t1494 = 2
 					} else {
-						_t1496 = -1
+						_t1494 = -1
 					}
-					_t1495 = _t1496
+					_t1493 = _t1494
 				}
-				_t1494 = _t1495
+				_t1492 = _t1493
 			}
-			_t1493 = _t1494
+			_t1491 = _t1492
 		}
-		_t1492 = _t1493
+		_t1490 = _t1491
 	} else {
-		_t1492 = -1
+		_t1490 = -1
 	}
-	prediction773 := _t1492
-	var _t1497 *pb.Write
-	if prediction773 == 3 {
-		_t1498 := p.parse_snapshot()
-		snapshot777 := _t1498
-		_t1499 := &pb.Write{}
-		_t1499.WriteType = &pb.Write_Snapshot{Snapshot: snapshot777}
-		_t1497 = _t1499
+	prediction772 := _t1490
+	var _t1495 *pb.Write
+	if prediction772 == 3 {
+		_t1496 := p.parse_snapshot()
+		snapshot776 := _t1496
+		_t1497 := &pb.Write{}
+		_t1497.WriteType = &pb.Write_Snapshot{Snapshot: snapshot776}
+		_t1495 = _t1497
 	} else {
-		var _t1500 *pb.Write
-		if prediction773 == 2 {
-			_t1501 := p.parse_context()
-			context776 := _t1501
-			_t1502 := &pb.Write{}
-			_t1502.WriteType = &pb.Write_Context{Context: context776}
-			_t1500 = _t1502
+		var _t1498 *pb.Write
+		if prediction772 == 2 {
+			_t1499 := p.parse_context()
+			context775 := _t1499
+			_t1500 := &pb.Write{}
+			_t1500.WriteType = &pb.Write_Context{Context: context775}
+			_t1498 = _t1500
 		} else {
-			var _t1503 *pb.Write
-			if prediction773 == 1 {
-				_t1504 := p.parse_undefine()
-				undefine775 := _t1504
-				_t1505 := &pb.Write{}
-				_t1505.WriteType = &pb.Write_Undefine{Undefine: undefine775}
-				_t1503 = _t1505
+			var _t1501 *pb.Write
+			if prediction772 == 1 {
+				_t1502 := p.parse_undefine()
+				undefine774 := _t1502
+				_t1503 := &pb.Write{}
+				_t1503.WriteType = &pb.Write_Undefine{Undefine: undefine774}
+				_t1501 = _t1503
 			} else {
-				var _t1506 *pb.Write
-				if prediction773 == 0 {
-					_t1507 := p.parse_define()
-					define774 := _t1507
-					_t1508 := &pb.Write{}
-					_t1508.WriteType = &pb.Write_Define{Define: define774}
-					_t1506 = _t1508
+				var _t1504 *pb.Write
+				if prediction772 == 0 {
+					_t1505 := p.parse_define()
+					define773 := _t1505
+					_t1506 := &pb.Write{}
+					_t1506.WriteType = &pb.Write_Define{Define: define773}
+					_t1504 = _t1506
 				} else {
 					panic(ParseError{msg: fmt.Sprintf("%s: %s=`%v`", "Unexpected token in write", p.lookahead(0).Type, p.lookahead(0).Value)})
 				}
-				_t1503 = _t1506
+				_t1501 = _t1504
 			}
-			_t1500 = _t1503
+			_t1498 = _t1501
 		}
-		_t1497 = _t1500
+		_t1495 = _t1498
 	}
-	result779 := _t1497
-	p.recordSpan(int(span_start778), "Write")
-	return result779
+	result778 := _t1495
+	p.recordSpan(int(span_start777), "Write")
+	return result778
 }
 
 func (p *Parser) parse_define() *pb.Define {
-	span_start781 := int64(p.spanStart())
+	span_start780 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("define")
-	_t1509 := p.parse_fragment()
-	fragment780 := _t1509
+	_t1507 := p.parse_fragment()
+	fragment779 := _t1507
 	p.consumeLiteral(")")
-	_t1510 := &pb.Define{Fragment: fragment780}
-	result782 := _t1510
-	p.recordSpan(int(span_start781), "Define")
-	return result782
+	_t1508 := &pb.Define{Fragment: fragment779}
+	result781 := _t1508
+	p.recordSpan(int(span_start780), "Define")
+	return result781
 }
 
 func (p *Parser) parse_fragment() *pb.Fragment {
-	span_start788 := int64(p.spanStart())
+	span_start787 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("fragment")
-	_t1511 := p.parse_new_fragment_id()
-	new_fragment_id783 := _t1511
-	xs784 := []*pb.Declaration{}
-	cond785 := p.matchLookaheadLiteral("(", 0)
-	for cond785 {
-		_t1512 := p.parse_declaration()
-		item786 := _t1512
-		xs784 = append(xs784, item786)
-		cond785 = p.matchLookaheadLiteral("(", 0)
+	_t1509 := p.parse_new_fragment_id()
+	new_fragment_id782 := _t1509
+	xs783 := []*pb.Declaration{}
+	cond784 := p.matchLookaheadLiteral("(", 0)
+	for cond784 {
+		_t1510 := p.parse_declaration()
+		item785 := _t1510
+		xs783 = append(xs783, item785)
+		cond784 = p.matchLookaheadLiteral("(", 0)
 	}
-	declarations787 := xs784
+	declarations786 := xs783
 	p.consumeLiteral(")")
-	result789 := p.constructFragment(new_fragment_id783, declarations787)
-	p.recordSpan(int(span_start788), "Fragment")
-	return result789
+	result788 := p.constructFragment(new_fragment_id782, declarations786)
+	p.recordSpan(int(span_start787), "Fragment")
+	return result788
 }
 
 func (p *Parser) parse_new_fragment_id() *pb.FragmentId {
-	span_start791 := int64(p.spanStart())
-	_t1513 := p.parse_fragment_id()
-	fragment_id790 := _t1513
-	p.startFragment(fragment_id790)
-	result792 := fragment_id790
-	p.recordSpan(int(span_start791), "FragmentId")
-	return result792
+	span_start790 := int64(p.spanStart())
+	_t1511 := p.parse_fragment_id()
+	fragment_id789 := _t1511
+	p.startFragment(fragment_id789)
+	result791 := fragment_id789
+	p.recordSpan(int(span_start790), "FragmentId")
+	return result791
 }
 
 func (p *Parser) parse_declaration() *pb.Declaration {
-	span_start798 := int64(p.spanStart())
-	var _t1514 int64
+	span_start797 := int64(p.spanStart())
+	var _t1512 int64
 	if p.matchLookaheadLiteral("(", 0) {
-		var _t1515 int64
+		var _t1513 int64
 		if p.matchLookaheadLiteral("iceberg_data", 1) {
-			_t1515 = 3
+			_t1513 = 3
 		} else {
-			var _t1516 int64
+			var _t1514 int64
 			if p.matchLookaheadLiteral("functional_dependency", 1) {
-				_t1516 = 2
+				_t1514 = 2
 			} else {
-				var _t1517 int64
+				var _t1515 int64
 				if p.matchLookaheadLiteral("edb", 1) {
-					_t1517 = 3
+					_t1515 = 3
 				} else {
-					var _t1518 int64
+					var _t1516 int64
 					if p.matchLookaheadLiteral("def", 1) {
-						_t1518 = 0
+						_t1516 = 0
 					} else {
-						var _t1519 int64
+						var _t1517 int64
 						if p.matchLookaheadLiteral("csv_data", 1) {
-							_t1519 = 3
+							_t1517 = 3
 						} else {
-							var _t1520 int64
+							var _t1518 int64
 							if p.matchLookaheadLiteral("betree_relation", 1) {
-								_t1520 = 3
+								_t1518 = 3
 							} else {
-								var _t1521 int64
+								var _t1519 int64
 								if p.matchLookaheadLiteral("algorithm", 1) {
-									_t1521 = 1
+									_t1519 = 1
 								} else {
-									_t1521 = -1
+									_t1519 = -1
 								}
-								_t1520 = _t1521
+								_t1518 = _t1519
 							}
-							_t1519 = _t1520
+							_t1517 = _t1518
 						}
-						_t1518 = _t1519
+						_t1516 = _t1517
 					}
-					_t1517 = _t1518
+					_t1515 = _t1516
 				}
-				_t1516 = _t1517
+				_t1514 = _t1515
 			}
-			_t1515 = _t1516
+			_t1513 = _t1514
 		}
-		_t1514 = _t1515
+		_t1512 = _t1513
 	} else {
-		_t1514 = -1
+		_t1512 = -1
 	}
-	prediction793 := _t1514
-	var _t1522 *pb.Declaration
-	if prediction793 == 3 {
-		_t1523 := p.parse_data()
-		data797 := _t1523
-		_t1524 := &pb.Declaration{}
-		_t1524.DeclarationType = &pb.Declaration_Data{Data: data797}
-		_t1522 = _t1524
+	prediction792 := _t1512
+	var _t1520 *pb.Declaration
+	if prediction792 == 3 {
+		_t1521 := p.parse_data()
+		data796 := _t1521
+		_t1522 := &pb.Declaration{}
+		_t1522.DeclarationType = &pb.Declaration_Data{Data: data796}
+		_t1520 = _t1522
 	} else {
-		var _t1525 *pb.Declaration
-		if prediction793 == 2 {
-			_t1526 := p.parse_constraint()
-			constraint796 := _t1526
-			_t1527 := &pb.Declaration{}
-			_t1527.DeclarationType = &pb.Declaration_Constraint{Constraint: constraint796}
-			_t1525 = _t1527
+		var _t1523 *pb.Declaration
+		if prediction792 == 2 {
+			_t1524 := p.parse_constraint()
+			constraint795 := _t1524
+			_t1525 := &pb.Declaration{}
+			_t1525.DeclarationType = &pb.Declaration_Constraint{Constraint: constraint795}
+			_t1523 = _t1525
 		} else {
-			var _t1528 *pb.Declaration
-			if prediction793 == 1 {
-				_t1529 := p.parse_algorithm()
-				algorithm795 := _t1529
-				_t1530 := &pb.Declaration{}
-				_t1530.DeclarationType = &pb.Declaration_Algorithm{Algorithm: algorithm795}
-				_t1528 = _t1530
+			var _t1526 *pb.Declaration
+			if prediction792 == 1 {
+				_t1527 := p.parse_algorithm()
+				algorithm794 := _t1527
+				_t1528 := &pb.Declaration{}
+				_t1528.DeclarationType = &pb.Declaration_Algorithm{Algorithm: algorithm794}
+				_t1526 = _t1528
 			} else {
-				var _t1531 *pb.Declaration
-				if prediction793 == 0 {
-					_t1532 := p.parse_def()
-					def794 := _t1532
-					_t1533 := &pb.Declaration{}
-					_t1533.DeclarationType = &pb.Declaration_Def{Def: def794}
-					_t1531 = _t1533
+				var _t1529 *pb.Declaration
+				if prediction792 == 0 {
+					_t1530 := p.parse_def()
+					def793 := _t1530
+					_t1531 := &pb.Declaration{}
+					_t1531.DeclarationType = &pb.Declaration_Def{Def: def793}
+					_t1529 = _t1531
 				} else {
 					panic(ParseError{msg: fmt.Sprintf("%s: %s=`%v`", "Unexpected token in declaration", p.lookahead(0).Type, p.lookahead(0).Value)})
 				}
-				_t1528 = _t1531
+				_t1526 = _t1529
 			}
-			_t1525 = _t1528
+			_t1523 = _t1526
 		}
-		_t1522 = _t1525
+		_t1520 = _t1523
 	}
-	result799 := _t1522
-	p.recordSpan(int(span_start798), "Declaration")
-	return result799
+	result798 := _t1520
+	p.recordSpan(int(span_start797), "Declaration")
+	return result798
 }
 
 func (p *Parser) parse_def() *pb.Def {
-	span_start803 := int64(p.spanStart())
+	span_start802 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("def")
-	_t1534 := p.parse_relation_id()
-	relation_id800 := _t1534
-	_t1535 := p.parse_abstraction()
-	abstraction801 := _t1535
-	var _t1536 []*pb.Attribute
+	_t1532 := p.parse_relation_id()
+	relation_id799 := _t1532
+	_t1533 := p.parse_abstraction()
+	abstraction800 := _t1533
+	var _t1534 []*pb.Attribute
 	if p.matchLookaheadLiteral("(", 0) {
-		_t1537 := p.parse_attrs()
-		_t1536 = _t1537
+		_t1535 := p.parse_attrs()
+		_t1534 = _t1535
 	}
-	attrs802 := _t1536
+	attrs801 := _t1534
 	p.consumeLiteral(")")
-	_t1538 := attrs802
-	if attrs802 == nil {
-		_t1538 = []*pb.Attribute{}
+	_t1536 := attrs801
+	if attrs801 == nil {
+		_t1536 = []*pb.Attribute{}
 	}
-	_t1539 := &pb.Def{Name: relation_id800, Body: abstraction801, Attrs: _t1538}
-	result804 := _t1539
-	p.recordSpan(int(span_start803), "Def")
-	return result804
+	_t1537 := &pb.Def{Name: relation_id799, Body: abstraction800, Attrs: _t1536}
+	result803 := _t1537
+	p.recordSpan(int(span_start802), "Def")
+	return result803
 }
 
 func (p *Parser) parse_relation_id() *pb.RelationId {
-	span_start808 := int64(p.spanStart())
-	var _t1540 int64
+	span_start807 := int64(p.spanStart())
+	var _t1538 int64
 	if p.matchLookaheadLiteral(":", 0) {
-		_t1540 = 0
+		_t1538 = 0
 	} else {
-		var _t1541 int64
+		var _t1539 int64
 		if p.matchLookaheadTerminal("UINT128", 0) {
-			_t1541 = 1
+			_t1539 = 1
 		} else {
-			_t1541 = -1
+			_t1539 = -1
 		}
-		_t1540 = _t1541
+		_t1538 = _t1539
 	}
-	prediction805 := _t1540
-	var _t1542 *pb.RelationId
-	if prediction805 == 1 {
-		uint128807 := p.consumeTerminal("UINT128").Value.uint128
-		_ = uint128807
-		_t1542 = &pb.RelationId{IdLow: uint128807.Low, IdHigh: uint128807.High}
+	prediction804 := _t1538
+	var _t1540 *pb.RelationId
+	if prediction804 == 1 {
+		uint128806 := p.consumeTerminal("UINT128").Value.uint128
+		_ = uint128806
+		_t1540 = &pb.RelationId{IdLow: uint128806.Low, IdHigh: uint128806.High}
 	} else {
-		var _t1543 *pb.RelationId
-		if prediction805 == 0 {
+		var _t1541 *pb.RelationId
+		if prediction804 == 0 {
 			p.consumeLiteral(":")
-			symbol806 := p.consumeTerminal("SYMBOL").Value.str
-			_t1543 = p.relationIdFromString(symbol806)
+			symbol805 := p.consumeTerminal("SYMBOL").Value.str
+			_t1541 = p.relationIdFromString(symbol805)
 		} else {
 			panic(ParseError{msg: fmt.Sprintf("%s: %s=`%v`", "Unexpected token in relation_id", p.lookahead(0).Type, p.lookahead(0).Value)})
 		}
-		_t1542 = _t1543
+		_t1540 = _t1541
 	}
-	result809 := _t1542
-	p.recordSpan(int(span_start808), "RelationId")
-	return result809
+	result808 := _t1540
+	p.recordSpan(int(span_start807), "RelationId")
+	return result808
 }
 
 func (p *Parser) parse_abstraction() *pb.Abstraction {
-	span_start812 := int64(p.spanStart())
+	span_start811 := int64(p.spanStart())
 	p.consumeLiteral("(")
-	_t1544 := p.parse_bindings()
-	bindings810 := _t1544
-	_t1545 := p.parse_formula()
-	formula811 := _t1545
+	_t1542 := p.parse_bindings()
+	bindings809 := _t1542
+	_t1543 := p.parse_formula()
+	formula810 := _t1543
 	p.consumeLiteral(")")
-	_t1546 := &pb.Abstraction{Vars: listConcat(bindings810[0].([]*pb.Binding), bindings810[1].([]*pb.Binding)), Value: formula811}
-	result813 := _t1546
-	p.recordSpan(int(span_start812), "Abstraction")
-	return result813
+	_t1544 := &pb.Abstraction{Vars: listConcat(bindings809[0].([]*pb.Binding), bindings809[1].([]*pb.Binding)), Value: formula810}
+	result812 := _t1544
+	p.recordSpan(int(span_start811), "Abstraction")
+	return result812
 }
 
 func (p *Parser) parse_bindings() []interface{} {
 	p.consumeLiteral("[")
-	xs814 := []*pb.Binding{}
-	cond815 := p.matchLookaheadTerminal("SYMBOL", 0)
-	for cond815 {
-		_t1547 := p.parse_binding()
-		item816 := _t1547
-		xs814 = append(xs814, item816)
-		cond815 = p.matchLookaheadTerminal("SYMBOL", 0)
+	xs813 := []*pb.Binding{}
+	cond814 := p.matchLookaheadTerminal("SYMBOL", 0)
+	for cond814 {
+		_t1545 := p.parse_binding()
+		item815 := _t1545
+		xs813 = append(xs813, item815)
+		cond814 = p.matchLookaheadTerminal("SYMBOL", 0)
 	}
-	bindings817 := xs814
-	var _t1548 []*pb.Binding
+	bindings816 := xs813
+	var _t1546 []*pb.Binding
 	if p.matchLookaheadLiteral("|", 0) {
-		_t1549 := p.parse_value_bindings()
-		_t1548 = _t1549
+		_t1547 := p.parse_value_bindings()
+		_t1546 = _t1547
 	}
-	value_bindings818 := _t1548
+	value_bindings817 := _t1546
 	p.consumeLiteral("]")
-	_t1550 := value_bindings818
-	if value_bindings818 == nil {
-		_t1550 = []*pb.Binding{}
+	_t1548 := value_bindings817
+	if value_bindings817 == nil {
+		_t1548 = []*pb.Binding{}
 	}
-	return []interface{}{bindings817, _t1550}
+	return []interface{}{bindings816, _t1548}
 }
 
 func (p *Parser) parse_binding() *pb.Binding {
-	span_start821 := int64(p.spanStart())
-	symbol819 := p.consumeTerminal("SYMBOL").Value.str
+	span_start820 := int64(p.spanStart())
+	symbol818 := p.consumeTerminal("SYMBOL").Value.str
 	p.consumeLiteral("::")
-	_t1551 := p.parse_type()
-	type820 := _t1551
-	_t1552 := &pb.Var{Name: symbol819}
-	_t1553 := &pb.Binding{Var: _t1552, Type: type820}
-	result822 := _t1553
-	p.recordSpan(int(span_start821), "Binding")
-	return result822
+	_t1549 := p.parse_type()
+	type819 := _t1549
+	_t1550 := &pb.Var{Name: symbol818}
+	_t1551 := &pb.Binding{Var: _t1550, Type: type819}
+	result821 := _t1551
+	p.recordSpan(int(span_start820), "Binding")
+	return result821
 }
 
 func (p *Parser) parse_type() *pb.Type {
-	span_start838 := int64(p.spanStart())
-	var _t1554 int64
+	span_start837 := int64(p.spanStart())
+	var _t1552 int64
 	if p.matchLookaheadLiteral("UNKNOWN", 0) {
-		_t1554 = 0
+		_t1552 = 0
 	} else {
-		var _t1555 int64
+		var _t1553 int64
 		if p.matchLookaheadLiteral("UINT32", 0) {
-			_t1555 = 13
+			_t1553 = 13
 		} else {
-			var _t1556 int64
+			var _t1554 int64
 			if p.matchLookaheadLiteral("UINT128", 0) {
-				_t1556 = 4
+				_t1554 = 4
 			} else {
-				var _t1557 int64
+				var _t1555 int64
 				if p.matchLookaheadLiteral("STRING", 0) {
-					_t1557 = 1
+					_t1555 = 1
 				} else {
-					var _t1558 int64
+					var _t1556 int64
 					if p.matchLookaheadLiteral("MISSING", 0) {
-						_t1558 = 8
+						_t1556 = 8
 					} else {
-						var _t1559 int64
+						var _t1557 int64
 						if p.matchLookaheadLiteral("INT32", 0) {
-							_t1559 = 11
+							_t1557 = 11
 						} else {
-							var _t1560 int64
+							var _t1558 int64
 							if p.matchLookaheadLiteral("INT128", 0) {
-								_t1560 = 5
+								_t1558 = 5
 							} else {
-								var _t1561 int64
+								var _t1559 int64
 								if p.matchLookaheadLiteral("INT", 0) {
-									_t1561 = 2
+									_t1559 = 2
 								} else {
-									var _t1562 int64
+									var _t1560 int64
 									if p.matchLookaheadLiteral("FLOAT32", 0) {
-										_t1562 = 12
+										_t1560 = 12
 									} else {
-										var _t1563 int64
+										var _t1561 int64
 										if p.matchLookaheadLiteral("FLOAT", 0) {
-											_t1563 = 3
+											_t1561 = 3
 										} else {
-											var _t1564 int64
+											var _t1562 int64
 											if p.matchLookaheadLiteral("DATETIME", 0) {
-												_t1564 = 7
+												_t1562 = 7
 											} else {
-												var _t1565 int64
+												var _t1563 int64
 												if p.matchLookaheadLiteral("DATE", 0) {
-													_t1565 = 6
+													_t1563 = 6
 												} else {
-													var _t1566 int64
+													var _t1564 int64
 													if p.matchLookaheadLiteral("BOOLEAN", 0) {
-														_t1566 = 10
+														_t1564 = 10
 													} else {
-														var _t1567 int64
+														var _t1565 int64
 														if p.matchLookaheadLiteral("(", 0) {
-															_t1567 = 9
+															_t1565 = 9
 														} else {
-															_t1567 = -1
+															_t1565 = -1
 														}
-														_t1566 = _t1567
+														_t1564 = _t1565
 													}
-													_t1565 = _t1566
+													_t1563 = _t1564
 												}
-												_t1564 = _t1565
+												_t1562 = _t1563
 											}
-											_t1563 = _t1564
+											_t1561 = _t1562
 										}
-										_t1562 = _t1563
+										_t1560 = _t1561
 									}
-									_t1561 = _t1562
+									_t1559 = _t1560
 								}
-								_t1560 = _t1561
+								_t1558 = _t1559
 							}
-							_t1559 = _t1560
+							_t1557 = _t1558
 						}
-						_t1558 = _t1559
+						_t1556 = _t1557
 					}
-					_t1557 = _t1558
+					_t1555 = _t1556
 				}
-				_t1556 = _t1557
+				_t1554 = _t1555
 			}
-			_t1555 = _t1556
+			_t1553 = _t1554
 		}
-		_t1554 = _t1555
+		_t1552 = _t1553
 	}
-	prediction823 := _t1554
-	var _t1568 *pb.Type
-	if prediction823 == 13 {
-		_t1569 := p.parse_uint32_type()
-		uint32_type837 := _t1569
-		_t1570 := &pb.Type{}
-		_t1570.Type = &pb.Type_Uint32Type{Uint32Type: uint32_type837}
-		_t1568 = _t1570
+	prediction822 := _t1552
+	var _t1566 *pb.Type
+	if prediction822 == 13 {
+		_t1567 := p.parse_uint32_type()
+		uint32_type836 := _t1567
+		_t1568 := &pb.Type{}
+		_t1568.Type = &pb.Type_Uint32Type{Uint32Type: uint32_type836}
+		_t1566 = _t1568
 	} else {
-		var _t1571 *pb.Type
-		if prediction823 == 12 {
-			_t1572 := p.parse_float32_type()
-			float32_type836 := _t1572
-			_t1573 := &pb.Type{}
-			_t1573.Type = &pb.Type_Float32Type{Float32Type: float32_type836}
-			_t1571 = _t1573
+		var _t1569 *pb.Type
+		if prediction822 == 12 {
+			_t1570 := p.parse_float32_type()
+			float32_type835 := _t1570
+			_t1571 := &pb.Type{}
+			_t1571.Type = &pb.Type_Float32Type{Float32Type: float32_type835}
+			_t1569 = _t1571
 		} else {
-			var _t1574 *pb.Type
-			if prediction823 == 11 {
-				_t1575 := p.parse_int32_type()
-				int32_type835 := _t1575
-				_t1576 := &pb.Type{}
-				_t1576.Type = &pb.Type_Int32Type{Int32Type: int32_type835}
-				_t1574 = _t1576
+			var _t1572 *pb.Type
+			if prediction822 == 11 {
+				_t1573 := p.parse_int32_type()
+				int32_type834 := _t1573
+				_t1574 := &pb.Type{}
+				_t1574.Type = &pb.Type_Int32Type{Int32Type: int32_type834}
+				_t1572 = _t1574
 			} else {
-				var _t1577 *pb.Type
-				if prediction823 == 10 {
-					_t1578 := p.parse_boolean_type()
-					boolean_type834 := _t1578
-					_t1579 := &pb.Type{}
-					_t1579.Type = &pb.Type_BooleanType{BooleanType: boolean_type834}
-					_t1577 = _t1579
+				var _t1575 *pb.Type
+				if prediction822 == 10 {
+					_t1576 := p.parse_boolean_type()
+					boolean_type833 := _t1576
+					_t1577 := &pb.Type{}
+					_t1577.Type = &pb.Type_BooleanType{BooleanType: boolean_type833}
+					_t1575 = _t1577
 				} else {
-					var _t1580 *pb.Type
-					if prediction823 == 9 {
-						_t1581 := p.parse_decimal_type()
-						decimal_type833 := _t1581
-						_t1582 := &pb.Type{}
-						_t1582.Type = &pb.Type_DecimalType{DecimalType: decimal_type833}
-						_t1580 = _t1582
+					var _t1578 *pb.Type
+					if prediction822 == 9 {
+						_t1579 := p.parse_decimal_type()
+						decimal_type832 := _t1579
+						_t1580 := &pb.Type{}
+						_t1580.Type = &pb.Type_DecimalType{DecimalType: decimal_type832}
+						_t1578 = _t1580
 					} else {
-						var _t1583 *pb.Type
-						if prediction823 == 8 {
-							_t1584 := p.parse_missing_type()
-							missing_type832 := _t1584
-							_t1585 := &pb.Type{}
-							_t1585.Type = &pb.Type_MissingType{MissingType: missing_type832}
-							_t1583 = _t1585
+						var _t1581 *pb.Type
+						if prediction822 == 8 {
+							_t1582 := p.parse_missing_type()
+							missing_type831 := _t1582
+							_t1583 := &pb.Type{}
+							_t1583.Type = &pb.Type_MissingType{MissingType: missing_type831}
+							_t1581 = _t1583
 						} else {
-							var _t1586 *pb.Type
-							if prediction823 == 7 {
-								_t1587 := p.parse_datetime_type()
-								datetime_type831 := _t1587
-								_t1588 := &pb.Type{}
-								_t1588.Type = &pb.Type_DatetimeType{DatetimeType: datetime_type831}
-								_t1586 = _t1588
+							var _t1584 *pb.Type
+							if prediction822 == 7 {
+								_t1585 := p.parse_datetime_type()
+								datetime_type830 := _t1585
+								_t1586 := &pb.Type{}
+								_t1586.Type = &pb.Type_DatetimeType{DatetimeType: datetime_type830}
+								_t1584 = _t1586
 							} else {
-								var _t1589 *pb.Type
-								if prediction823 == 6 {
-									_t1590 := p.parse_date_type()
-									date_type830 := _t1590
-									_t1591 := &pb.Type{}
-									_t1591.Type = &pb.Type_DateType{DateType: date_type830}
-									_t1589 = _t1591
+								var _t1587 *pb.Type
+								if prediction822 == 6 {
+									_t1588 := p.parse_date_type()
+									date_type829 := _t1588
+									_t1589 := &pb.Type{}
+									_t1589.Type = &pb.Type_DateType{DateType: date_type829}
+									_t1587 = _t1589
 								} else {
-									var _t1592 *pb.Type
-									if prediction823 == 5 {
-										_t1593 := p.parse_int128_type()
-										int128_type829 := _t1593
-										_t1594 := &pb.Type{}
-										_t1594.Type = &pb.Type_Int128Type{Int128Type: int128_type829}
-										_t1592 = _t1594
+									var _t1590 *pb.Type
+									if prediction822 == 5 {
+										_t1591 := p.parse_int128_type()
+										int128_type828 := _t1591
+										_t1592 := &pb.Type{}
+										_t1592.Type = &pb.Type_Int128Type{Int128Type: int128_type828}
+										_t1590 = _t1592
 									} else {
-										var _t1595 *pb.Type
-										if prediction823 == 4 {
-											_t1596 := p.parse_uint128_type()
-											uint128_type828 := _t1596
-											_t1597 := &pb.Type{}
-											_t1597.Type = &pb.Type_Uint128Type{Uint128Type: uint128_type828}
-											_t1595 = _t1597
+										var _t1593 *pb.Type
+										if prediction822 == 4 {
+											_t1594 := p.parse_uint128_type()
+											uint128_type827 := _t1594
+											_t1595 := &pb.Type{}
+											_t1595.Type = &pb.Type_Uint128Type{Uint128Type: uint128_type827}
+											_t1593 = _t1595
 										} else {
-											var _t1598 *pb.Type
-											if prediction823 == 3 {
-												_t1599 := p.parse_float_type()
-												float_type827 := _t1599
-												_t1600 := &pb.Type{}
-												_t1600.Type = &pb.Type_FloatType{FloatType: float_type827}
-												_t1598 = _t1600
+											var _t1596 *pb.Type
+											if prediction822 == 3 {
+												_t1597 := p.parse_float_type()
+												float_type826 := _t1597
+												_t1598 := &pb.Type{}
+												_t1598.Type = &pb.Type_FloatType{FloatType: float_type826}
+												_t1596 = _t1598
 											} else {
-												var _t1601 *pb.Type
-												if prediction823 == 2 {
-													_t1602 := p.parse_int_type()
-													int_type826 := _t1602
-													_t1603 := &pb.Type{}
-													_t1603.Type = &pb.Type_IntType{IntType: int_type826}
-													_t1601 = _t1603
+												var _t1599 *pb.Type
+												if prediction822 == 2 {
+													_t1600 := p.parse_int_type()
+													int_type825 := _t1600
+													_t1601 := &pb.Type{}
+													_t1601.Type = &pb.Type_IntType{IntType: int_type825}
+													_t1599 = _t1601
 												} else {
-													var _t1604 *pb.Type
-													if prediction823 == 1 {
-														_t1605 := p.parse_string_type()
-														string_type825 := _t1605
-														_t1606 := &pb.Type{}
-														_t1606.Type = &pb.Type_StringType{StringType: string_type825}
-														_t1604 = _t1606
+													var _t1602 *pb.Type
+													if prediction822 == 1 {
+														_t1603 := p.parse_string_type()
+														string_type824 := _t1603
+														_t1604 := &pb.Type{}
+														_t1604.Type = &pb.Type_StringType{StringType: string_type824}
+														_t1602 = _t1604
 													} else {
-														var _t1607 *pb.Type
-														if prediction823 == 0 {
-															_t1608 := p.parse_unspecified_type()
-															unspecified_type824 := _t1608
-															_t1609 := &pb.Type{}
-															_t1609.Type = &pb.Type_UnspecifiedType{UnspecifiedType: unspecified_type824}
-															_t1607 = _t1609
+														var _t1605 *pb.Type
+														if prediction822 == 0 {
+															_t1606 := p.parse_unspecified_type()
+															unspecified_type823 := _t1606
+															_t1607 := &pb.Type{}
+															_t1607.Type = &pb.Type_UnspecifiedType{UnspecifiedType: unspecified_type823}
+															_t1605 = _t1607
 														} else {
 															panic(ParseError{msg: fmt.Sprintf("%s: %s=`%v`", "Unexpected token in type", p.lookahead(0).Type, p.lookahead(0).Value)})
 														}
-														_t1604 = _t1607
+														_t1602 = _t1605
 													}
-													_t1601 = _t1604
+													_t1599 = _t1602
 												}
-												_t1598 = _t1601
+												_t1596 = _t1599
 											}
-											_t1595 = _t1598
+											_t1593 = _t1596
 										}
-										_t1592 = _t1595
+										_t1590 = _t1593
 									}
-									_t1589 = _t1592
+									_t1587 = _t1590
 								}
-								_t1586 = _t1589
+								_t1584 = _t1587
 							}
-							_t1583 = _t1586
+							_t1581 = _t1584
 						}
-						_t1580 = _t1583
+						_t1578 = _t1581
 					}
-					_t1577 = _t1580
+					_t1575 = _t1578
 				}
-				_t1574 = _t1577
+				_t1572 = _t1575
 			}
-			_t1571 = _t1574
+			_t1569 = _t1572
 		}
-		_t1568 = _t1571
+		_t1566 = _t1569
 	}
-	result839 := _t1568
-	p.recordSpan(int(span_start838), "Type")
-	return result839
+	result838 := _t1566
+	p.recordSpan(int(span_start837), "Type")
+	return result838
 }
 
 func (p *Parser) parse_unspecified_type() *pb.UnspecifiedType {
-	span_start840 := int64(p.spanStart())
+	span_start839 := int64(p.spanStart())
 	p.consumeLiteral("UNKNOWN")
-	_t1610 := &pb.UnspecifiedType{}
-	result841 := _t1610
-	p.recordSpan(int(span_start840), "UnspecifiedType")
-	return result841
+	_t1608 := &pb.UnspecifiedType{}
+	result840 := _t1608
+	p.recordSpan(int(span_start839), "UnspecifiedType")
+	return result840
 }
 
 func (p *Parser) parse_string_type() *pb.StringType {
-	span_start842 := int64(p.spanStart())
+	span_start841 := int64(p.spanStart())
 	p.consumeLiteral("STRING")
-	_t1611 := &pb.StringType{}
-	result843 := _t1611
-	p.recordSpan(int(span_start842), "StringType")
-	return result843
+	_t1609 := &pb.StringType{}
+	result842 := _t1609
+	p.recordSpan(int(span_start841), "StringType")
+	return result842
 }
 
 func (p *Parser) parse_int_type() *pb.IntType {
-	span_start844 := int64(p.spanStart())
+	span_start843 := int64(p.spanStart())
 	p.consumeLiteral("INT")
-	_t1612 := &pb.IntType{}
-	result845 := _t1612
-	p.recordSpan(int(span_start844), "IntType")
-	return result845
+	_t1610 := &pb.IntType{}
+	result844 := _t1610
+	p.recordSpan(int(span_start843), "IntType")
+	return result844
 }
 
 func (p *Parser) parse_float_type() *pb.FloatType {
-	span_start846 := int64(p.spanStart())
+	span_start845 := int64(p.spanStart())
 	p.consumeLiteral("FLOAT")
-	_t1613 := &pb.FloatType{}
-	result847 := _t1613
-	p.recordSpan(int(span_start846), "FloatType")
-	return result847
+	_t1611 := &pb.FloatType{}
+	result846 := _t1611
+	p.recordSpan(int(span_start845), "FloatType")
+	return result846
 }
 
 func (p *Parser) parse_uint128_type() *pb.UInt128Type {
-	span_start848 := int64(p.spanStart())
+	span_start847 := int64(p.spanStart())
 	p.consumeLiteral("UINT128")
-	_t1614 := &pb.UInt128Type{}
-	result849 := _t1614
-	p.recordSpan(int(span_start848), "UInt128Type")
-	return result849
+	_t1612 := &pb.UInt128Type{}
+	result848 := _t1612
+	p.recordSpan(int(span_start847), "UInt128Type")
+	return result848
 }
 
 func (p *Parser) parse_int128_type() *pb.Int128Type {
-	span_start850 := int64(p.spanStart())
+	span_start849 := int64(p.spanStart())
 	p.consumeLiteral("INT128")
-	_t1615 := &pb.Int128Type{}
-	result851 := _t1615
-	p.recordSpan(int(span_start850), "Int128Type")
-	return result851
+	_t1613 := &pb.Int128Type{}
+	result850 := _t1613
+	p.recordSpan(int(span_start849), "Int128Type")
+	return result850
 }
 
 func (p *Parser) parse_date_type() *pb.DateType {
-	span_start852 := int64(p.spanStart())
+	span_start851 := int64(p.spanStart())
 	p.consumeLiteral("DATE")
-	_t1616 := &pb.DateType{}
-	result853 := _t1616
-	p.recordSpan(int(span_start852), "DateType")
-	return result853
+	_t1614 := &pb.DateType{}
+	result852 := _t1614
+	p.recordSpan(int(span_start851), "DateType")
+	return result852
 }
 
 func (p *Parser) parse_datetime_type() *pb.DateTimeType {
-	span_start854 := int64(p.spanStart())
+	span_start853 := int64(p.spanStart())
 	p.consumeLiteral("DATETIME")
-	_t1617 := &pb.DateTimeType{}
-	result855 := _t1617
-	p.recordSpan(int(span_start854), "DateTimeType")
-	return result855
+	_t1615 := &pb.DateTimeType{}
+	result854 := _t1615
+	p.recordSpan(int(span_start853), "DateTimeType")
+	return result854
 }
 
 func (p *Parser) parse_missing_type() *pb.MissingType {
-	span_start856 := int64(p.spanStart())
+	span_start855 := int64(p.spanStart())
 	p.consumeLiteral("MISSING")
-	_t1618 := &pb.MissingType{}
-	result857 := _t1618
-	p.recordSpan(int(span_start856), "MissingType")
-	return result857
+	_t1616 := &pb.MissingType{}
+	result856 := _t1616
+	p.recordSpan(int(span_start855), "MissingType")
+	return result856
 }
 
 func (p *Parser) parse_decimal_type() *pb.DecimalType {
-	span_start860 := int64(p.spanStart())
+	span_start859 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("DECIMAL")
-	int858 := p.consumeTerminal("INT").Value.i64
-	int_3859 := p.consumeTerminal("INT").Value.i64
+	int857 := p.consumeTerminal("INT").Value.i64
+	int_3858 := p.consumeTerminal("INT").Value.i64
 	p.consumeLiteral(")")
-	_t1619 := &pb.DecimalType{Precision: int32(int858), Scale: int32(int_3859)}
-	result861 := _t1619
-	p.recordSpan(int(span_start860), "DecimalType")
-	return result861
+	_t1617 := &pb.DecimalType{Precision: int32(int857), Scale: int32(int_3858)}
+	result860 := _t1617
+	p.recordSpan(int(span_start859), "DecimalType")
+	return result860
 }
 
 func (p *Parser) parse_boolean_type() *pb.BooleanType {
-	span_start862 := int64(p.spanStart())
+	span_start861 := int64(p.spanStart())
 	p.consumeLiteral("BOOLEAN")
-	_t1620 := &pb.BooleanType{}
-	result863 := _t1620
-	p.recordSpan(int(span_start862), "BooleanType")
-	return result863
+	_t1618 := &pb.BooleanType{}
+	result862 := _t1618
+	p.recordSpan(int(span_start861), "BooleanType")
+	return result862
 }
 
 func (p *Parser) parse_int32_type() *pb.Int32Type {
-	span_start864 := int64(p.spanStart())
+	span_start863 := int64(p.spanStart())
 	p.consumeLiteral("INT32")
-	_t1621 := &pb.Int32Type{}
-	result865 := _t1621
-	p.recordSpan(int(span_start864), "Int32Type")
-	return result865
+	_t1619 := &pb.Int32Type{}
+	result864 := _t1619
+	p.recordSpan(int(span_start863), "Int32Type")
+	return result864
 }
 
 func (p *Parser) parse_float32_type() *pb.Float32Type {
-	span_start866 := int64(p.spanStart())
+	span_start865 := int64(p.spanStart())
 	p.consumeLiteral("FLOAT32")
-	_t1622 := &pb.Float32Type{}
-	result867 := _t1622
-	p.recordSpan(int(span_start866), "Float32Type")
-	return result867
+	_t1620 := &pb.Float32Type{}
+	result866 := _t1620
+	p.recordSpan(int(span_start865), "Float32Type")
+	return result866
 }
 
 func (p *Parser) parse_uint32_type() *pb.UInt32Type {
-	span_start868 := int64(p.spanStart())
+	span_start867 := int64(p.spanStart())
 	p.consumeLiteral("UINT32")
-	_t1623 := &pb.UInt32Type{}
-	result869 := _t1623
-	p.recordSpan(int(span_start868), "UInt32Type")
-	return result869
+	_t1621 := &pb.UInt32Type{}
+	result868 := _t1621
+	p.recordSpan(int(span_start867), "UInt32Type")
+	return result868
 }
 
 func (p *Parser) parse_value_bindings() []*pb.Binding {
 	p.consumeLiteral("|")
-	xs870 := []*pb.Binding{}
-	cond871 := p.matchLookaheadTerminal("SYMBOL", 0)
-	for cond871 {
-		_t1624 := p.parse_binding()
-		item872 := _t1624
-		xs870 = append(xs870, item872)
-		cond871 = p.matchLookaheadTerminal("SYMBOL", 0)
+	xs869 := []*pb.Binding{}
+	cond870 := p.matchLookaheadTerminal("SYMBOL", 0)
+	for cond870 {
+		_t1622 := p.parse_binding()
+		item871 := _t1622
+		xs869 = append(xs869, item871)
+		cond870 = p.matchLookaheadTerminal("SYMBOL", 0)
 	}
-	bindings873 := xs870
-	return bindings873
+	bindings872 := xs869
+	return bindings872
 }
 
 func (p *Parser) parse_formula() *pb.Formula {
-	span_start888 := int64(p.spanStart())
-	var _t1625 int64
+	span_start887 := int64(p.spanStart())
+	var _t1623 int64
 	if p.matchLookaheadLiteral("(", 0) {
-		var _t1626 int64
+		var _t1624 int64
 		if p.matchLookaheadLiteral("true", 1) {
-			_t1626 = 0
+			_t1624 = 0
 		} else {
-			var _t1627 int64
+			var _t1625 int64
 			if p.matchLookaheadLiteral("relatom", 1) {
-				_t1627 = 11
+				_t1625 = 11
 			} else {
-				var _t1628 int64
+				var _t1626 int64
 				if p.matchLookaheadLiteral("reduce", 1) {
-					_t1628 = 3
+					_t1626 = 3
 				} else {
-					var _t1629 int64
+					var _t1627 int64
 					if p.matchLookaheadLiteral("primitive", 1) {
-						_t1629 = 10
+						_t1627 = 10
 					} else {
-						var _t1630 int64
+						var _t1628 int64
 						if p.matchLookaheadLiteral("pragma", 1) {
-							_t1630 = 9
+							_t1628 = 9
 						} else {
-							var _t1631 int64
+							var _t1629 int64
 							if p.matchLookaheadLiteral("or", 1) {
-								_t1631 = 5
+								_t1629 = 5
 							} else {
-								var _t1632 int64
+								var _t1630 int64
 								if p.matchLookaheadLiteral("not", 1) {
-									_t1632 = 6
+									_t1630 = 6
 								} else {
-									var _t1633 int64
+									var _t1631 int64
 									if p.matchLookaheadLiteral("ffi", 1) {
-										_t1633 = 7
+										_t1631 = 7
 									} else {
-										var _t1634 int64
+										var _t1632 int64
 										if p.matchLookaheadLiteral("false", 1) {
-											_t1634 = 1
+											_t1632 = 1
 										} else {
-											var _t1635 int64
+											var _t1633 int64
 											if p.matchLookaheadLiteral("exists", 1) {
-												_t1635 = 2
+												_t1633 = 2
 											} else {
-												var _t1636 int64
+												var _t1634 int64
 												if p.matchLookaheadLiteral("cast", 1) {
-													_t1636 = 12
+													_t1634 = 12
 												} else {
-													var _t1637 int64
+													var _t1635 int64
 													if p.matchLookaheadLiteral("atom", 1) {
-														_t1637 = 8
+														_t1635 = 8
 													} else {
-														var _t1638 int64
+														var _t1636 int64
 														if p.matchLookaheadLiteral("and", 1) {
-															_t1638 = 4
+															_t1636 = 4
 														} else {
-															var _t1639 int64
+															var _t1637 int64
 															if p.matchLookaheadLiteral(">=", 1) {
-																_t1639 = 10
+																_t1637 = 10
 															} else {
-																var _t1640 int64
+																var _t1638 int64
 																if p.matchLookaheadLiteral(">", 1) {
-																	_t1640 = 10
+																	_t1638 = 10
 																} else {
-																	var _t1641 int64
+																	var _t1639 int64
 																	if p.matchLookaheadLiteral("=", 1) {
-																		_t1641 = 10
+																		_t1639 = 10
 																	} else {
-																		var _t1642 int64
+																		var _t1640 int64
 																		if p.matchLookaheadLiteral("<=", 1) {
-																			_t1642 = 10
+																			_t1640 = 10
 																		} else {
-																			var _t1643 int64
+																			var _t1641 int64
 																			if p.matchLookaheadLiteral("<", 1) {
-																				_t1643 = 10
+																				_t1641 = 10
 																			} else {
-																				var _t1644 int64
+																				var _t1642 int64
 																				if p.matchLookaheadLiteral("/", 1) {
-																					_t1644 = 10
+																					_t1642 = 10
 																				} else {
-																					var _t1645 int64
+																					var _t1643 int64
 																					if p.matchLookaheadLiteral("-", 1) {
-																						_t1645 = 10
+																						_t1643 = 10
 																					} else {
-																						var _t1646 int64
+																						var _t1644 int64
 																						if p.matchLookaheadLiteral("+", 1) {
-																							_t1646 = 10
+																							_t1644 = 10
 																						} else {
-																							var _t1647 int64
+																							var _t1645 int64
 																							if p.matchLookaheadLiteral("*", 1) {
-																								_t1647 = 10
+																								_t1645 = 10
 																							} else {
-																								_t1647 = -1
+																								_t1645 = -1
 																							}
-																							_t1646 = _t1647
+																							_t1644 = _t1645
 																						}
-																						_t1645 = _t1646
+																						_t1643 = _t1644
 																					}
-																					_t1644 = _t1645
+																					_t1642 = _t1643
 																				}
-																				_t1643 = _t1644
+																				_t1641 = _t1642
 																			}
-																			_t1642 = _t1643
+																			_t1640 = _t1641
 																		}
-																		_t1641 = _t1642
+																		_t1639 = _t1640
 																	}
-																	_t1640 = _t1641
+																	_t1638 = _t1639
 																}
-																_t1639 = _t1640
+																_t1637 = _t1638
 															}
-															_t1638 = _t1639
+															_t1636 = _t1637
 														}
-														_t1637 = _t1638
+														_t1635 = _t1636
 													}
-													_t1636 = _t1637
+													_t1634 = _t1635
 												}
-												_t1635 = _t1636
+												_t1633 = _t1634
 											}
-											_t1634 = _t1635
+											_t1632 = _t1633
 										}
-										_t1633 = _t1634
+										_t1631 = _t1632
 									}
-									_t1632 = _t1633
+									_t1630 = _t1631
 								}
-								_t1631 = _t1632
+								_t1629 = _t1630
 							}
-							_t1630 = _t1631
+							_t1628 = _t1629
 						}
-						_t1629 = _t1630
+						_t1627 = _t1628
 					}
-					_t1628 = _t1629
+					_t1626 = _t1627
 				}
-				_t1627 = _t1628
+				_t1625 = _t1626
 			}
-			_t1626 = _t1627
+			_t1624 = _t1625
 		}
-		_t1625 = _t1626
+		_t1623 = _t1624
 	} else {
-		_t1625 = -1
+		_t1623 = -1
 	}
-	prediction874 := _t1625
-	var _t1648 *pb.Formula
-	if prediction874 == 12 {
-		_t1649 := p.parse_cast()
-		cast887 := _t1649
-		_t1650 := &pb.Formula{}
-		_t1650.FormulaType = &pb.Formula_Cast{Cast: cast887}
-		_t1648 = _t1650
+	prediction873 := _t1623
+	var _t1646 *pb.Formula
+	if prediction873 == 12 {
+		_t1647 := p.parse_cast()
+		cast886 := _t1647
+		_t1648 := &pb.Formula{}
+		_t1648.FormulaType = &pb.Formula_Cast{Cast: cast886}
+		_t1646 = _t1648
 	} else {
-		var _t1651 *pb.Formula
-		if prediction874 == 11 {
-			_t1652 := p.parse_rel_atom()
-			rel_atom886 := _t1652
-			_t1653 := &pb.Formula{}
-			_t1653.FormulaType = &pb.Formula_RelAtom{RelAtom: rel_atom886}
-			_t1651 = _t1653
+		var _t1649 *pb.Formula
+		if prediction873 == 11 {
+			_t1650 := p.parse_rel_atom()
+			rel_atom885 := _t1650
+			_t1651 := &pb.Formula{}
+			_t1651.FormulaType = &pb.Formula_RelAtom{RelAtom: rel_atom885}
+			_t1649 = _t1651
 		} else {
-			var _t1654 *pb.Formula
-			if prediction874 == 10 {
-				_t1655 := p.parse_primitive()
-				primitive885 := _t1655
-				_t1656 := &pb.Formula{}
-				_t1656.FormulaType = &pb.Formula_Primitive{Primitive: primitive885}
-				_t1654 = _t1656
+			var _t1652 *pb.Formula
+			if prediction873 == 10 {
+				_t1653 := p.parse_primitive()
+				primitive884 := _t1653
+				_t1654 := &pb.Formula{}
+				_t1654.FormulaType = &pb.Formula_Primitive{Primitive: primitive884}
+				_t1652 = _t1654
 			} else {
-				var _t1657 *pb.Formula
-				if prediction874 == 9 {
-					_t1658 := p.parse_pragma()
-					pragma884 := _t1658
-					_t1659 := &pb.Formula{}
-					_t1659.FormulaType = &pb.Formula_Pragma{Pragma: pragma884}
-					_t1657 = _t1659
+				var _t1655 *pb.Formula
+				if prediction873 == 9 {
+					_t1656 := p.parse_pragma()
+					pragma883 := _t1656
+					_t1657 := &pb.Formula{}
+					_t1657.FormulaType = &pb.Formula_Pragma{Pragma: pragma883}
+					_t1655 = _t1657
 				} else {
-					var _t1660 *pb.Formula
-					if prediction874 == 8 {
-						_t1661 := p.parse_atom()
-						atom883 := _t1661
-						_t1662 := &pb.Formula{}
-						_t1662.FormulaType = &pb.Formula_Atom{Atom: atom883}
-						_t1660 = _t1662
+					var _t1658 *pb.Formula
+					if prediction873 == 8 {
+						_t1659 := p.parse_atom()
+						atom882 := _t1659
+						_t1660 := &pb.Formula{}
+						_t1660.FormulaType = &pb.Formula_Atom{Atom: atom882}
+						_t1658 = _t1660
 					} else {
-						var _t1663 *pb.Formula
-						if prediction874 == 7 {
-							_t1664 := p.parse_ffi()
-							ffi882 := _t1664
-							_t1665 := &pb.Formula{}
-							_t1665.FormulaType = &pb.Formula_Ffi{Ffi: ffi882}
-							_t1663 = _t1665
+						var _t1661 *pb.Formula
+						if prediction873 == 7 {
+							_t1662 := p.parse_ffi()
+							ffi881 := _t1662
+							_t1663 := &pb.Formula{}
+							_t1663.FormulaType = &pb.Formula_Ffi{Ffi: ffi881}
+							_t1661 = _t1663
 						} else {
-							var _t1666 *pb.Formula
-							if prediction874 == 6 {
-								_t1667 := p.parse_not()
-								not881 := _t1667
-								_t1668 := &pb.Formula{}
-								_t1668.FormulaType = &pb.Formula_Not{Not: not881}
-								_t1666 = _t1668
+							var _t1664 *pb.Formula
+							if prediction873 == 6 {
+								_t1665 := p.parse_not()
+								not880 := _t1665
+								_t1666 := &pb.Formula{}
+								_t1666.FormulaType = &pb.Formula_Not{Not: not880}
+								_t1664 = _t1666
 							} else {
-								var _t1669 *pb.Formula
-								if prediction874 == 5 {
-									_t1670 := p.parse_disjunction()
-									disjunction880 := _t1670
-									_t1671 := &pb.Formula{}
-									_t1671.FormulaType = &pb.Formula_Disjunction{Disjunction: disjunction880}
-									_t1669 = _t1671
+								var _t1667 *pb.Formula
+								if prediction873 == 5 {
+									_t1668 := p.parse_disjunction()
+									disjunction879 := _t1668
+									_t1669 := &pb.Formula{}
+									_t1669.FormulaType = &pb.Formula_Disjunction{Disjunction: disjunction879}
+									_t1667 = _t1669
 								} else {
-									var _t1672 *pb.Formula
-									if prediction874 == 4 {
-										_t1673 := p.parse_conjunction()
-										conjunction879 := _t1673
-										_t1674 := &pb.Formula{}
-										_t1674.FormulaType = &pb.Formula_Conjunction{Conjunction: conjunction879}
-										_t1672 = _t1674
+									var _t1670 *pb.Formula
+									if prediction873 == 4 {
+										_t1671 := p.parse_conjunction()
+										conjunction878 := _t1671
+										_t1672 := &pb.Formula{}
+										_t1672.FormulaType = &pb.Formula_Conjunction{Conjunction: conjunction878}
+										_t1670 = _t1672
 									} else {
-										var _t1675 *pb.Formula
-										if prediction874 == 3 {
-											_t1676 := p.parse_reduce()
-											reduce878 := _t1676
-											_t1677 := &pb.Formula{}
-											_t1677.FormulaType = &pb.Formula_Reduce{Reduce: reduce878}
-											_t1675 = _t1677
+										var _t1673 *pb.Formula
+										if prediction873 == 3 {
+											_t1674 := p.parse_reduce()
+											reduce877 := _t1674
+											_t1675 := &pb.Formula{}
+											_t1675.FormulaType = &pb.Formula_Reduce{Reduce: reduce877}
+											_t1673 = _t1675
 										} else {
-											var _t1678 *pb.Formula
-											if prediction874 == 2 {
-												_t1679 := p.parse_exists()
-												exists877 := _t1679
-												_t1680 := &pb.Formula{}
-												_t1680.FormulaType = &pb.Formula_Exists{Exists: exists877}
-												_t1678 = _t1680
+											var _t1676 *pb.Formula
+											if prediction873 == 2 {
+												_t1677 := p.parse_exists()
+												exists876 := _t1677
+												_t1678 := &pb.Formula{}
+												_t1678.FormulaType = &pb.Formula_Exists{Exists: exists876}
+												_t1676 = _t1678
 											} else {
-												var _t1681 *pb.Formula
-												if prediction874 == 1 {
-													_t1682 := p.parse_false()
-													false876 := _t1682
-													_t1683 := &pb.Formula{}
-													_t1683.FormulaType = &pb.Formula_Disjunction{Disjunction: false876}
-													_t1681 = _t1683
+												var _t1679 *pb.Formula
+												if prediction873 == 1 {
+													_t1680 := p.parse_false()
+													false875 := _t1680
+													_t1681 := &pb.Formula{}
+													_t1681.FormulaType = &pb.Formula_Disjunction{Disjunction: false875}
+													_t1679 = _t1681
 												} else {
-													var _t1684 *pb.Formula
-													if prediction874 == 0 {
-														_t1685 := p.parse_true()
-														true875 := _t1685
-														_t1686 := &pb.Formula{}
-														_t1686.FormulaType = &pb.Formula_Conjunction{Conjunction: true875}
-														_t1684 = _t1686
+													var _t1682 *pb.Formula
+													if prediction873 == 0 {
+														_t1683 := p.parse_true()
+														true874 := _t1683
+														_t1684 := &pb.Formula{}
+														_t1684.FormulaType = &pb.Formula_Conjunction{Conjunction: true874}
+														_t1682 = _t1684
 													} else {
 														panic(ParseError{msg: fmt.Sprintf("%s: %s=`%v`", "Unexpected token in formula", p.lookahead(0).Type, p.lookahead(0).Value)})
 													}
-													_t1681 = _t1684
+													_t1679 = _t1682
 												}
-												_t1678 = _t1681
+												_t1676 = _t1679
 											}
-											_t1675 = _t1678
+											_t1673 = _t1676
 										}
-										_t1672 = _t1675
+										_t1670 = _t1673
 									}
-									_t1669 = _t1672
+									_t1667 = _t1670
 								}
-								_t1666 = _t1669
+								_t1664 = _t1667
 							}
-							_t1663 = _t1666
+							_t1661 = _t1664
 						}
-						_t1660 = _t1663
+						_t1658 = _t1661
 					}
-					_t1657 = _t1660
+					_t1655 = _t1658
 				}
-				_t1654 = _t1657
+				_t1652 = _t1655
 			}
-			_t1651 = _t1654
+			_t1649 = _t1652
 		}
-		_t1648 = _t1651
+		_t1646 = _t1649
 	}
-	result889 := _t1648
-	p.recordSpan(int(span_start888), "Formula")
-	return result889
+	result888 := _t1646
+	p.recordSpan(int(span_start887), "Formula")
+	return result888
 }
 
 func (p *Parser) parse_true() *pb.Conjunction {
-	span_start890 := int64(p.spanStart())
+	span_start889 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("true")
 	p.consumeLiteral(")")
-	_t1687 := &pb.Conjunction{Args: []*pb.Formula{}}
-	result891 := _t1687
-	p.recordSpan(int(span_start890), "Conjunction")
-	return result891
+	_t1685 := &pb.Conjunction{Args: []*pb.Formula{}}
+	result890 := _t1685
+	p.recordSpan(int(span_start889), "Conjunction")
+	return result890
 }
 
 func (p *Parser) parse_false() *pb.Disjunction {
-	span_start892 := int64(p.spanStart())
+	span_start891 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("false")
 	p.consumeLiteral(")")
-	_t1688 := &pb.Disjunction{Args: []*pb.Formula{}}
-	result893 := _t1688
-	p.recordSpan(int(span_start892), "Disjunction")
-	return result893
+	_t1686 := &pb.Disjunction{Args: []*pb.Formula{}}
+	result892 := _t1686
+	p.recordSpan(int(span_start891), "Disjunction")
+	return result892
 }
 
 func (p *Parser) parse_exists() *pb.Exists {
-	span_start896 := int64(p.spanStart())
+	span_start895 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("exists")
-	_t1689 := p.parse_bindings()
-	bindings894 := _t1689
-	_t1690 := p.parse_formula()
-	formula895 := _t1690
+	_t1687 := p.parse_bindings()
+	bindings893 := _t1687
+	_t1688 := p.parse_formula()
+	formula894 := _t1688
 	p.consumeLiteral(")")
-	_t1691 := &pb.Abstraction{Vars: listConcat(bindings894[0].([]*pb.Binding), bindings894[1].([]*pb.Binding)), Value: formula895}
-	_t1692 := &pb.Exists{Body: _t1691}
-	result897 := _t1692
-	p.recordSpan(int(span_start896), "Exists")
-	return result897
+	_t1689 := &pb.Abstraction{Vars: listConcat(bindings893[0].([]*pb.Binding), bindings893[1].([]*pb.Binding)), Value: formula894}
+	_t1690 := &pb.Exists{Body: _t1689}
+	result896 := _t1690
+	p.recordSpan(int(span_start895), "Exists")
+	return result896
 }
 
 func (p *Parser) parse_reduce() *pb.Reduce {
-	span_start901 := int64(p.spanStart())
+	span_start900 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("reduce")
-	_t1693 := p.parse_abstraction()
-	abstraction898 := _t1693
-	_t1694 := p.parse_abstraction()
-	abstraction_3899 := _t1694
-	_t1695 := p.parse_terms()
-	terms900 := _t1695
+	_t1691 := p.parse_abstraction()
+	abstraction897 := _t1691
+	_t1692 := p.parse_abstraction()
+	abstraction_3898 := _t1692
+	_t1693 := p.parse_terms()
+	terms899 := _t1693
 	p.consumeLiteral(")")
-	_t1696 := &pb.Reduce{Op: abstraction898, Body: abstraction_3899, Terms: terms900}
-	result902 := _t1696
-	p.recordSpan(int(span_start901), "Reduce")
-	return result902
+	_t1694 := &pb.Reduce{Op: abstraction897, Body: abstraction_3898, Terms: terms899}
+	result901 := _t1694
+	p.recordSpan(int(span_start900), "Reduce")
+	return result901
 }
 
 func (p *Parser) parse_terms() []*pb.Term {
 	p.consumeLiteral("(")
 	p.consumeLiteral("terms")
-	xs903 := []*pb.Term{}
-	cond904 := (((((((((((((p.matchLookaheadLiteral("(", 0) || p.matchLookaheadLiteral("false", 0)) || p.matchLookaheadLiteral("missing", 0)) || p.matchLookaheadLiteral("true", 0)) || p.matchLookaheadTerminal("DECIMAL", 0)) || p.matchLookaheadTerminal("FLOAT", 0)) || p.matchLookaheadTerminal("FLOAT32", 0)) || p.matchLookaheadTerminal("INT", 0)) || p.matchLookaheadTerminal("INT128", 0)) || p.matchLookaheadTerminal("INT32", 0)) || p.matchLookaheadTerminal("STRING", 0)) || p.matchLookaheadTerminal("UINT128", 0)) || p.matchLookaheadTerminal("UINT32", 0)) || p.matchLookaheadTerminal("SYMBOL", 0))
-	for cond904 {
-		_t1697 := p.parse_term()
-		item905 := _t1697
-		xs903 = append(xs903, item905)
-		cond904 = (((((((((((((p.matchLookaheadLiteral("(", 0) || p.matchLookaheadLiteral("false", 0)) || p.matchLookaheadLiteral("missing", 0)) || p.matchLookaheadLiteral("true", 0)) || p.matchLookaheadTerminal("DECIMAL", 0)) || p.matchLookaheadTerminal("FLOAT", 0)) || p.matchLookaheadTerminal("FLOAT32", 0)) || p.matchLookaheadTerminal("INT", 0)) || p.matchLookaheadTerminal("INT128", 0)) || p.matchLookaheadTerminal("INT32", 0)) || p.matchLookaheadTerminal("STRING", 0)) || p.matchLookaheadTerminal("UINT128", 0)) || p.matchLookaheadTerminal("UINT32", 0)) || p.matchLookaheadTerminal("SYMBOL", 0))
+	xs902 := []*pb.Term{}
+	cond903 := (((((((((((((p.matchLookaheadLiteral("(", 0) || p.matchLookaheadLiteral("false", 0)) || p.matchLookaheadLiteral("missing", 0)) || p.matchLookaheadLiteral("true", 0)) || p.matchLookaheadTerminal("DECIMAL", 0)) || p.matchLookaheadTerminal("FLOAT", 0)) || p.matchLookaheadTerminal("FLOAT32", 0)) || p.matchLookaheadTerminal("INT", 0)) || p.matchLookaheadTerminal("INT128", 0)) || p.matchLookaheadTerminal("INT32", 0)) || p.matchLookaheadTerminal("STRING", 0)) || p.matchLookaheadTerminal("UINT128", 0)) || p.matchLookaheadTerminal("UINT32", 0)) || p.matchLookaheadTerminal("SYMBOL", 0))
+	for cond903 {
+		_t1695 := p.parse_term()
+		item904 := _t1695
+		xs902 = append(xs902, item904)
+		cond903 = (((((((((((((p.matchLookaheadLiteral("(", 0) || p.matchLookaheadLiteral("false", 0)) || p.matchLookaheadLiteral("missing", 0)) || p.matchLookaheadLiteral("true", 0)) || p.matchLookaheadTerminal("DECIMAL", 0)) || p.matchLookaheadTerminal("FLOAT", 0)) || p.matchLookaheadTerminal("FLOAT32", 0)) || p.matchLookaheadTerminal("INT", 0)) || p.matchLookaheadTerminal("INT128", 0)) || p.matchLookaheadTerminal("INT32", 0)) || p.matchLookaheadTerminal("STRING", 0)) || p.matchLookaheadTerminal("UINT128", 0)) || p.matchLookaheadTerminal("UINT32", 0)) || p.matchLookaheadTerminal("SYMBOL", 0))
 	}
-	terms906 := xs903
+	terms905 := xs902
 	p.consumeLiteral(")")
-	return terms906
+	return terms905
 }
 
 func (p *Parser) parse_term() *pb.Term {
-	span_start910 := int64(p.spanStart())
-	var _t1698 int64
+	span_start909 := int64(p.spanStart())
+	var _t1696 int64
 	if p.matchLookaheadLiteral("true", 0) {
-		_t1698 = 1
+		_t1696 = 1
 	} else {
-		var _t1699 int64
+		var _t1697 int64
 		if p.matchLookaheadLiteral("missing", 0) {
-			_t1699 = 1
+			_t1697 = 1
 		} else {
-			var _t1700 int64
+			var _t1698 int64
 			if p.matchLookaheadLiteral("false", 0) {
-				_t1700 = 1
+				_t1698 = 1
 			} else {
-				var _t1701 int64
+				var _t1699 int64
 				if p.matchLookaheadLiteral("(", 0) {
-					_t1701 = 1
+					_t1699 = 1
 				} else {
-					var _t1702 int64
+					var _t1700 int64
 					if p.matchLookaheadTerminal("SYMBOL", 0) {
-						_t1702 = 0
+						_t1700 = 0
 					} else {
-						var _t1703 int64
+						var _t1701 int64
 						if p.matchLookaheadTerminal("UINT32", 0) {
-							_t1703 = 1
+							_t1701 = 1
 						} else {
-							var _t1704 int64
+							var _t1702 int64
 							if p.matchLookaheadTerminal("UINT128", 0) {
-								_t1704 = 1
+								_t1702 = 1
 							} else {
-								var _t1705 int64
+								var _t1703 int64
 								if p.matchLookaheadTerminal("STRING", 0) {
-									_t1705 = 1
+									_t1703 = 1
 								} else {
-									var _t1706 int64
+									var _t1704 int64
 									if p.matchLookaheadTerminal("INT32", 0) {
-										_t1706 = 1
+										_t1704 = 1
 									} else {
-										var _t1707 int64
+										var _t1705 int64
 										if p.matchLookaheadTerminal("INT128", 0) {
-											_t1707 = 1
+											_t1705 = 1
 										} else {
-											var _t1708 int64
+											var _t1706 int64
 											if p.matchLookaheadTerminal("INT", 0) {
-												_t1708 = 1
+												_t1706 = 1
 											} else {
-												var _t1709 int64
+												var _t1707 int64
 												if p.matchLookaheadTerminal("FLOAT32", 0) {
-													_t1709 = 1
+													_t1707 = 1
 												} else {
-													var _t1710 int64
+													var _t1708 int64
 													if p.matchLookaheadTerminal("FLOAT", 0) {
-														_t1710 = 1
+														_t1708 = 1
 													} else {
-														var _t1711 int64
+														var _t1709 int64
 														if p.matchLookaheadTerminal("DECIMAL", 0) {
-															_t1711 = 1
+															_t1709 = 1
 														} else {
-															_t1711 = -1
+															_t1709 = -1
 														}
-														_t1710 = _t1711
+														_t1708 = _t1709
 													}
-													_t1709 = _t1710
+													_t1707 = _t1708
 												}
-												_t1708 = _t1709
+												_t1706 = _t1707
 											}
-											_t1707 = _t1708
+											_t1705 = _t1706
 										}
-										_t1706 = _t1707
+										_t1704 = _t1705
 									}
-									_t1705 = _t1706
+									_t1703 = _t1704
 								}
-								_t1704 = _t1705
+								_t1702 = _t1703
 							}
-							_t1703 = _t1704
+							_t1701 = _t1702
 						}
-						_t1702 = _t1703
+						_t1700 = _t1701
 					}
-					_t1701 = _t1702
+					_t1699 = _t1700
 				}
-				_t1700 = _t1701
+				_t1698 = _t1699
 			}
-			_t1699 = _t1700
+			_t1697 = _t1698
 		}
-		_t1698 = _t1699
+		_t1696 = _t1697
 	}
-	prediction907 := _t1698
-	var _t1712 *pb.Term
-	if prediction907 == 1 {
-		_t1713 := p.parse_value()
-		value909 := _t1713
-		_t1714 := &pb.Term{}
-		_t1714.TermType = &pb.Term_Constant{Constant: value909}
-		_t1712 = _t1714
+	prediction906 := _t1696
+	var _t1710 *pb.Term
+	if prediction906 == 1 {
+		_t1711 := p.parse_value()
+		value908 := _t1711
+		_t1712 := &pb.Term{}
+		_t1712.TermType = &pb.Term_Constant{Constant: value908}
+		_t1710 = _t1712
 	} else {
-		var _t1715 *pb.Term
-		if prediction907 == 0 {
-			_t1716 := p.parse_var()
-			var908 := _t1716
-			_t1717 := &pb.Term{}
-			_t1717.TermType = &pb.Term_Var{Var: var908}
-			_t1715 = _t1717
+		var _t1713 *pb.Term
+		if prediction906 == 0 {
+			_t1714 := p.parse_var()
+			var907 := _t1714
+			_t1715 := &pb.Term{}
+			_t1715.TermType = &pb.Term_Var{Var: var907}
+			_t1713 = _t1715
 		} else {
 			panic(ParseError{msg: fmt.Sprintf("%s: %s=`%v`", "Unexpected token in term", p.lookahead(0).Type, p.lookahead(0).Value)})
 		}
-		_t1712 = _t1715
+		_t1710 = _t1713
 	}
-	result911 := _t1712
-	p.recordSpan(int(span_start910), "Term")
-	return result911
+	result910 := _t1710
+	p.recordSpan(int(span_start909), "Term")
+	return result910
 }
 
 func (p *Parser) parse_var() *pb.Var {
-	span_start913 := int64(p.spanStart())
-	symbol912 := p.consumeTerminal("SYMBOL").Value.str
-	_t1718 := &pb.Var{Name: symbol912}
-	result914 := _t1718
-	p.recordSpan(int(span_start913), "Var")
-	return result914
+	span_start912 := int64(p.spanStart())
+	symbol911 := p.consumeTerminal("SYMBOL").Value.str
+	_t1716 := &pb.Var{Name: symbol911}
+	result913 := _t1716
+	p.recordSpan(int(span_start912), "Var")
+	return result913
 }
 
 func (p *Parser) parse_value() *pb.Value {
-	span_start928 := int64(p.spanStart())
-	var _t1719 int64
+	span_start927 := int64(p.spanStart())
+	var _t1717 int64
 	if p.matchLookaheadLiteral("true", 0) {
-		_t1719 = 12
+		_t1717 = 12
 	} else {
-		var _t1720 int64
+		var _t1718 int64
 		if p.matchLookaheadLiteral("missing", 0) {
-			_t1720 = 11
+			_t1718 = 11
 		} else {
-			var _t1721 int64
+			var _t1719 int64
 			if p.matchLookaheadLiteral("false", 0) {
-				_t1721 = 12
+				_t1719 = 12
 			} else {
-				var _t1722 int64
+				var _t1720 int64
 				if p.matchLookaheadLiteral("(", 0) {
-					var _t1723 int64
+					var _t1721 int64
 					if p.matchLookaheadLiteral("datetime", 1) {
-						_t1723 = 1
+						_t1721 = 1
+					} else {
+						var _t1722 int64
+						if p.matchLookaheadLiteral("date", 1) {
+							_t1722 = 0
+						} else {
+							_t1722 = -1
+						}
+						_t1721 = _t1722
+					}
+					_t1720 = _t1721
+				} else {
+					var _t1723 int64
+					if p.matchLookaheadTerminal("UINT32", 0) {
+						_t1723 = 7
 					} else {
 						var _t1724 int64
-						if p.matchLookaheadLiteral("date", 1) {
-							_t1724 = 0
+						if p.matchLookaheadTerminal("UINT128", 0) {
+							_t1724 = 8
 						} else {
-							_t1724 = -1
+							var _t1725 int64
+							if p.matchLookaheadTerminal("STRING", 0) {
+								_t1725 = 2
+							} else {
+								var _t1726 int64
+								if p.matchLookaheadTerminal("INT32", 0) {
+									_t1726 = 3
+								} else {
+									var _t1727 int64
+									if p.matchLookaheadTerminal("INT128", 0) {
+										_t1727 = 9
+									} else {
+										var _t1728 int64
+										if p.matchLookaheadTerminal("INT", 0) {
+											_t1728 = 4
+										} else {
+											var _t1729 int64
+											if p.matchLookaheadTerminal("FLOAT32", 0) {
+												_t1729 = 5
+											} else {
+												var _t1730 int64
+												if p.matchLookaheadTerminal("FLOAT", 0) {
+													_t1730 = 6
+												} else {
+													var _t1731 int64
+													if p.matchLookaheadTerminal("DECIMAL", 0) {
+														_t1731 = 10
+													} else {
+														_t1731 = -1
+													}
+													_t1730 = _t1731
+												}
+												_t1729 = _t1730
+											}
+											_t1728 = _t1729
+										}
+										_t1727 = _t1728
+									}
+									_t1726 = _t1727
+								}
+								_t1725 = _t1726
+							}
+							_t1724 = _t1725
 						}
 						_t1723 = _t1724
 					}
-					_t1722 = _t1723
-				} else {
-					var _t1725 int64
-					if p.matchLookaheadTerminal("UINT32", 0) {
-						_t1725 = 7
-					} else {
-						var _t1726 int64
-						if p.matchLookaheadTerminal("UINT128", 0) {
-							_t1726 = 8
-						} else {
-							var _t1727 int64
-							if p.matchLookaheadTerminal("STRING", 0) {
-								_t1727 = 2
-							} else {
-								var _t1728 int64
-								if p.matchLookaheadTerminal("INT32", 0) {
-									_t1728 = 3
-								} else {
-									var _t1729 int64
-									if p.matchLookaheadTerminal("INT128", 0) {
-										_t1729 = 9
-									} else {
-										var _t1730 int64
-										if p.matchLookaheadTerminal("INT", 0) {
-											_t1730 = 4
-										} else {
-											var _t1731 int64
-											if p.matchLookaheadTerminal("FLOAT32", 0) {
-												_t1731 = 5
-											} else {
-												var _t1732 int64
-												if p.matchLookaheadTerminal("FLOAT", 0) {
-													_t1732 = 6
-												} else {
-													var _t1733 int64
-													if p.matchLookaheadTerminal("DECIMAL", 0) {
-														_t1733 = 10
-													} else {
-														_t1733 = -1
-													}
-													_t1732 = _t1733
-												}
-												_t1731 = _t1732
-											}
-											_t1730 = _t1731
-										}
-										_t1729 = _t1730
-									}
-									_t1728 = _t1729
-								}
-								_t1727 = _t1728
-							}
-							_t1726 = _t1727
-						}
-						_t1725 = _t1726
-					}
-					_t1722 = _t1725
+					_t1720 = _t1723
 				}
-				_t1721 = _t1722
+				_t1719 = _t1720
 			}
-			_t1720 = _t1721
+			_t1718 = _t1719
 		}
-		_t1719 = _t1720
+		_t1717 = _t1718
 	}
-	prediction915 := _t1719
-	var _t1734 *pb.Value
-	if prediction915 == 12 {
-		_t1735 := p.parse_boolean_value()
-		boolean_value927 := _t1735
-		_t1736 := &pb.Value{}
-		_t1736.Value = &pb.Value_BooleanValue{BooleanValue: boolean_value927}
-		_t1734 = _t1736
+	prediction914 := _t1717
+	var _t1732 *pb.Value
+	if prediction914 == 12 {
+		_t1733 := p.parse_boolean_value()
+		boolean_value926 := _t1733
+		_t1734 := &pb.Value{}
+		_t1734.Value = &pb.Value_BooleanValue{BooleanValue: boolean_value926}
+		_t1732 = _t1734
 	} else {
-		var _t1737 *pb.Value
-		if prediction915 == 11 {
+		var _t1735 *pb.Value
+		if prediction914 == 11 {
 			p.consumeLiteral("missing")
-			_t1738 := &pb.MissingValue{}
-			_t1739 := &pb.Value{}
-			_t1739.Value = &pb.Value_MissingValue{MissingValue: _t1738}
-			_t1737 = _t1739
+			_t1736 := &pb.MissingValue{}
+			_t1737 := &pb.Value{}
+			_t1737.Value = &pb.Value_MissingValue{MissingValue: _t1736}
+			_t1735 = _t1737
 		} else {
-			var _t1740 *pb.Value
-			if prediction915 == 10 {
-				formatted_decimal926 := p.consumeTerminal("DECIMAL").Value.decimal
-				_t1741 := &pb.Value{}
-				_t1741.Value = &pb.Value_DecimalValue{DecimalValue: formatted_decimal926}
-				_t1740 = _t1741
+			var _t1738 *pb.Value
+			if prediction914 == 10 {
+				formatted_decimal925 := p.consumeTerminal("DECIMAL").Value.decimal
+				_t1739 := &pb.Value{}
+				_t1739.Value = &pb.Value_DecimalValue{DecimalValue: formatted_decimal925}
+				_t1738 = _t1739
 			} else {
-				var _t1742 *pb.Value
-				if prediction915 == 9 {
-					formatted_int128925 := p.consumeTerminal("INT128").Value.int128
-					_t1743 := &pb.Value{}
-					_t1743.Value = &pb.Value_Int128Value{Int128Value: formatted_int128925}
-					_t1742 = _t1743
+				var _t1740 *pb.Value
+				if prediction914 == 9 {
+					formatted_int128924 := p.consumeTerminal("INT128").Value.int128
+					_t1741 := &pb.Value{}
+					_t1741.Value = &pb.Value_Int128Value{Int128Value: formatted_int128924}
+					_t1740 = _t1741
 				} else {
-					var _t1744 *pb.Value
-					if prediction915 == 8 {
-						formatted_uint128924 := p.consumeTerminal("UINT128").Value.uint128
-						_t1745 := &pb.Value{}
-						_t1745.Value = &pb.Value_Uint128Value{Uint128Value: formatted_uint128924}
-						_t1744 = _t1745
+					var _t1742 *pb.Value
+					if prediction914 == 8 {
+						formatted_uint128923 := p.consumeTerminal("UINT128").Value.uint128
+						_t1743 := &pb.Value{}
+						_t1743.Value = &pb.Value_Uint128Value{Uint128Value: formatted_uint128923}
+						_t1742 = _t1743
 					} else {
-						var _t1746 *pb.Value
-						if prediction915 == 7 {
-							formatted_uint32923 := p.consumeTerminal("UINT32").Value.u32
-							_t1747 := &pb.Value{}
-							_t1747.Value = &pb.Value_Uint32Value{Uint32Value: formatted_uint32923}
-							_t1746 = _t1747
+						var _t1744 *pb.Value
+						if prediction914 == 7 {
+							formatted_uint32922 := p.consumeTerminal("UINT32").Value.u32
+							_t1745 := &pb.Value{}
+							_t1745.Value = &pb.Value_Uint32Value{Uint32Value: formatted_uint32922}
+							_t1744 = _t1745
 						} else {
-							var _t1748 *pb.Value
-							if prediction915 == 6 {
-								formatted_float922 := p.consumeTerminal("FLOAT").Value.f64
-								_t1749 := &pb.Value{}
-								_t1749.Value = &pb.Value_FloatValue{FloatValue: formatted_float922}
-								_t1748 = _t1749
+							var _t1746 *pb.Value
+							if prediction914 == 6 {
+								formatted_float921 := p.consumeTerminal("FLOAT").Value.f64
+								_t1747 := &pb.Value{}
+								_t1747.Value = &pb.Value_FloatValue{FloatValue: formatted_float921}
+								_t1746 = _t1747
 							} else {
-								var _t1750 *pb.Value
-								if prediction915 == 5 {
-									formatted_float32921 := p.consumeTerminal("FLOAT32").Value.f32
-									_t1751 := &pb.Value{}
-									_t1751.Value = &pb.Value_Float32Value{Float32Value: formatted_float32921}
-									_t1750 = _t1751
+								var _t1748 *pb.Value
+								if prediction914 == 5 {
+									formatted_float32920 := p.consumeTerminal("FLOAT32").Value.f32
+									_t1749 := &pb.Value{}
+									_t1749.Value = &pb.Value_Float32Value{Float32Value: formatted_float32920}
+									_t1748 = _t1749
 								} else {
-									var _t1752 *pb.Value
-									if prediction915 == 4 {
-										formatted_int920 := p.consumeTerminal("INT").Value.i64
-										_t1753 := &pb.Value{}
-										_t1753.Value = &pb.Value_IntValue{IntValue: formatted_int920}
-										_t1752 = _t1753
+									var _t1750 *pb.Value
+									if prediction914 == 4 {
+										formatted_int919 := p.consumeTerminal("INT").Value.i64
+										_t1751 := &pb.Value{}
+										_t1751.Value = &pb.Value_IntValue{IntValue: formatted_int919}
+										_t1750 = _t1751
 									} else {
-										var _t1754 *pb.Value
-										if prediction915 == 3 {
-											formatted_int32919 := p.consumeTerminal("INT32").Value.i32
-											_t1755 := &pb.Value{}
-											_t1755.Value = &pb.Value_Int32Value{Int32Value: formatted_int32919}
-											_t1754 = _t1755
+										var _t1752 *pb.Value
+										if prediction914 == 3 {
+											formatted_int32918 := p.consumeTerminal("INT32").Value.i32
+											_t1753 := &pb.Value{}
+											_t1753.Value = &pb.Value_Int32Value{Int32Value: formatted_int32918}
+											_t1752 = _t1753
 										} else {
-											var _t1756 *pb.Value
-											if prediction915 == 2 {
-												formatted_string918 := p.consumeTerminal("STRING").Value.str
-												_t1757 := &pb.Value{}
-												_t1757.Value = &pb.Value_StringValue{StringValue: formatted_string918}
-												_t1756 = _t1757
+											var _t1754 *pb.Value
+											if prediction914 == 2 {
+												formatted_string917 := p.consumeTerminal("STRING").Value.str
+												_t1755 := &pb.Value{}
+												_t1755.Value = &pb.Value_StringValue{StringValue: formatted_string917}
+												_t1754 = _t1755
 											} else {
-												var _t1758 *pb.Value
-												if prediction915 == 1 {
-													_t1759 := p.parse_datetime()
-													datetime917 := _t1759
-													_t1760 := &pb.Value{}
-													_t1760.Value = &pb.Value_DatetimeValue{DatetimeValue: datetime917}
-													_t1758 = _t1760
+												var _t1756 *pb.Value
+												if prediction914 == 1 {
+													_t1757 := p.parse_datetime()
+													datetime916 := _t1757
+													_t1758 := &pb.Value{}
+													_t1758.Value = &pb.Value_DatetimeValue{DatetimeValue: datetime916}
+													_t1756 = _t1758
 												} else {
-													var _t1761 *pb.Value
-													if prediction915 == 0 {
-														_t1762 := p.parse_date()
-														date916 := _t1762
-														_t1763 := &pb.Value{}
-														_t1763.Value = &pb.Value_DateValue{DateValue: date916}
-														_t1761 = _t1763
+													var _t1759 *pb.Value
+													if prediction914 == 0 {
+														_t1760 := p.parse_date()
+														date915 := _t1760
+														_t1761 := &pb.Value{}
+														_t1761.Value = &pb.Value_DateValue{DateValue: date915}
+														_t1759 = _t1761
 													} else {
 														panic(ParseError{msg: fmt.Sprintf("%s: %s=`%v`", "Unexpected token in value", p.lookahead(0).Type, p.lookahead(0).Value)})
 													}
-													_t1758 = _t1761
+													_t1756 = _t1759
 												}
-												_t1756 = _t1758
+												_t1754 = _t1756
 											}
-											_t1754 = _t1756
+											_t1752 = _t1754
 										}
-										_t1752 = _t1754
+										_t1750 = _t1752
 									}
-									_t1750 = _t1752
+									_t1748 = _t1750
 								}
-								_t1748 = _t1750
+								_t1746 = _t1748
 							}
-							_t1746 = _t1748
+							_t1744 = _t1746
 						}
-						_t1744 = _t1746
+						_t1742 = _t1744
 					}
-					_t1742 = _t1744
+					_t1740 = _t1742
 				}
-				_t1740 = _t1742
+				_t1738 = _t1740
 			}
-			_t1737 = _t1740
+			_t1735 = _t1738
 		}
-		_t1734 = _t1737
+		_t1732 = _t1735
 	}
-	result929 := _t1734
-	p.recordSpan(int(span_start928), "Value")
-	return result929
+	result928 := _t1732
+	p.recordSpan(int(span_start927), "Value")
+	return result928
 }
 
 func (p *Parser) parse_date() *pb.DateValue {
-	span_start933 := int64(p.spanStart())
+	span_start932 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("date")
-	formatted_int930 := p.consumeTerminal("INT").Value.i64
-	formatted_int_3931 := p.consumeTerminal("INT").Value.i64
-	formatted_int_4932 := p.consumeTerminal("INT").Value.i64
+	formatted_int929 := p.consumeTerminal("INT").Value.i64
+	formatted_int_3930 := p.consumeTerminal("INT").Value.i64
+	formatted_int_4931 := p.consumeTerminal("INT").Value.i64
 	p.consumeLiteral(")")
-	_t1764 := &pb.DateValue{Year: int32(formatted_int930), Month: int32(formatted_int_3931), Day: int32(formatted_int_4932)}
-	result934 := _t1764
-	p.recordSpan(int(span_start933), "DateValue")
-	return result934
+	_t1762 := &pb.DateValue{Year: int32(formatted_int929), Month: int32(formatted_int_3930), Day: int32(formatted_int_4931)}
+	result933 := _t1762
+	p.recordSpan(int(span_start932), "DateValue")
+	return result933
 }
 
 func (p *Parser) parse_datetime() *pb.DateTimeValue {
-	span_start942 := int64(p.spanStart())
+	span_start941 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("datetime")
-	formatted_int935 := p.consumeTerminal("INT").Value.i64
-	formatted_int_3936 := p.consumeTerminal("INT").Value.i64
-	formatted_int_4937 := p.consumeTerminal("INT").Value.i64
-	formatted_int_5938 := p.consumeTerminal("INT").Value.i64
-	formatted_int_6939 := p.consumeTerminal("INT").Value.i64
-	formatted_int_7940 := p.consumeTerminal("INT").Value.i64
-	var _t1765 *int64
+	formatted_int934 := p.consumeTerminal("INT").Value.i64
+	formatted_int_3935 := p.consumeTerminal("INT").Value.i64
+	formatted_int_4936 := p.consumeTerminal("INT").Value.i64
+	formatted_int_5937 := p.consumeTerminal("INT").Value.i64
+	formatted_int_6938 := p.consumeTerminal("INT").Value.i64
+	formatted_int_7939 := p.consumeTerminal("INT").Value.i64
+	var _t1763 *int64
 	if p.matchLookaheadTerminal("INT", 0) {
-		_t1765 = ptr(p.consumeTerminal("INT").Value.i64)
+		_t1763 = ptr(p.consumeTerminal("INT").Value.i64)
 	}
-	formatted_int_8941 := _t1765
+	formatted_int_8940 := _t1763
 	p.consumeLiteral(")")
-	_t1766 := &pb.DateTimeValue{Year: int32(formatted_int935), Month: int32(formatted_int_3936), Day: int32(formatted_int_4937), Hour: int32(formatted_int_5938), Minute: int32(formatted_int_6939), Second: int32(formatted_int_7940), Microsecond: int32(deref(formatted_int_8941, 0))}
-	result943 := _t1766
-	p.recordSpan(int(span_start942), "DateTimeValue")
-	return result943
+	_t1764 := &pb.DateTimeValue{Year: int32(formatted_int934), Month: int32(formatted_int_3935), Day: int32(formatted_int_4936), Hour: int32(formatted_int_5937), Minute: int32(formatted_int_6938), Second: int32(formatted_int_7939), Microsecond: int32(deref(formatted_int_8940, 0))}
+	result942 := _t1764
+	p.recordSpan(int(span_start941), "DateTimeValue")
+	return result942
 }
 
 func (p *Parser) parse_conjunction() *pb.Conjunction {
-	span_start948 := int64(p.spanStart())
+	span_start947 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("and")
-	xs944 := []*pb.Formula{}
-	cond945 := p.matchLookaheadLiteral("(", 0)
-	for cond945 {
-		_t1767 := p.parse_formula()
-		item946 := _t1767
-		xs944 = append(xs944, item946)
-		cond945 = p.matchLookaheadLiteral("(", 0)
+	xs943 := []*pb.Formula{}
+	cond944 := p.matchLookaheadLiteral("(", 0)
+	for cond944 {
+		_t1765 := p.parse_formula()
+		item945 := _t1765
+		xs943 = append(xs943, item945)
+		cond944 = p.matchLookaheadLiteral("(", 0)
 	}
-	formulas947 := xs944
+	formulas946 := xs943
 	p.consumeLiteral(")")
-	_t1768 := &pb.Conjunction{Args: formulas947}
-	result949 := _t1768
-	p.recordSpan(int(span_start948), "Conjunction")
-	return result949
+	_t1766 := &pb.Conjunction{Args: formulas946}
+	result948 := _t1766
+	p.recordSpan(int(span_start947), "Conjunction")
+	return result948
 }
 
 func (p *Parser) parse_disjunction() *pb.Disjunction {
-	span_start954 := int64(p.spanStart())
+	span_start953 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("or")
-	xs950 := []*pb.Formula{}
-	cond951 := p.matchLookaheadLiteral("(", 0)
-	for cond951 {
-		_t1769 := p.parse_formula()
-		item952 := _t1769
-		xs950 = append(xs950, item952)
-		cond951 = p.matchLookaheadLiteral("(", 0)
+	xs949 := []*pb.Formula{}
+	cond950 := p.matchLookaheadLiteral("(", 0)
+	for cond950 {
+		_t1767 := p.parse_formula()
+		item951 := _t1767
+		xs949 = append(xs949, item951)
+		cond950 = p.matchLookaheadLiteral("(", 0)
 	}
-	formulas953 := xs950
+	formulas952 := xs949
 	p.consumeLiteral(")")
-	_t1770 := &pb.Disjunction{Args: formulas953}
-	result955 := _t1770
-	p.recordSpan(int(span_start954), "Disjunction")
-	return result955
+	_t1768 := &pb.Disjunction{Args: formulas952}
+	result954 := _t1768
+	p.recordSpan(int(span_start953), "Disjunction")
+	return result954
 }
 
 func (p *Parser) parse_not() *pb.Not {
-	span_start957 := int64(p.spanStart())
+	span_start956 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("not")
-	_t1771 := p.parse_formula()
-	formula956 := _t1771
+	_t1769 := p.parse_formula()
+	formula955 := _t1769
 	p.consumeLiteral(")")
-	_t1772 := &pb.Not{Arg: formula956}
-	result958 := _t1772
-	p.recordSpan(int(span_start957), "Not")
-	return result958
+	_t1770 := &pb.Not{Arg: formula955}
+	result957 := _t1770
+	p.recordSpan(int(span_start956), "Not")
+	return result957
 }
 
 func (p *Parser) parse_ffi() *pb.FFI {
-	span_start962 := int64(p.spanStart())
+	span_start961 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("ffi")
-	_t1773 := p.parse_name()
-	name959 := _t1773
-	_t1774 := p.parse_ffi_args()
-	ffi_args960 := _t1774
-	_t1775 := p.parse_terms()
-	terms961 := _t1775
+	_t1771 := p.parse_name()
+	name958 := _t1771
+	_t1772 := p.parse_ffi_args()
+	ffi_args959 := _t1772
+	_t1773 := p.parse_terms()
+	terms960 := _t1773
 	p.consumeLiteral(")")
-	_t1776 := &pb.FFI{Name: name959, Args: ffi_args960, Terms: terms961}
-	result963 := _t1776
-	p.recordSpan(int(span_start962), "FFI")
-	return result963
+	_t1774 := &pb.FFI{Name: name958, Args: ffi_args959, Terms: terms960}
+	result962 := _t1774
+	p.recordSpan(int(span_start961), "FFI")
+	return result962
 }
 
 func (p *Parser) parse_name() string {
 	p.consumeLiteral(":")
-	symbol964 := p.consumeTerminal("SYMBOL").Value.str
-	return symbol964
+	symbol963 := p.consumeTerminal("SYMBOL").Value.str
+	return symbol963
 }
 
 func (p *Parser) parse_ffi_args() []*pb.Abstraction {
 	p.consumeLiteral("(")
 	p.consumeLiteral("args")
-	xs965 := []*pb.Abstraction{}
-	cond966 := p.matchLookaheadLiteral("(", 0)
-	for cond966 {
-		_t1777 := p.parse_abstraction()
-		item967 := _t1777
-		xs965 = append(xs965, item967)
-		cond966 = p.matchLookaheadLiteral("(", 0)
+	xs964 := []*pb.Abstraction{}
+	cond965 := p.matchLookaheadLiteral("(", 0)
+	for cond965 {
+		_t1775 := p.parse_abstraction()
+		item966 := _t1775
+		xs964 = append(xs964, item966)
+		cond965 = p.matchLookaheadLiteral("(", 0)
 	}
-	abstractions968 := xs965
+	abstractions967 := xs964
 	p.consumeLiteral(")")
-	return abstractions968
+	return abstractions967
 }
 
 func (p *Parser) parse_atom() *pb.Atom {
-	span_start974 := int64(p.spanStart())
+	span_start973 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("atom")
-	_t1778 := p.parse_relation_id()
-	relation_id969 := _t1778
-	xs970 := []*pb.Term{}
-	cond971 := (((((((((((((p.matchLookaheadLiteral("(", 0) || p.matchLookaheadLiteral("false", 0)) || p.matchLookaheadLiteral("missing", 0)) || p.matchLookaheadLiteral("true", 0)) || p.matchLookaheadTerminal("DECIMAL", 0)) || p.matchLookaheadTerminal("FLOAT", 0)) || p.matchLookaheadTerminal("FLOAT32", 0)) || p.matchLookaheadTerminal("INT", 0)) || p.matchLookaheadTerminal("INT128", 0)) || p.matchLookaheadTerminal("INT32", 0)) || p.matchLookaheadTerminal("STRING", 0)) || p.matchLookaheadTerminal("UINT128", 0)) || p.matchLookaheadTerminal("UINT32", 0)) || p.matchLookaheadTerminal("SYMBOL", 0))
-	for cond971 {
-		_t1779 := p.parse_term()
-		item972 := _t1779
-		xs970 = append(xs970, item972)
-		cond971 = (((((((((((((p.matchLookaheadLiteral("(", 0) || p.matchLookaheadLiteral("false", 0)) || p.matchLookaheadLiteral("missing", 0)) || p.matchLookaheadLiteral("true", 0)) || p.matchLookaheadTerminal("DECIMAL", 0)) || p.matchLookaheadTerminal("FLOAT", 0)) || p.matchLookaheadTerminal("FLOAT32", 0)) || p.matchLookaheadTerminal("INT", 0)) || p.matchLookaheadTerminal("INT128", 0)) || p.matchLookaheadTerminal("INT32", 0)) || p.matchLookaheadTerminal("STRING", 0)) || p.matchLookaheadTerminal("UINT128", 0)) || p.matchLookaheadTerminal("UINT32", 0)) || p.matchLookaheadTerminal("SYMBOL", 0))
+	_t1776 := p.parse_relation_id()
+	relation_id968 := _t1776
+	xs969 := []*pb.Term{}
+	cond970 := (((((((((((((p.matchLookaheadLiteral("(", 0) || p.matchLookaheadLiteral("false", 0)) || p.matchLookaheadLiteral("missing", 0)) || p.matchLookaheadLiteral("true", 0)) || p.matchLookaheadTerminal("DECIMAL", 0)) || p.matchLookaheadTerminal("FLOAT", 0)) || p.matchLookaheadTerminal("FLOAT32", 0)) || p.matchLookaheadTerminal("INT", 0)) || p.matchLookaheadTerminal("INT128", 0)) || p.matchLookaheadTerminal("INT32", 0)) || p.matchLookaheadTerminal("STRING", 0)) || p.matchLookaheadTerminal("UINT128", 0)) || p.matchLookaheadTerminal("UINT32", 0)) || p.matchLookaheadTerminal("SYMBOL", 0))
+	for cond970 {
+		_t1777 := p.parse_term()
+		item971 := _t1777
+		xs969 = append(xs969, item971)
+		cond970 = (((((((((((((p.matchLookaheadLiteral("(", 0) || p.matchLookaheadLiteral("false", 0)) || p.matchLookaheadLiteral("missing", 0)) || p.matchLookaheadLiteral("true", 0)) || p.matchLookaheadTerminal("DECIMAL", 0)) || p.matchLookaheadTerminal("FLOAT", 0)) || p.matchLookaheadTerminal("FLOAT32", 0)) || p.matchLookaheadTerminal("INT", 0)) || p.matchLookaheadTerminal("INT128", 0)) || p.matchLookaheadTerminal("INT32", 0)) || p.matchLookaheadTerminal("STRING", 0)) || p.matchLookaheadTerminal("UINT128", 0)) || p.matchLookaheadTerminal("UINT32", 0)) || p.matchLookaheadTerminal("SYMBOL", 0))
 	}
-	terms973 := xs970
+	terms972 := xs969
 	p.consumeLiteral(")")
-	_t1780 := &pb.Atom{Name: relation_id969, Terms: terms973}
-	result975 := _t1780
-	p.recordSpan(int(span_start974), "Atom")
-	return result975
+	_t1778 := &pb.Atom{Name: relation_id968, Terms: terms972}
+	result974 := _t1778
+	p.recordSpan(int(span_start973), "Atom")
+	return result974
 }
 
 func (p *Parser) parse_pragma() *pb.Pragma {
-	span_start981 := int64(p.spanStart())
+	span_start980 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("pragma")
-	_t1781 := p.parse_name()
-	name976 := _t1781
-	xs977 := []*pb.Term{}
-	cond978 := (((((((((((((p.matchLookaheadLiteral("(", 0) || p.matchLookaheadLiteral("false", 0)) || p.matchLookaheadLiteral("missing", 0)) || p.matchLookaheadLiteral("true", 0)) || p.matchLookaheadTerminal("DECIMAL", 0)) || p.matchLookaheadTerminal("FLOAT", 0)) || p.matchLookaheadTerminal("FLOAT32", 0)) || p.matchLookaheadTerminal("INT", 0)) || p.matchLookaheadTerminal("INT128", 0)) || p.matchLookaheadTerminal("INT32", 0)) || p.matchLookaheadTerminal("STRING", 0)) || p.matchLookaheadTerminal("UINT128", 0)) || p.matchLookaheadTerminal("UINT32", 0)) || p.matchLookaheadTerminal("SYMBOL", 0))
-	for cond978 {
-		_t1782 := p.parse_term()
-		item979 := _t1782
-		xs977 = append(xs977, item979)
-		cond978 = (((((((((((((p.matchLookaheadLiteral("(", 0) || p.matchLookaheadLiteral("false", 0)) || p.matchLookaheadLiteral("missing", 0)) || p.matchLookaheadLiteral("true", 0)) || p.matchLookaheadTerminal("DECIMAL", 0)) || p.matchLookaheadTerminal("FLOAT", 0)) || p.matchLookaheadTerminal("FLOAT32", 0)) || p.matchLookaheadTerminal("INT", 0)) || p.matchLookaheadTerminal("INT128", 0)) || p.matchLookaheadTerminal("INT32", 0)) || p.matchLookaheadTerminal("STRING", 0)) || p.matchLookaheadTerminal("UINT128", 0)) || p.matchLookaheadTerminal("UINT32", 0)) || p.matchLookaheadTerminal("SYMBOL", 0))
+	_t1779 := p.parse_name()
+	name975 := _t1779
+	xs976 := []*pb.Term{}
+	cond977 := (((((((((((((p.matchLookaheadLiteral("(", 0) || p.matchLookaheadLiteral("false", 0)) || p.matchLookaheadLiteral("missing", 0)) || p.matchLookaheadLiteral("true", 0)) || p.matchLookaheadTerminal("DECIMAL", 0)) || p.matchLookaheadTerminal("FLOAT", 0)) || p.matchLookaheadTerminal("FLOAT32", 0)) || p.matchLookaheadTerminal("INT", 0)) || p.matchLookaheadTerminal("INT128", 0)) || p.matchLookaheadTerminal("INT32", 0)) || p.matchLookaheadTerminal("STRING", 0)) || p.matchLookaheadTerminal("UINT128", 0)) || p.matchLookaheadTerminal("UINT32", 0)) || p.matchLookaheadTerminal("SYMBOL", 0))
+	for cond977 {
+		_t1780 := p.parse_term()
+		item978 := _t1780
+		xs976 = append(xs976, item978)
+		cond977 = (((((((((((((p.matchLookaheadLiteral("(", 0) || p.matchLookaheadLiteral("false", 0)) || p.matchLookaheadLiteral("missing", 0)) || p.matchLookaheadLiteral("true", 0)) || p.matchLookaheadTerminal("DECIMAL", 0)) || p.matchLookaheadTerminal("FLOAT", 0)) || p.matchLookaheadTerminal("FLOAT32", 0)) || p.matchLookaheadTerminal("INT", 0)) || p.matchLookaheadTerminal("INT128", 0)) || p.matchLookaheadTerminal("INT32", 0)) || p.matchLookaheadTerminal("STRING", 0)) || p.matchLookaheadTerminal("UINT128", 0)) || p.matchLookaheadTerminal("UINT32", 0)) || p.matchLookaheadTerminal("SYMBOL", 0))
 	}
-	terms980 := xs977
+	terms979 := xs976
 	p.consumeLiteral(")")
-	_t1783 := &pb.Pragma{Name: name976, Terms: terms980}
-	result982 := _t1783
-	p.recordSpan(int(span_start981), "Pragma")
-	return result982
+	_t1781 := &pb.Pragma{Name: name975, Terms: terms979}
+	result981 := _t1781
+	p.recordSpan(int(span_start980), "Pragma")
+	return result981
 }
 
 func (p *Parser) parse_primitive() *pb.Primitive {
-	span_start998 := int64(p.spanStart())
-	var _t1784 int64
+	span_start997 := int64(p.spanStart())
+	var _t1782 int64
 	if p.matchLookaheadLiteral("(", 0) {
-		var _t1785 int64
+		var _t1783 int64
 		if p.matchLookaheadLiteral("primitive", 1) {
-			_t1785 = 9
+			_t1783 = 9
 		} else {
-			var _t1786 int64
+			var _t1784 int64
 			if p.matchLookaheadLiteral(">=", 1) {
-				_t1786 = 4
+				_t1784 = 4
 			} else {
-				var _t1787 int64
+				var _t1785 int64
 				if p.matchLookaheadLiteral(">", 1) {
-					_t1787 = 3
+					_t1785 = 3
 				} else {
-					var _t1788 int64
+					var _t1786 int64
 					if p.matchLookaheadLiteral("=", 1) {
-						_t1788 = 0
+						_t1786 = 0
 					} else {
-						var _t1789 int64
+						var _t1787 int64
 						if p.matchLookaheadLiteral("<=", 1) {
-							_t1789 = 2
+							_t1787 = 2
 						} else {
-							var _t1790 int64
+							var _t1788 int64
 							if p.matchLookaheadLiteral("<", 1) {
-								_t1790 = 1
+								_t1788 = 1
 							} else {
-								var _t1791 int64
+								var _t1789 int64
 								if p.matchLookaheadLiteral("/", 1) {
-									_t1791 = 8
+									_t1789 = 8
 								} else {
-									var _t1792 int64
+									var _t1790 int64
 									if p.matchLookaheadLiteral("-", 1) {
-										_t1792 = 6
+										_t1790 = 6
 									} else {
-										var _t1793 int64
+										var _t1791 int64
 										if p.matchLookaheadLiteral("+", 1) {
-											_t1793 = 5
+											_t1791 = 5
 										} else {
-											var _t1794 int64
+											var _t1792 int64
 											if p.matchLookaheadLiteral("*", 1) {
-												_t1794 = 7
+												_t1792 = 7
 											} else {
-												_t1794 = -1
+												_t1792 = -1
 											}
-											_t1793 = _t1794
+											_t1791 = _t1792
 										}
-										_t1792 = _t1793
+										_t1790 = _t1791
 									}
-									_t1791 = _t1792
+									_t1789 = _t1790
 								}
-								_t1790 = _t1791
+								_t1788 = _t1789
 							}
-							_t1789 = _t1790
+							_t1787 = _t1788
 						}
-						_t1788 = _t1789
+						_t1786 = _t1787
 					}
-					_t1787 = _t1788
+					_t1785 = _t1786
 				}
-				_t1786 = _t1787
+				_t1784 = _t1785
 			}
-			_t1785 = _t1786
+			_t1783 = _t1784
 		}
-		_t1784 = _t1785
+		_t1782 = _t1783
 	} else {
-		_t1784 = -1
+		_t1782 = -1
 	}
-	prediction983 := _t1784
-	var _t1795 *pb.Primitive
-	if prediction983 == 9 {
+	prediction982 := _t1782
+	var _t1793 *pb.Primitive
+	if prediction982 == 9 {
 		p.consumeLiteral("(")
 		p.consumeLiteral("primitive")
-		_t1796 := p.parse_name()
-		name993 := _t1796
-		xs994 := []*pb.RelTerm{}
-		cond995 := ((((((((((((((p.matchLookaheadLiteral("#", 0) || p.matchLookaheadLiteral("(", 0)) || p.matchLookaheadLiteral("false", 0)) || p.matchLookaheadLiteral("missing", 0)) || p.matchLookaheadLiteral("true", 0)) || p.matchLookaheadTerminal("DECIMAL", 0)) || p.matchLookaheadTerminal("FLOAT", 0)) || p.matchLookaheadTerminal("FLOAT32", 0)) || p.matchLookaheadTerminal("INT", 0)) || p.matchLookaheadTerminal("INT128", 0)) || p.matchLookaheadTerminal("INT32", 0)) || p.matchLookaheadTerminal("STRING", 0)) || p.matchLookaheadTerminal("UINT128", 0)) || p.matchLookaheadTerminal("UINT32", 0)) || p.matchLookaheadTerminal("SYMBOL", 0))
-		for cond995 {
-			_t1797 := p.parse_rel_term()
-			item996 := _t1797
-			xs994 = append(xs994, item996)
-			cond995 = ((((((((((((((p.matchLookaheadLiteral("#", 0) || p.matchLookaheadLiteral("(", 0)) || p.matchLookaheadLiteral("false", 0)) || p.matchLookaheadLiteral("missing", 0)) || p.matchLookaheadLiteral("true", 0)) || p.matchLookaheadTerminal("DECIMAL", 0)) || p.matchLookaheadTerminal("FLOAT", 0)) || p.matchLookaheadTerminal("FLOAT32", 0)) || p.matchLookaheadTerminal("INT", 0)) || p.matchLookaheadTerminal("INT128", 0)) || p.matchLookaheadTerminal("INT32", 0)) || p.matchLookaheadTerminal("STRING", 0)) || p.matchLookaheadTerminal("UINT128", 0)) || p.matchLookaheadTerminal("UINT32", 0)) || p.matchLookaheadTerminal("SYMBOL", 0))
+		_t1794 := p.parse_name()
+		name992 := _t1794
+		xs993 := []*pb.RelTerm{}
+		cond994 := ((((((((((((((p.matchLookaheadLiteral("#", 0) || p.matchLookaheadLiteral("(", 0)) || p.matchLookaheadLiteral("false", 0)) || p.matchLookaheadLiteral("missing", 0)) || p.matchLookaheadLiteral("true", 0)) || p.matchLookaheadTerminal("DECIMAL", 0)) || p.matchLookaheadTerminal("FLOAT", 0)) || p.matchLookaheadTerminal("FLOAT32", 0)) || p.matchLookaheadTerminal("INT", 0)) || p.matchLookaheadTerminal("INT128", 0)) || p.matchLookaheadTerminal("INT32", 0)) || p.matchLookaheadTerminal("STRING", 0)) || p.matchLookaheadTerminal("UINT128", 0)) || p.matchLookaheadTerminal("UINT32", 0)) || p.matchLookaheadTerminal("SYMBOL", 0))
+		for cond994 {
+			_t1795 := p.parse_rel_term()
+			item995 := _t1795
+			xs993 = append(xs993, item995)
+			cond994 = ((((((((((((((p.matchLookaheadLiteral("#", 0) || p.matchLookaheadLiteral("(", 0)) || p.matchLookaheadLiteral("false", 0)) || p.matchLookaheadLiteral("missing", 0)) || p.matchLookaheadLiteral("true", 0)) || p.matchLookaheadTerminal("DECIMAL", 0)) || p.matchLookaheadTerminal("FLOAT", 0)) || p.matchLookaheadTerminal("FLOAT32", 0)) || p.matchLookaheadTerminal("INT", 0)) || p.matchLookaheadTerminal("INT128", 0)) || p.matchLookaheadTerminal("INT32", 0)) || p.matchLookaheadTerminal("STRING", 0)) || p.matchLookaheadTerminal("UINT128", 0)) || p.matchLookaheadTerminal("UINT32", 0)) || p.matchLookaheadTerminal("SYMBOL", 0))
 		}
-		rel_terms997 := xs994
+		rel_terms996 := xs993
 		p.consumeLiteral(")")
-		_t1798 := &pb.Primitive{Name: name993, Terms: rel_terms997}
-		_t1795 = _t1798
+		_t1796 := &pb.Primitive{Name: name992, Terms: rel_terms996}
+		_t1793 = _t1796
 	} else {
-		var _t1799 *pb.Primitive
-		if prediction983 == 8 {
-			_t1800 := p.parse_divide()
-			divide992 := _t1800
-			_t1799 = divide992
+		var _t1797 *pb.Primitive
+		if prediction982 == 8 {
+			_t1798 := p.parse_divide()
+			divide991 := _t1798
+			_t1797 = divide991
 		} else {
-			var _t1801 *pb.Primitive
-			if prediction983 == 7 {
-				_t1802 := p.parse_multiply()
-				multiply991 := _t1802
-				_t1801 = multiply991
+			var _t1799 *pb.Primitive
+			if prediction982 == 7 {
+				_t1800 := p.parse_multiply()
+				multiply990 := _t1800
+				_t1799 = multiply990
 			} else {
-				var _t1803 *pb.Primitive
-				if prediction983 == 6 {
-					_t1804 := p.parse_minus()
-					minus990 := _t1804
-					_t1803 = minus990
+				var _t1801 *pb.Primitive
+				if prediction982 == 6 {
+					_t1802 := p.parse_minus()
+					minus989 := _t1802
+					_t1801 = minus989
 				} else {
-					var _t1805 *pb.Primitive
-					if prediction983 == 5 {
-						_t1806 := p.parse_add()
-						add989 := _t1806
-						_t1805 = add989
+					var _t1803 *pb.Primitive
+					if prediction982 == 5 {
+						_t1804 := p.parse_add()
+						add988 := _t1804
+						_t1803 = add988
 					} else {
-						var _t1807 *pb.Primitive
-						if prediction983 == 4 {
-							_t1808 := p.parse_gt_eq()
-							gt_eq988 := _t1808
-							_t1807 = gt_eq988
+						var _t1805 *pb.Primitive
+						if prediction982 == 4 {
+							_t1806 := p.parse_gt_eq()
+							gt_eq987 := _t1806
+							_t1805 = gt_eq987
 						} else {
-							var _t1809 *pb.Primitive
-							if prediction983 == 3 {
-								_t1810 := p.parse_gt()
-								gt987 := _t1810
-								_t1809 = gt987
+							var _t1807 *pb.Primitive
+							if prediction982 == 3 {
+								_t1808 := p.parse_gt()
+								gt986 := _t1808
+								_t1807 = gt986
 							} else {
-								var _t1811 *pb.Primitive
-								if prediction983 == 2 {
-									_t1812 := p.parse_lt_eq()
-									lt_eq986 := _t1812
-									_t1811 = lt_eq986
+								var _t1809 *pb.Primitive
+								if prediction982 == 2 {
+									_t1810 := p.parse_lt_eq()
+									lt_eq985 := _t1810
+									_t1809 = lt_eq985
 								} else {
-									var _t1813 *pb.Primitive
-									if prediction983 == 1 {
-										_t1814 := p.parse_lt()
-										lt985 := _t1814
-										_t1813 = lt985
+									var _t1811 *pb.Primitive
+									if prediction982 == 1 {
+										_t1812 := p.parse_lt()
+										lt984 := _t1812
+										_t1811 = lt984
 									} else {
-										var _t1815 *pb.Primitive
-										if prediction983 == 0 {
-											_t1816 := p.parse_eq()
-											eq984 := _t1816
-											_t1815 = eq984
+										var _t1813 *pb.Primitive
+										if prediction982 == 0 {
+											_t1814 := p.parse_eq()
+											eq983 := _t1814
+											_t1813 = eq983
 										} else {
 											panic(ParseError{msg: fmt.Sprintf("%s: %s=`%v`", "Unexpected token in primitive", p.lookahead(0).Type, p.lookahead(0).Value)})
 										}
-										_t1813 = _t1815
+										_t1811 = _t1813
 									}
-									_t1811 = _t1813
+									_t1809 = _t1811
 								}
-								_t1809 = _t1811
+								_t1807 = _t1809
 							}
-							_t1807 = _t1809
+							_t1805 = _t1807
 						}
-						_t1805 = _t1807
+						_t1803 = _t1805
 					}
-					_t1803 = _t1805
+					_t1801 = _t1803
 				}
-				_t1801 = _t1803
+				_t1799 = _t1801
 			}
-			_t1799 = _t1801
+			_t1797 = _t1799
 		}
-		_t1795 = _t1799
+		_t1793 = _t1797
 	}
-	result999 := _t1795
-	p.recordSpan(int(span_start998), "Primitive")
-	return result999
+	result998 := _t1793
+	p.recordSpan(int(span_start997), "Primitive")
+	return result998
 }
 
 func (p *Parser) parse_eq() *pb.Primitive {
-	span_start1002 := int64(p.spanStart())
+	span_start1001 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("=")
-	_t1817 := p.parse_term()
-	term1000 := _t1817
-	_t1818 := p.parse_term()
-	term_31001 := _t1818
+	_t1815 := p.parse_term()
+	term999 := _t1815
+	_t1816 := p.parse_term()
+	term_31000 := _t1816
 	p.consumeLiteral(")")
-	_t1819 := &pb.RelTerm{}
-	_t1819.RelTermType = &pb.RelTerm_Term{Term: term1000}
-	_t1820 := &pb.RelTerm{}
-	_t1820.RelTermType = &pb.RelTerm_Term{Term: term_31001}
-	_t1821 := &pb.Primitive{Name: "rel_primitive_eq", Terms: []*pb.RelTerm{_t1819, _t1820}}
-	result1003 := _t1821
-	p.recordSpan(int(span_start1002), "Primitive")
-	return result1003
+	_t1817 := &pb.RelTerm{}
+	_t1817.RelTermType = &pb.RelTerm_Term{Term: term999}
+	_t1818 := &pb.RelTerm{}
+	_t1818.RelTermType = &pb.RelTerm_Term{Term: term_31000}
+	_t1819 := &pb.Primitive{Name: "rel_primitive_eq", Terms: []*pb.RelTerm{_t1817, _t1818}}
+	result1002 := _t1819
+	p.recordSpan(int(span_start1001), "Primitive")
+	return result1002
 }
 
 func (p *Parser) parse_lt() *pb.Primitive {
-	span_start1006 := int64(p.spanStart())
+	span_start1005 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("<")
-	_t1822 := p.parse_term()
-	term1004 := _t1822
-	_t1823 := p.parse_term()
-	term_31005 := _t1823
+	_t1820 := p.parse_term()
+	term1003 := _t1820
+	_t1821 := p.parse_term()
+	term_31004 := _t1821
 	p.consumeLiteral(")")
-	_t1824 := &pb.RelTerm{}
-	_t1824.RelTermType = &pb.RelTerm_Term{Term: term1004}
-	_t1825 := &pb.RelTerm{}
-	_t1825.RelTermType = &pb.RelTerm_Term{Term: term_31005}
-	_t1826 := &pb.Primitive{Name: "rel_primitive_lt_monotype", Terms: []*pb.RelTerm{_t1824, _t1825}}
-	result1007 := _t1826
-	p.recordSpan(int(span_start1006), "Primitive")
-	return result1007
+	_t1822 := &pb.RelTerm{}
+	_t1822.RelTermType = &pb.RelTerm_Term{Term: term1003}
+	_t1823 := &pb.RelTerm{}
+	_t1823.RelTermType = &pb.RelTerm_Term{Term: term_31004}
+	_t1824 := &pb.Primitive{Name: "rel_primitive_lt_monotype", Terms: []*pb.RelTerm{_t1822, _t1823}}
+	result1006 := _t1824
+	p.recordSpan(int(span_start1005), "Primitive")
+	return result1006
 }
 
 func (p *Parser) parse_lt_eq() *pb.Primitive {
-	span_start1010 := int64(p.spanStart())
+	span_start1009 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("<=")
-	_t1827 := p.parse_term()
-	term1008 := _t1827
-	_t1828 := p.parse_term()
-	term_31009 := _t1828
+	_t1825 := p.parse_term()
+	term1007 := _t1825
+	_t1826 := p.parse_term()
+	term_31008 := _t1826
 	p.consumeLiteral(")")
-	_t1829 := &pb.RelTerm{}
-	_t1829.RelTermType = &pb.RelTerm_Term{Term: term1008}
-	_t1830 := &pb.RelTerm{}
-	_t1830.RelTermType = &pb.RelTerm_Term{Term: term_31009}
-	_t1831 := &pb.Primitive{Name: "rel_primitive_lt_eq_monotype", Terms: []*pb.RelTerm{_t1829, _t1830}}
-	result1011 := _t1831
-	p.recordSpan(int(span_start1010), "Primitive")
-	return result1011
+	_t1827 := &pb.RelTerm{}
+	_t1827.RelTermType = &pb.RelTerm_Term{Term: term1007}
+	_t1828 := &pb.RelTerm{}
+	_t1828.RelTermType = &pb.RelTerm_Term{Term: term_31008}
+	_t1829 := &pb.Primitive{Name: "rel_primitive_lt_eq_monotype", Terms: []*pb.RelTerm{_t1827, _t1828}}
+	result1010 := _t1829
+	p.recordSpan(int(span_start1009), "Primitive")
+	return result1010
 }
 
 func (p *Parser) parse_gt() *pb.Primitive {
-	span_start1014 := int64(p.spanStart())
+	span_start1013 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral(">")
-	_t1832 := p.parse_term()
-	term1012 := _t1832
-	_t1833 := p.parse_term()
-	term_31013 := _t1833
+	_t1830 := p.parse_term()
+	term1011 := _t1830
+	_t1831 := p.parse_term()
+	term_31012 := _t1831
 	p.consumeLiteral(")")
-	_t1834 := &pb.RelTerm{}
-	_t1834.RelTermType = &pb.RelTerm_Term{Term: term1012}
-	_t1835 := &pb.RelTerm{}
-	_t1835.RelTermType = &pb.RelTerm_Term{Term: term_31013}
-	_t1836 := &pb.Primitive{Name: "rel_primitive_gt_monotype", Terms: []*pb.RelTerm{_t1834, _t1835}}
-	result1015 := _t1836
-	p.recordSpan(int(span_start1014), "Primitive")
-	return result1015
+	_t1832 := &pb.RelTerm{}
+	_t1832.RelTermType = &pb.RelTerm_Term{Term: term1011}
+	_t1833 := &pb.RelTerm{}
+	_t1833.RelTermType = &pb.RelTerm_Term{Term: term_31012}
+	_t1834 := &pb.Primitive{Name: "rel_primitive_gt_monotype", Terms: []*pb.RelTerm{_t1832, _t1833}}
+	result1014 := _t1834
+	p.recordSpan(int(span_start1013), "Primitive")
+	return result1014
 }
 
 func (p *Parser) parse_gt_eq() *pb.Primitive {
-	span_start1018 := int64(p.spanStart())
+	span_start1017 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral(">=")
-	_t1837 := p.parse_term()
-	term1016 := _t1837
-	_t1838 := p.parse_term()
-	term_31017 := _t1838
+	_t1835 := p.parse_term()
+	term1015 := _t1835
+	_t1836 := p.parse_term()
+	term_31016 := _t1836
 	p.consumeLiteral(")")
-	_t1839 := &pb.RelTerm{}
-	_t1839.RelTermType = &pb.RelTerm_Term{Term: term1016}
-	_t1840 := &pb.RelTerm{}
-	_t1840.RelTermType = &pb.RelTerm_Term{Term: term_31017}
-	_t1841 := &pb.Primitive{Name: "rel_primitive_gt_eq_monotype", Terms: []*pb.RelTerm{_t1839, _t1840}}
-	result1019 := _t1841
-	p.recordSpan(int(span_start1018), "Primitive")
-	return result1019
+	_t1837 := &pb.RelTerm{}
+	_t1837.RelTermType = &pb.RelTerm_Term{Term: term1015}
+	_t1838 := &pb.RelTerm{}
+	_t1838.RelTermType = &pb.RelTerm_Term{Term: term_31016}
+	_t1839 := &pb.Primitive{Name: "rel_primitive_gt_eq_monotype", Terms: []*pb.RelTerm{_t1837, _t1838}}
+	result1018 := _t1839
+	p.recordSpan(int(span_start1017), "Primitive")
+	return result1018
 }
 
 func (p *Parser) parse_add() *pb.Primitive {
-	span_start1023 := int64(p.spanStart())
+	span_start1022 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("+")
+	_t1840 := p.parse_term()
+	term1019 := _t1840
+	_t1841 := p.parse_term()
+	term_31020 := _t1841
 	_t1842 := p.parse_term()
-	term1020 := _t1842
-	_t1843 := p.parse_term()
-	term_31021 := _t1843
-	_t1844 := p.parse_term()
-	term_41022 := _t1844
+	term_41021 := _t1842
 	p.consumeLiteral(")")
+	_t1843 := &pb.RelTerm{}
+	_t1843.RelTermType = &pb.RelTerm_Term{Term: term1019}
+	_t1844 := &pb.RelTerm{}
+	_t1844.RelTermType = &pb.RelTerm_Term{Term: term_31020}
 	_t1845 := &pb.RelTerm{}
-	_t1845.RelTermType = &pb.RelTerm_Term{Term: term1020}
-	_t1846 := &pb.RelTerm{}
-	_t1846.RelTermType = &pb.RelTerm_Term{Term: term_31021}
-	_t1847 := &pb.RelTerm{}
-	_t1847.RelTermType = &pb.RelTerm_Term{Term: term_41022}
-	_t1848 := &pb.Primitive{Name: "rel_primitive_add_monotype", Terms: []*pb.RelTerm{_t1845, _t1846, _t1847}}
-	result1024 := _t1848
-	p.recordSpan(int(span_start1023), "Primitive")
-	return result1024
+	_t1845.RelTermType = &pb.RelTerm_Term{Term: term_41021}
+	_t1846 := &pb.Primitive{Name: "rel_primitive_add_monotype", Terms: []*pb.RelTerm{_t1843, _t1844, _t1845}}
+	result1023 := _t1846
+	p.recordSpan(int(span_start1022), "Primitive")
+	return result1023
 }
 
 func (p *Parser) parse_minus() *pb.Primitive {
-	span_start1028 := int64(p.spanStart())
+	span_start1027 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("-")
+	_t1847 := p.parse_term()
+	term1024 := _t1847
+	_t1848 := p.parse_term()
+	term_31025 := _t1848
 	_t1849 := p.parse_term()
-	term1025 := _t1849
-	_t1850 := p.parse_term()
-	term_31026 := _t1850
-	_t1851 := p.parse_term()
-	term_41027 := _t1851
+	term_41026 := _t1849
 	p.consumeLiteral(")")
+	_t1850 := &pb.RelTerm{}
+	_t1850.RelTermType = &pb.RelTerm_Term{Term: term1024}
+	_t1851 := &pb.RelTerm{}
+	_t1851.RelTermType = &pb.RelTerm_Term{Term: term_31025}
 	_t1852 := &pb.RelTerm{}
-	_t1852.RelTermType = &pb.RelTerm_Term{Term: term1025}
-	_t1853 := &pb.RelTerm{}
-	_t1853.RelTermType = &pb.RelTerm_Term{Term: term_31026}
-	_t1854 := &pb.RelTerm{}
-	_t1854.RelTermType = &pb.RelTerm_Term{Term: term_41027}
-	_t1855 := &pb.Primitive{Name: "rel_primitive_subtract_monotype", Terms: []*pb.RelTerm{_t1852, _t1853, _t1854}}
-	result1029 := _t1855
-	p.recordSpan(int(span_start1028), "Primitive")
-	return result1029
+	_t1852.RelTermType = &pb.RelTerm_Term{Term: term_41026}
+	_t1853 := &pb.Primitive{Name: "rel_primitive_subtract_monotype", Terms: []*pb.RelTerm{_t1850, _t1851, _t1852}}
+	result1028 := _t1853
+	p.recordSpan(int(span_start1027), "Primitive")
+	return result1028
 }
 
 func (p *Parser) parse_multiply() *pb.Primitive {
-	span_start1033 := int64(p.spanStart())
+	span_start1032 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("*")
+	_t1854 := p.parse_term()
+	term1029 := _t1854
+	_t1855 := p.parse_term()
+	term_31030 := _t1855
 	_t1856 := p.parse_term()
-	term1030 := _t1856
-	_t1857 := p.parse_term()
-	term_31031 := _t1857
-	_t1858 := p.parse_term()
-	term_41032 := _t1858
+	term_41031 := _t1856
 	p.consumeLiteral(")")
+	_t1857 := &pb.RelTerm{}
+	_t1857.RelTermType = &pb.RelTerm_Term{Term: term1029}
+	_t1858 := &pb.RelTerm{}
+	_t1858.RelTermType = &pb.RelTerm_Term{Term: term_31030}
 	_t1859 := &pb.RelTerm{}
-	_t1859.RelTermType = &pb.RelTerm_Term{Term: term1030}
-	_t1860 := &pb.RelTerm{}
-	_t1860.RelTermType = &pb.RelTerm_Term{Term: term_31031}
-	_t1861 := &pb.RelTerm{}
-	_t1861.RelTermType = &pb.RelTerm_Term{Term: term_41032}
-	_t1862 := &pb.Primitive{Name: "rel_primitive_multiply_monotype", Terms: []*pb.RelTerm{_t1859, _t1860, _t1861}}
-	result1034 := _t1862
-	p.recordSpan(int(span_start1033), "Primitive")
-	return result1034
+	_t1859.RelTermType = &pb.RelTerm_Term{Term: term_41031}
+	_t1860 := &pb.Primitive{Name: "rel_primitive_multiply_monotype", Terms: []*pb.RelTerm{_t1857, _t1858, _t1859}}
+	result1033 := _t1860
+	p.recordSpan(int(span_start1032), "Primitive")
+	return result1033
 }
 
 func (p *Parser) parse_divide() *pb.Primitive {
-	span_start1038 := int64(p.spanStart())
+	span_start1037 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("/")
+	_t1861 := p.parse_term()
+	term1034 := _t1861
+	_t1862 := p.parse_term()
+	term_31035 := _t1862
 	_t1863 := p.parse_term()
-	term1035 := _t1863
-	_t1864 := p.parse_term()
-	term_31036 := _t1864
-	_t1865 := p.parse_term()
-	term_41037 := _t1865
+	term_41036 := _t1863
 	p.consumeLiteral(")")
+	_t1864 := &pb.RelTerm{}
+	_t1864.RelTermType = &pb.RelTerm_Term{Term: term1034}
+	_t1865 := &pb.RelTerm{}
+	_t1865.RelTermType = &pb.RelTerm_Term{Term: term_31035}
 	_t1866 := &pb.RelTerm{}
-	_t1866.RelTermType = &pb.RelTerm_Term{Term: term1035}
-	_t1867 := &pb.RelTerm{}
-	_t1867.RelTermType = &pb.RelTerm_Term{Term: term_31036}
-	_t1868 := &pb.RelTerm{}
-	_t1868.RelTermType = &pb.RelTerm_Term{Term: term_41037}
-	_t1869 := &pb.Primitive{Name: "rel_primitive_divide_monotype", Terms: []*pb.RelTerm{_t1866, _t1867, _t1868}}
-	result1039 := _t1869
-	p.recordSpan(int(span_start1038), "Primitive")
-	return result1039
+	_t1866.RelTermType = &pb.RelTerm_Term{Term: term_41036}
+	_t1867 := &pb.Primitive{Name: "rel_primitive_divide_monotype", Terms: []*pb.RelTerm{_t1864, _t1865, _t1866}}
+	result1038 := _t1867
+	p.recordSpan(int(span_start1037), "Primitive")
+	return result1038
 }
 
 func (p *Parser) parse_rel_term() *pb.RelTerm {
-	span_start1043 := int64(p.spanStart())
-	var _t1870 int64
+	span_start1042 := int64(p.spanStart())
+	var _t1868 int64
 	if p.matchLookaheadLiteral("true", 0) {
-		_t1870 = 1
+		_t1868 = 1
 	} else {
-		var _t1871 int64
+		var _t1869 int64
 		if p.matchLookaheadLiteral("missing", 0) {
-			_t1871 = 1
+			_t1869 = 1
 		} else {
-			var _t1872 int64
+			var _t1870 int64
 			if p.matchLookaheadLiteral("false", 0) {
-				_t1872 = 1
+				_t1870 = 1
 			} else {
-				var _t1873 int64
+				var _t1871 int64
 				if p.matchLookaheadLiteral("(", 0) {
-					_t1873 = 1
+					_t1871 = 1
 				} else {
-					var _t1874 int64
+					var _t1872 int64
 					if p.matchLookaheadLiteral("#", 0) {
-						_t1874 = 0
+						_t1872 = 0
 					} else {
-						var _t1875 int64
+						var _t1873 int64
 						if p.matchLookaheadTerminal("SYMBOL", 0) {
-							_t1875 = 1
+							_t1873 = 1
 						} else {
-							var _t1876 int64
+							var _t1874 int64
 							if p.matchLookaheadTerminal("UINT32", 0) {
-								_t1876 = 1
+								_t1874 = 1
 							} else {
-								var _t1877 int64
+								var _t1875 int64
 								if p.matchLookaheadTerminal("UINT128", 0) {
-									_t1877 = 1
+									_t1875 = 1
 								} else {
-									var _t1878 int64
+									var _t1876 int64
 									if p.matchLookaheadTerminal("STRING", 0) {
-										_t1878 = 1
+										_t1876 = 1
 									} else {
-										var _t1879 int64
+										var _t1877 int64
 										if p.matchLookaheadTerminal("INT32", 0) {
-											_t1879 = 1
+											_t1877 = 1
 										} else {
-											var _t1880 int64
+											var _t1878 int64
 											if p.matchLookaheadTerminal("INT128", 0) {
-												_t1880 = 1
+												_t1878 = 1
 											} else {
-												var _t1881 int64
+												var _t1879 int64
 												if p.matchLookaheadTerminal("INT", 0) {
-													_t1881 = 1
+													_t1879 = 1
 												} else {
-													var _t1882 int64
+													var _t1880 int64
 													if p.matchLookaheadTerminal("FLOAT32", 0) {
-														_t1882 = 1
+														_t1880 = 1
 													} else {
-														var _t1883 int64
+														var _t1881 int64
 														if p.matchLookaheadTerminal("FLOAT", 0) {
-															_t1883 = 1
+															_t1881 = 1
 														} else {
-															var _t1884 int64
+															var _t1882 int64
 															if p.matchLookaheadTerminal("DECIMAL", 0) {
-																_t1884 = 1
+																_t1882 = 1
 															} else {
-																_t1884 = -1
+																_t1882 = -1
 															}
-															_t1883 = _t1884
+															_t1881 = _t1882
 														}
-														_t1882 = _t1883
+														_t1880 = _t1881
 													}
-													_t1881 = _t1882
+													_t1879 = _t1880
 												}
-												_t1880 = _t1881
+												_t1878 = _t1879
 											}
-											_t1879 = _t1880
+											_t1877 = _t1878
 										}
-										_t1878 = _t1879
+										_t1876 = _t1877
 									}
-									_t1877 = _t1878
+									_t1875 = _t1876
 								}
-								_t1876 = _t1877
+								_t1874 = _t1875
 							}
-							_t1875 = _t1876
+							_t1873 = _t1874
 						}
-						_t1874 = _t1875
+						_t1872 = _t1873
 					}
-					_t1873 = _t1874
+					_t1871 = _t1872
 				}
-				_t1872 = _t1873
+				_t1870 = _t1871
 			}
-			_t1871 = _t1872
+			_t1869 = _t1870
 		}
-		_t1870 = _t1871
+		_t1868 = _t1869
 	}
-	prediction1040 := _t1870
-	var _t1885 *pb.RelTerm
-	if prediction1040 == 1 {
-		_t1886 := p.parse_term()
-		term1042 := _t1886
-		_t1887 := &pb.RelTerm{}
-		_t1887.RelTermType = &pb.RelTerm_Term{Term: term1042}
-		_t1885 = _t1887
+	prediction1039 := _t1868
+	var _t1883 *pb.RelTerm
+	if prediction1039 == 1 {
+		_t1884 := p.parse_term()
+		term1041 := _t1884
+		_t1885 := &pb.RelTerm{}
+		_t1885.RelTermType = &pb.RelTerm_Term{Term: term1041}
+		_t1883 = _t1885
 	} else {
-		var _t1888 *pb.RelTerm
-		if prediction1040 == 0 {
-			_t1889 := p.parse_specialized_value()
-			specialized_value1041 := _t1889
-			_t1890 := &pb.RelTerm{}
-			_t1890.RelTermType = &pb.RelTerm_SpecializedValue{SpecializedValue: specialized_value1041}
-			_t1888 = _t1890
+		var _t1886 *pb.RelTerm
+		if prediction1039 == 0 {
+			_t1887 := p.parse_specialized_value()
+			specialized_value1040 := _t1887
+			_t1888 := &pb.RelTerm{}
+			_t1888.RelTermType = &pb.RelTerm_SpecializedValue{SpecializedValue: specialized_value1040}
+			_t1886 = _t1888
 		} else {
 			panic(ParseError{msg: fmt.Sprintf("%s: %s=`%v`", "Unexpected token in rel_term", p.lookahead(0).Type, p.lookahead(0).Value)})
 		}
-		_t1885 = _t1888
+		_t1883 = _t1886
 	}
-	result1044 := _t1885
-	p.recordSpan(int(span_start1043), "RelTerm")
-	return result1044
+	result1043 := _t1883
+	p.recordSpan(int(span_start1042), "RelTerm")
+	return result1043
 }
 
 func (p *Parser) parse_specialized_value() *pb.Value {
-	span_start1046 := int64(p.spanStart())
+	span_start1045 := int64(p.spanStart())
 	p.consumeLiteral("#")
-	_t1891 := p.parse_raw_value()
-	raw_value1045 := _t1891
-	result1047 := raw_value1045
-	p.recordSpan(int(span_start1046), "Value")
-	return result1047
+	_t1889 := p.parse_raw_value()
+	raw_value1044 := _t1889
+	result1046 := raw_value1044
+	p.recordSpan(int(span_start1045), "Value")
+	return result1046
 }
 
 func (p *Parser) parse_rel_atom() *pb.RelAtom {
-	span_start1053 := int64(p.spanStart())
+	span_start1052 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("relatom")
-	_t1892 := p.parse_name()
-	name1048 := _t1892
-	xs1049 := []*pb.RelTerm{}
-	cond1050 := ((((((((((((((p.matchLookaheadLiteral("#", 0) || p.matchLookaheadLiteral("(", 0)) || p.matchLookaheadLiteral("false", 0)) || p.matchLookaheadLiteral("missing", 0)) || p.matchLookaheadLiteral("true", 0)) || p.matchLookaheadTerminal("DECIMAL", 0)) || p.matchLookaheadTerminal("FLOAT", 0)) || p.matchLookaheadTerminal("FLOAT32", 0)) || p.matchLookaheadTerminal("INT", 0)) || p.matchLookaheadTerminal("INT128", 0)) || p.matchLookaheadTerminal("INT32", 0)) || p.matchLookaheadTerminal("STRING", 0)) || p.matchLookaheadTerminal("UINT128", 0)) || p.matchLookaheadTerminal("UINT32", 0)) || p.matchLookaheadTerminal("SYMBOL", 0))
-	for cond1050 {
-		_t1893 := p.parse_rel_term()
-		item1051 := _t1893
-		xs1049 = append(xs1049, item1051)
-		cond1050 = ((((((((((((((p.matchLookaheadLiteral("#", 0) || p.matchLookaheadLiteral("(", 0)) || p.matchLookaheadLiteral("false", 0)) || p.matchLookaheadLiteral("missing", 0)) || p.matchLookaheadLiteral("true", 0)) || p.matchLookaheadTerminal("DECIMAL", 0)) || p.matchLookaheadTerminal("FLOAT", 0)) || p.matchLookaheadTerminal("FLOAT32", 0)) || p.matchLookaheadTerminal("INT", 0)) || p.matchLookaheadTerminal("INT128", 0)) || p.matchLookaheadTerminal("INT32", 0)) || p.matchLookaheadTerminal("STRING", 0)) || p.matchLookaheadTerminal("UINT128", 0)) || p.matchLookaheadTerminal("UINT32", 0)) || p.matchLookaheadTerminal("SYMBOL", 0))
+	_t1890 := p.parse_name()
+	name1047 := _t1890
+	xs1048 := []*pb.RelTerm{}
+	cond1049 := ((((((((((((((p.matchLookaheadLiteral("#", 0) || p.matchLookaheadLiteral("(", 0)) || p.matchLookaheadLiteral("false", 0)) || p.matchLookaheadLiteral("missing", 0)) || p.matchLookaheadLiteral("true", 0)) || p.matchLookaheadTerminal("DECIMAL", 0)) || p.matchLookaheadTerminal("FLOAT", 0)) || p.matchLookaheadTerminal("FLOAT32", 0)) || p.matchLookaheadTerminal("INT", 0)) || p.matchLookaheadTerminal("INT128", 0)) || p.matchLookaheadTerminal("INT32", 0)) || p.matchLookaheadTerminal("STRING", 0)) || p.matchLookaheadTerminal("UINT128", 0)) || p.matchLookaheadTerminal("UINT32", 0)) || p.matchLookaheadTerminal("SYMBOL", 0))
+	for cond1049 {
+		_t1891 := p.parse_rel_term()
+		item1050 := _t1891
+		xs1048 = append(xs1048, item1050)
+		cond1049 = ((((((((((((((p.matchLookaheadLiteral("#", 0) || p.matchLookaheadLiteral("(", 0)) || p.matchLookaheadLiteral("false", 0)) || p.matchLookaheadLiteral("missing", 0)) || p.matchLookaheadLiteral("true", 0)) || p.matchLookaheadTerminal("DECIMAL", 0)) || p.matchLookaheadTerminal("FLOAT", 0)) || p.matchLookaheadTerminal("FLOAT32", 0)) || p.matchLookaheadTerminal("INT", 0)) || p.matchLookaheadTerminal("INT128", 0)) || p.matchLookaheadTerminal("INT32", 0)) || p.matchLookaheadTerminal("STRING", 0)) || p.matchLookaheadTerminal("UINT128", 0)) || p.matchLookaheadTerminal("UINT32", 0)) || p.matchLookaheadTerminal("SYMBOL", 0))
 	}
-	rel_terms1052 := xs1049
+	rel_terms1051 := xs1048
 	p.consumeLiteral(")")
-	_t1894 := &pb.RelAtom{Name: name1048, Terms: rel_terms1052}
-	result1054 := _t1894
-	p.recordSpan(int(span_start1053), "RelAtom")
-	return result1054
+	_t1892 := &pb.RelAtom{Name: name1047, Terms: rel_terms1051}
+	result1053 := _t1892
+	p.recordSpan(int(span_start1052), "RelAtom")
+	return result1053
 }
 
 func (p *Parser) parse_cast() *pb.Cast {
-	span_start1057 := int64(p.spanStart())
+	span_start1056 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("cast")
-	_t1895 := p.parse_term()
-	term1055 := _t1895
-	_t1896 := p.parse_term()
-	term_31056 := _t1896
+	_t1893 := p.parse_term()
+	term1054 := _t1893
+	_t1894 := p.parse_term()
+	term_31055 := _t1894
 	p.consumeLiteral(")")
-	_t1897 := &pb.Cast{Input: term1055, Result: term_31056}
-	result1058 := _t1897
-	p.recordSpan(int(span_start1057), "Cast")
-	return result1058
+	_t1895 := &pb.Cast{Input: term1054, Result: term_31055}
+	result1057 := _t1895
+	p.recordSpan(int(span_start1056), "Cast")
+	return result1057
 }
 
 func (p *Parser) parse_attrs() []*pb.Attribute {
 	p.consumeLiteral("(")
 	p.consumeLiteral("attrs")
-	xs1059 := []*pb.Attribute{}
-	cond1060 := p.matchLookaheadLiteral("(", 0)
-	for cond1060 {
-		_t1898 := p.parse_attribute()
-		item1061 := _t1898
-		xs1059 = append(xs1059, item1061)
-		cond1060 = p.matchLookaheadLiteral("(", 0)
+	xs1058 := []*pb.Attribute{}
+	cond1059 := p.matchLookaheadLiteral("(", 0)
+	for cond1059 {
+		_t1896 := p.parse_attribute()
+		item1060 := _t1896
+		xs1058 = append(xs1058, item1060)
+		cond1059 = p.matchLookaheadLiteral("(", 0)
 	}
-	attributes1062 := xs1059
+	attributes1061 := xs1058
 	p.consumeLiteral(")")
-	return attributes1062
+	return attributes1061
 }
 
 func (p *Parser) parse_attribute() *pb.Attribute {
-	span_start1068 := int64(p.spanStart())
+	span_start1067 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("attribute")
-	_t1899 := p.parse_name()
-	name1063 := _t1899
-	xs1064 := []*pb.Value{}
-	cond1065 := ((((((((((((p.matchLookaheadLiteral("(", 0) || p.matchLookaheadLiteral("false", 0)) || p.matchLookaheadLiteral("missing", 0)) || p.matchLookaheadLiteral("true", 0)) || p.matchLookaheadTerminal("DECIMAL", 0)) || p.matchLookaheadTerminal("FLOAT", 0)) || p.matchLookaheadTerminal("FLOAT32", 0)) || p.matchLookaheadTerminal("INT", 0)) || p.matchLookaheadTerminal("INT128", 0)) || p.matchLookaheadTerminal("INT32", 0)) || p.matchLookaheadTerminal("STRING", 0)) || p.matchLookaheadTerminal("UINT128", 0)) || p.matchLookaheadTerminal("UINT32", 0))
-	for cond1065 {
-		_t1900 := p.parse_raw_value()
-		item1066 := _t1900
-		xs1064 = append(xs1064, item1066)
-		cond1065 = ((((((((((((p.matchLookaheadLiteral("(", 0) || p.matchLookaheadLiteral("false", 0)) || p.matchLookaheadLiteral("missing", 0)) || p.matchLookaheadLiteral("true", 0)) || p.matchLookaheadTerminal("DECIMAL", 0)) || p.matchLookaheadTerminal("FLOAT", 0)) || p.matchLookaheadTerminal("FLOAT32", 0)) || p.matchLookaheadTerminal("INT", 0)) || p.matchLookaheadTerminal("INT128", 0)) || p.matchLookaheadTerminal("INT32", 0)) || p.matchLookaheadTerminal("STRING", 0)) || p.matchLookaheadTerminal("UINT128", 0)) || p.matchLookaheadTerminal("UINT32", 0))
+	_t1897 := p.parse_name()
+	name1062 := _t1897
+	xs1063 := []*pb.Value{}
+	cond1064 := ((((((((((((p.matchLookaheadLiteral("(", 0) || p.matchLookaheadLiteral("false", 0)) || p.matchLookaheadLiteral("missing", 0)) || p.matchLookaheadLiteral("true", 0)) || p.matchLookaheadTerminal("DECIMAL", 0)) || p.matchLookaheadTerminal("FLOAT", 0)) || p.matchLookaheadTerminal("FLOAT32", 0)) || p.matchLookaheadTerminal("INT", 0)) || p.matchLookaheadTerminal("INT128", 0)) || p.matchLookaheadTerminal("INT32", 0)) || p.matchLookaheadTerminal("STRING", 0)) || p.matchLookaheadTerminal("UINT128", 0)) || p.matchLookaheadTerminal("UINT32", 0))
+	for cond1064 {
+		_t1898 := p.parse_raw_value()
+		item1065 := _t1898
+		xs1063 = append(xs1063, item1065)
+		cond1064 = ((((((((((((p.matchLookaheadLiteral("(", 0) || p.matchLookaheadLiteral("false", 0)) || p.matchLookaheadLiteral("missing", 0)) || p.matchLookaheadLiteral("true", 0)) || p.matchLookaheadTerminal("DECIMAL", 0)) || p.matchLookaheadTerminal("FLOAT", 0)) || p.matchLookaheadTerminal("FLOAT32", 0)) || p.matchLookaheadTerminal("INT", 0)) || p.matchLookaheadTerminal("INT128", 0)) || p.matchLookaheadTerminal("INT32", 0)) || p.matchLookaheadTerminal("STRING", 0)) || p.matchLookaheadTerminal("UINT128", 0)) || p.matchLookaheadTerminal("UINT32", 0))
 	}
-	raw_values1067 := xs1064
+	raw_values1066 := xs1063
 	p.consumeLiteral(")")
-	_t1901 := &pb.Attribute{Name: name1063, Args: raw_values1067}
-	result1069 := _t1901
-	p.recordSpan(int(span_start1068), "Attribute")
-	return result1069
+	_t1899 := &pb.Attribute{Name: name1062, Args: raw_values1066}
+	result1068 := _t1899
+	p.recordSpan(int(span_start1067), "Attribute")
+	return result1068
 }
 
 func (p *Parser) parse_algorithm() *pb.Algorithm {
-	span_start1076 := int64(p.spanStart())
+	span_start1075 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("algorithm")
-	xs1070 := []*pb.RelationId{}
-	cond1071 := (p.matchLookaheadLiteral(":", 0) || p.matchLookaheadTerminal("UINT128", 0))
-	for cond1071 {
-		_t1902 := p.parse_relation_id()
-		item1072 := _t1902
-		xs1070 = append(xs1070, item1072)
-		cond1071 = (p.matchLookaheadLiteral(":", 0) || p.matchLookaheadTerminal("UINT128", 0))
+	xs1069 := []*pb.RelationId{}
+	cond1070 := (p.matchLookaheadLiteral(":", 0) || p.matchLookaheadTerminal("UINT128", 0))
+	for cond1070 {
+		_t1900 := p.parse_relation_id()
+		item1071 := _t1900
+		xs1069 = append(xs1069, item1071)
+		cond1070 = (p.matchLookaheadLiteral(":", 0) || p.matchLookaheadTerminal("UINT128", 0))
 	}
-	relation_ids1073 := xs1070
-	_t1903 := p.parse_script()
-	script1074 := _t1903
-	var _t1904 []*pb.Attribute
+	relation_ids1072 := xs1069
+	_t1901 := p.parse_script()
+	script1073 := _t1901
+	var _t1902 []*pb.Attribute
 	if p.matchLookaheadLiteral("(", 0) {
-		_t1905 := p.parse_attrs()
-		_t1904 = _t1905
+		_t1903 := p.parse_attrs()
+		_t1902 = _t1903
 	}
-	attrs1075 := _t1904
+	attrs1074 := _t1902
 	p.consumeLiteral(")")
-	_t1906 := attrs1075
-	if attrs1075 == nil {
-		_t1906 = []*pb.Attribute{}
+	_t1904 := attrs1074
+	if attrs1074 == nil {
+		_t1904 = []*pb.Attribute{}
 	}
-	_t1907 := &pb.Algorithm{Global: relation_ids1073, Body: script1074, Attrs: _t1906}
-	result1077 := _t1907
-	p.recordSpan(int(span_start1076), "Algorithm")
-	return result1077
+	_t1905 := &pb.Algorithm{Global: relation_ids1072, Body: script1073, Attrs: _t1904}
+	result1076 := _t1905
+	p.recordSpan(int(span_start1075), "Algorithm")
+	return result1076
 }
 
 func (p *Parser) parse_script() *pb.Script {
-	span_start1082 := int64(p.spanStart())
+	span_start1081 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("script")
-	xs1078 := []*pb.Construct{}
-	cond1079 := p.matchLookaheadLiteral("(", 0)
-	for cond1079 {
-		_t1908 := p.parse_construct()
-		item1080 := _t1908
-		xs1078 = append(xs1078, item1080)
-		cond1079 = p.matchLookaheadLiteral("(", 0)
+	xs1077 := []*pb.Construct{}
+	cond1078 := p.matchLookaheadLiteral("(", 0)
+	for cond1078 {
+		_t1906 := p.parse_construct()
+		item1079 := _t1906
+		xs1077 = append(xs1077, item1079)
+		cond1078 = p.matchLookaheadLiteral("(", 0)
 	}
-	constructs1081 := xs1078
+	constructs1080 := xs1077
 	p.consumeLiteral(")")
-	_t1909 := &pb.Script{Constructs: constructs1081}
-	result1083 := _t1909
-	p.recordSpan(int(span_start1082), "Script")
-	return result1083
+	_t1907 := &pb.Script{Constructs: constructs1080}
+	result1082 := _t1907
+	p.recordSpan(int(span_start1081), "Script")
+	return result1082
 }
 
 func (p *Parser) parse_construct() *pb.Construct {
-	span_start1087 := int64(p.spanStart())
-	var _t1910 int64
+	span_start1086 := int64(p.spanStart())
+	var _t1908 int64
 	if p.matchLookaheadLiteral("(", 0) {
-		var _t1911 int64
+		var _t1909 int64
 		if p.matchLookaheadLiteral("upsert", 1) {
-			_t1911 = 1
+			_t1909 = 1
 		} else {
-			var _t1912 int64
+			var _t1910 int64
 			if p.matchLookaheadLiteral("monus", 1) {
-				_t1912 = 1
+				_t1910 = 1
 			} else {
-				var _t1913 int64
+				var _t1911 int64
 				if p.matchLookaheadLiteral("monoid", 1) {
-					_t1913 = 1
+					_t1911 = 1
 				} else {
-					var _t1914 int64
+					var _t1912 int64
 					if p.matchLookaheadLiteral("loop", 1) {
-						_t1914 = 0
+						_t1912 = 0
 					} else {
-						var _t1915 int64
+						var _t1913 int64
 						if p.matchLookaheadLiteral("break", 1) {
-							_t1915 = 1
+							_t1913 = 1
 						} else {
-							var _t1916 int64
+							var _t1914 int64
 							if p.matchLookaheadLiteral("assign", 1) {
-								_t1916 = 1
+								_t1914 = 1
 							} else {
-								_t1916 = -1
+								_t1914 = -1
 							}
-							_t1915 = _t1916
+							_t1913 = _t1914
 						}
-						_t1914 = _t1915
+						_t1912 = _t1913
 					}
-					_t1913 = _t1914
+					_t1911 = _t1912
 				}
-				_t1912 = _t1913
+				_t1910 = _t1911
 			}
-			_t1911 = _t1912
+			_t1909 = _t1910
 		}
-		_t1910 = _t1911
+		_t1908 = _t1909
 	} else {
-		_t1910 = -1
+		_t1908 = -1
 	}
-	prediction1084 := _t1910
-	var _t1917 *pb.Construct
-	if prediction1084 == 1 {
-		_t1918 := p.parse_instruction()
-		instruction1086 := _t1918
-		_t1919 := &pb.Construct{}
-		_t1919.ConstructType = &pb.Construct_Instruction{Instruction: instruction1086}
-		_t1917 = _t1919
+	prediction1083 := _t1908
+	var _t1915 *pb.Construct
+	if prediction1083 == 1 {
+		_t1916 := p.parse_instruction()
+		instruction1085 := _t1916
+		_t1917 := &pb.Construct{}
+		_t1917.ConstructType = &pb.Construct_Instruction{Instruction: instruction1085}
+		_t1915 = _t1917
 	} else {
-		var _t1920 *pb.Construct
-		if prediction1084 == 0 {
-			_t1921 := p.parse_loop()
-			loop1085 := _t1921
-			_t1922 := &pb.Construct{}
-			_t1922.ConstructType = &pb.Construct_Loop{Loop: loop1085}
-			_t1920 = _t1922
+		var _t1918 *pb.Construct
+		if prediction1083 == 0 {
+			_t1919 := p.parse_loop()
+			loop1084 := _t1919
+			_t1920 := &pb.Construct{}
+			_t1920.ConstructType = &pb.Construct_Loop{Loop: loop1084}
+			_t1918 = _t1920
 		} else {
 			panic(ParseError{msg: fmt.Sprintf("%s: %s=`%v`", "Unexpected token in construct", p.lookahead(0).Type, p.lookahead(0).Value)})
 		}
-		_t1917 = _t1920
+		_t1915 = _t1918
 	}
-	result1088 := _t1917
-	p.recordSpan(int(span_start1087), "Construct")
-	return result1088
+	result1087 := _t1915
+	p.recordSpan(int(span_start1086), "Construct")
+	return result1087
 }
 
 func (p *Parser) parse_loop() *pb.Loop {
-	span_start1092 := int64(p.spanStart())
+	span_start1091 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("loop")
-	_t1923 := p.parse_init()
-	init1089 := _t1923
-	_t1924 := p.parse_script()
-	script1090 := _t1924
-	var _t1925 []*pb.Attribute
+	_t1921 := p.parse_init()
+	init1088 := _t1921
+	_t1922 := p.parse_script()
+	script1089 := _t1922
+	var _t1923 []*pb.Attribute
 	if p.matchLookaheadLiteral("(", 0) {
-		_t1926 := p.parse_attrs()
-		_t1925 = _t1926
+		_t1924 := p.parse_attrs()
+		_t1923 = _t1924
 	}
-	attrs1091 := _t1925
+	attrs1090 := _t1923
 	p.consumeLiteral(")")
-	_t1927 := attrs1091
-	if attrs1091 == nil {
-		_t1927 = []*pb.Attribute{}
+	_t1925 := attrs1090
+	if attrs1090 == nil {
+		_t1925 = []*pb.Attribute{}
 	}
-	_t1928 := &pb.Loop{Init: init1089, Body: script1090, Attrs: _t1927}
-	result1093 := _t1928
-	p.recordSpan(int(span_start1092), "Loop")
-	return result1093
+	_t1926 := &pb.Loop{Init: init1088, Body: script1089, Attrs: _t1925}
+	result1092 := _t1926
+	p.recordSpan(int(span_start1091), "Loop")
+	return result1092
 }
 
 func (p *Parser) parse_init() []*pb.Instruction {
 	p.consumeLiteral("(")
 	p.consumeLiteral("init")
-	xs1094 := []*pb.Instruction{}
-	cond1095 := p.matchLookaheadLiteral("(", 0)
-	for cond1095 {
-		_t1929 := p.parse_instruction()
-		item1096 := _t1929
-		xs1094 = append(xs1094, item1096)
-		cond1095 = p.matchLookaheadLiteral("(", 0)
+	xs1093 := []*pb.Instruction{}
+	cond1094 := p.matchLookaheadLiteral("(", 0)
+	for cond1094 {
+		_t1927 := p.parse_instruction()
+		item1095 := _t1927
+		xs1093 = append(xs1093, item1095)
+		cond1094 = p.matchLookaheadLiteral("(", 0)
 	}
-	instructions1097 := xs1094
+	instructions1096 := xs1093
 	p.consumeLiteral(")")
-	return instructions1097
+	return instructions1096
 }
 
 func (p *Parser) parse_instruction() *pb.Instruction {
-	span_start1104 := int64(p.spanStart())
-	var _t1930 int64
+	span_start1103 := int64(p.spanStart())
+	var _t1928 int64
 	if p.matchLookaheadLiteral("(", 0) {
-		var _t1931 int64
+		var _t1929 int64
 		if p.matchLookaheadLiteral("upsert", 1) {
-			_t1931 = 1
+			_t1929 = 1
 		} else {
-			var _t1932 int64
+			var _t1930 int64
 			if p.matchLookaheadLiteral("monus", 1) {
-				_t1932 = 4
+				_t1930 = 4
 			} else {
-				var _t1933 int64
+				var _t1931 int64
 				if p.matchLookaheadLiteral("monoid", 1) {
-					_t1933 = 3
+					_t1931 = 3
 				} else {
-					var _t1934 int64
+					var _t1932 int64
 					if p.matchLookaheadLiteral("break", 1) {
-						_t1934 = 2
+						_t1932 = 2
 					} else {
-						var _t1935 int64
+						var _t1933 int64
 						if p.matchLookaheadLiteral("assign", 1) {
-							_t1935 = 0
+							_t1933 = 0
 						} else {
-							_t1935 = -1
+							_t1933 = -1
 						}
-						_t1934 = _t1935
+						_t1932 = _t1933
 					}
-					_t1933 = _t1934
+					_t1931 = _t1932
 				}
-				_t1932 = _t1933
+				_t1930 = _t1931
 			}
-			_t1931 = _t1932
+			_t1929 = _t1930
 		}
-		_t1930 = _t1931
+		_t1928 = _t1929
 	} else {
-		_t1930 = -1
+		_t1928 = -1
 	}
-	prediction1098 := _t1930
-	var _t1936 *pb.Instruction
-	if prediction1098 == 4 {
-		_t1937 := p.parse_monus_def()
-		monus_def1103 := _t1937
-		_t1938 := &pb.Instruction{}
-		_t1938.InstrType = &pb.Instruction_MonusDef{MonusDef: monus_def1103}
-		_t1936 = _t1938
+	prediction1097 := _t1928
+	var _t1934 *pb.Instruction
+	if prediction1097 == 4 {
+		_t1935 := p.parse_monus_def()
+		monus_def1102 := _t1935
+		_t1936 := &pb.Instruction{}
+		_t1936.InstrType = &pb.Instruction_MonusDef{MonusDef: monus_def1102}
+		_t1934 = _t1936
 	} else {
-		var _t1939 *pb.Instruction
-		if prediction1098 == 3 {
-			_t1940 := p.parse_monoid_def()
-			monoid_def1102 := _t1940
-			_t1941 := &pb.Instruction{}
-			_t1941.InstrType = &pb.Instruction_MonoidDef{MonoidDef: monoid_def1102}
-			_t1939 = _t1941
+		var _t1937 *pb.Instruction
+		if prediction1097 == 3 {
+			_t1938 := p.parse_monoid_def()
+			monoid_def1101 := _t1938
+			_t1939 := &pb.Instruction{}
+			_t1939.InstrType = &pb.Instruction_MonoidDef{MonoidDef: monoid_def1101}
+			_t1937 = _t1939
 		} else {
-			var _t1942 *pb.Instruction
-			if prediction1098 == 2 {
-				_t1943 := p.parse_break()
-				break1101 := _t1943
-				_t1944 := &pb.Instruction{}
-				_t1944.InstrType = &pb.Instruction_Break{Break: break1101}
-				_t1942 = _t1944
+			var _t1940 *pb.Instruction
+			if prediction1097 == 2 {
+				_t1941 := p.parse_break()
+				break1100 := _t1941
+				_t1942 := &pb.Instruction{}
+				_t1942.InstrType = &pb.Instruction_Break{Break: break1100}
+				_t1940 = _t1942
 			} else {
-				var _t1945 *pb.Instruction
-				if prediction1098 == 1 {
-					_t1946 := p.parse_upsert()
-					upsert1100 := _t1946
-					_t1947 := &pb.Instruction{}
-					_t1947.InstrType = &pb.Instruction_Upsert{Upsert: upsert1100}
-					_t1945 = _t1947
+				var _t1943 *pb.Instruction
+				if prediction1097 == 1 {
+					_t1944 := p.parse_upsert()
+					upsert1099 := _t1944
+					_t1945 := &pb.Instruction{}
+					_t1945.InstrType = &pb.Instruction_Upsert{Upsert: upsert1099}
+					_t1943 = _t1945
 				} else {
-					var _t1948 *pb.Instruction
-					if prediction1098 == 0 {
-						_t1949 := p.parse_assign()
-						assign1099 := _t1949
-						_t1950 := &pb.Instruction{}
-						_t1950.InstrType = &pb.Instruction_Assign{Assign: assign1099}
-						_t1948 = _t1950
+					var _t1946 *pb.Instruction
+					if prediction1097 == 0 {
+						_t1947 := p.parse_assign()
+						assign1098 := _t1947
+						_t1948 := &pb.Instruction{}
+						_t1948.InstrType = &pb.Instruction_Assign{Assign: assign1098}
+						_t1946 = _t1948
 					} else {
 						panic(ParseError{msg: fmt.Sprintf("%s: %s=`%v`", "Unexpected token in instruction", p.lookahead(0).Type, p.lookahead(0).Value)})
 					}
-					_t1945 = _t1948
+					_t1943 = _t1946
 				}
-				_t1942 = _t1945
+				_t1940 = _t1943
 			}
-			_t1939 = _t1942
+			_t1937 = _t1940
 		}
-		_t1936 = _t1939
+		_t1934 = _t1937
 	}
-	result1105 := _t1936
-	p.recordSpan(int(span_start1104), "Instruction")
-	return result1105
+	result1104 := _t1934
+	p.recordSpan(int(span_start1103), "Instruction")
+	return result1104
 }
 
 func (p *Parser) parse_assign() *pb.Assign {
-	span_start1109 := int64(p.spanStart())
+	span_start1108 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("assign")
-	_t1951 := p.parse_relation_id()
-	relation_id1106 := _t1951
-	_t1952 := p.parse_abstraction()
-	abstraction1107 := _t1952
-	var _t1953 []*pb.Attribute
+	_t1949 := p.parse_relation_id()
+	relation_id1105 := _t1949
+	_t1950 := p.parse_abstraction()
+	abstraction1106 := _t1950
+	var _t1951 []*pb.Attribute
 	if p.matchLookaheadLiteral("(", 0) {
-		_t1954 := p.parse_attrs()
-		_t1953 = _t1954
+		_t1952 := p.parse_attrs()
+		_t1951 = _t1952
 	}
-	attrs1108 := _t1953
+	attrs1107 := _t1951
 	p.consumeLiteral(")")
-	_t1955 := attrs1108
-	if attrs1108 == nil {
-		_t1955 = []*pb.Attribute{}
+	_t1953 := attrs1107
+	if attrs1107 == nil {
+		_t1953 = []*pb.Attribute{}
 	}
-	_t1956 := &pb.Assign{Name: relation_id1106, Body: abstraction1107, Attrs: _t1955}
-	result1110 := _t1956
-	p.recordSpan(int(span_start1109), "Assign")
-	return result1110
+	_t1954 := &pb.Assign{Name: relation_id1105, Body: abstraction1106, Attrs: _t1953}
+	result1109 := _t1954
+	p.recordSpan(int(span_start1108), "Assign")
+	return result1109
 }
 
 func (p *Parser) parse_upsert() *pb.Upsert {
-	span_start1114 := int64(p.spanStart())
+	span_start1113 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("upsert")
-	_t1957 := p.parse_relation_id()
-	relation_id1111 := _t1957
-	_t1958 := p.parse_abstraction_with_arity()
-	abstraction_with_arity1112 := _t1958
-	var _t1959 []*pb.Attribute
+	_t1955 := p.parse_relation_id()
+	relation_id1110 := _t1955
+	_t1956 := p.parse_abstraction_with_arity()
+	abstraction_with_arity1111 := _t1956
+	var _t1957 []*pb.Attribute
 	if p.matchLookaheadLiteral("(", 0) {
-		_t1960 := p.parse_attrs()
-		_t1959 = _t1960
+		_t1958 := p.parse_attrs()
+		_t1957 = _t1958
 	}
-	attrs1113 := _t1959
+	attrs1112 := _t1957
 	p.consumeLiteral(")")
-	_t1961 := attrs1113
-	if attrs1113 == nil {
-		_t1961 = []*pb.Attribute{}
+	_t1959 := attrs1112
+	if attrs1112 == nil {
+		_t1959 = []*pb.Attribute{}
 	}
-	_t1962 := &pb.Upsert{Name: relation_id1111, Body: abstraction_with_arity1112[0].(*pb.Abstraction), Attrs: _t1961, ValueArity: abstraction_with_arity1112[1].(int64)}
-	result1115 := _t1962
-	p.recordSpan(int(span_start1114), "Upsert")
-	return result1115
+	_t1960 := &pb.Upsert{Name: relation_id1110, Body: abstraction_with_arity1111[0].(*pb.Abstraction), Attrs: _t1959, ValueArity: abstraction_with_arity1111[1].(int64)}
+	result1114 := _t1960
+	p.recordSpan(int(span_start1113), "Upsert")
+	return result1114
 }
 
 func (p *Parser) parse_abstraction_with_arity() []interface{} {
 	p.consumeLiteral("(")
-	_t1963 := p.parse_bindings()
-	bindings1116 := _t1963
-	_t1964 := p.parse_formula()
-	formula1117 := _t1964
+	_t1961 := p.parse_bindings()
+	bindings1115 := _t1961
+	_t1962 := p.parse_formula()
+	formula1116 := _t1962
 	p.consumeLiteral(")")
-	_t1965 := &pb.Abstraction{Vars: listConcat(bindings1116[0].([]*pb.Binding), bindings1116[1].([]*pb.Binding)), Value: formula1117}
-	return []interface{}{_t1965, int64(len(bindings1116[1].([]*pb.Binding)))}
+	_t1963 := &pb.Abstraction{Vars: listConcat(bindings1115[0].([]*pb.Binding), bindings1115[1].([]*pb.Binding)), Value: formula1116}
+	return []interface{}{_t1963, int64(len(bindings1115[1].([]*pb.Binding)))}
 }
 
 func (p *Parser) parse_break() *pb.Break {
-	span_start1121 := int64(p.spanStart())
+	span_start1120 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("break")
-	_t1966 := p.parse_relation_id()
-	relation_id1118 := _t1966
-	_t1967 := p.parse_abstraction()
-	abstraction1119 := _t1967
-	var _t1968 []*pb.Attribute
+	_t1964 := p.parse_relation_id()
+	relation_id1117 := _t1964
+	_t1965 := p.parse_abstraction()
+	abstraction1118 := _t1965
+	var _t1966 []*pb.Attribute
 	if p.matchLookaheadLiteral("(", 0) {
-		_t1969 := p.parse_attrs()
-		_t1968 = _t1969
+		_t1967 := p.parse_attrs()
+		_t1966 = _t1967
 	}
-	attrs1120 := _t1968
+	attrs1119 := _t1966
 	p.consumeLiteral(")")
-	_t1970 := attrs1120
-	if attrs1120 == nil {
-		_t1970 = []*pb.Attribute{}
+	_t1968 := attrs1119
+	if attrs1119 == nil {
+		_t1968 = []*pb.Attribute{}
 	}
-	_t1971 := &pb.Break{Name: relation_id1118, Body: abstraction1119, Attrs: _t1970}
-	result1122 := _t1971
-	p.recordSpan(int(span_start1121), "Break")
-	return result1122
+	_t1969 := &pb.Break{Name: relation_id1117, Body: abstraction1118, Attrs: _t1968}
+	result1121 := _t1969
+	p.recordSpan(int(span_start1120), "Break")
+	return result1121
 }
 
 func (p *Parser) parse_monoid_def() *pb.MonoidDef {
-	span_start1127 := int64(p.spanStart())
+	span_start1126 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("monoid")
-	_t1972 := p.parse_monoid()
-	monoid1123 := _t1972
-	_t1973 := p.parse_relation_id()
-	relation_id1124 := _t1973
-	_t1974 := p.parse_abstraction_with_arity()
-	abstraction_with_arity1125 := _t1974
-	var _t1975 []*pb.Attribute
+	_t1970 := p.parse_monoid()
+	monoid1122 := _t1970
+	_t1971 := p.parse_relation_id()
+	relation_id1123 := _t1971
+	_t1972 := p.parse_abstraction_with_arity()
+	abstraction_with_arity1124 := _t1972
+	var _t1973 []*pb.Attribute
 	if p.matchLookaheadLiteral("(", 0) {
-		_t1976 := p.parse_attrs()
-		_t1975 = _t1976
+		_t1974 := p.parse_attrs()
+		_t1973 = _t1974
 	}
-	attrs1126 := _t1975
+	attrs1125 := _t1973
 	p.consumeLiteral(")")
-	_t1977 := attrs1126
-	if attrs1126 == nil {
-		_t1977 = []*pb.Attribute{}
+	_t1975 := attrs1125
+	if attrs1125 == nil {
+		_t1975 = []*pb.Attribute{}
 	}
-	_t1978 := &pb.MonoidDef{Monoid: monoid1123, Name: relation_id1124, Body: abstraction_with_arity1125[0].(*pb.Abstraction), Attrs: _t1977, ValueArity: abstraction_with_arity1125[1].(int64)}
-	result1128 := _t1978
-	p.recordSpan(int(span_start1127), "MonoidDef")
-	return result1128
+	_t1976 := &pb.MonoidDef{Monoid: monoid1122, Name: relation_id1123, Body: abstraction_with_arity1124[0].(*pb.Abstraction), Attrs: _t1975, ValueArity: abstraction_with_arity1124[1].(int64)}
+	result1127 := _t1976
+	p.recordSpan(int(span_start1126), "MonoidDef")
+	return result1127
 }
 
 func (p *Parser) parse_monoid() *pb.Monoid {
-	span_start1134 := int64(p.spanStart())
-	var _t1979 int64
+	span_start1133 := int64(p.spanStart())
+	var _t1977 int64
 	if p.matchLookaheadLiteral("(", 0) {
-		var _t1980 int64
+		var _t1978 int64
 		if p.matchLookaheadLiteral("sum", 1) {
-			_t1980 = 3
+			_t1978 = 3
 		} else {
-			var _t1981 int64
+			var _t1979 int64
 			if p.matchLookaheadLiteral("or", 1) {
-				_t1981 = 0
+				_t1979 = 0
 			} else {
-				var _t1982 int64
+				var _t1980 int64
 				if p.matchLookaheadLiteral("min", 1) {
-					_t1982 = 1
+					_t1980 = 1
 				} else {
-					var _t1983 int64
+					var _t1981 int64
 					if p.matchLookaheadLiteral("max", 1) {
-						_t1983 = 2
+						_t1981 = 2
 					} else {
-						_t1983 = -1
+						_t1981 = -1
 					}
-					_t1982 = _t1983
+					_t1980 = _t1981
 				}
-				_t1981 = _t1982
+				_t1979 = _t1980
 			}
-			_t1980 = _t1981
+			_t1978 = _t1979
 		}
-		_t1979 = _t1980
+		_t1977 = _t1978
 	} else {
-		_t1979 = -1
+		_t1977 = -1
 	}
-	prediction1129 := _t1979
-	var _t1984 *pb.Monoid
-	if prediction1129 == 3 {
-		_t1985 := p.parse_sum_monoid()
-		sum_monoid1133 := _t1985
-		_t1986 := &pb.Monoid{}
-		_t1986.Value = &pb.Monoid_SumMonoid{SumMonoid: sum_monoid1133}
-		_t1984 = _t1986
+	prediction1128 := _t1977
+	var _t1982 *pb.Monoid
+	if prediction1128 == 3 {
+		_t1983 := p.parse_sum_monoid()
+		sum_monoid1132 := _t1983
+		_t1984 := &pb.Monoid{}
+		_t1984.Value = &pb.Monoid_SumMonoid{SumMonoid: sum_monoid1132}
+		_t1982 = _t1984
 	} else {
-		var _t1987 *pb.Monoid
-		if prediction1129 == 2 {
-			_t1988 := p.parse_max_monoid()
-			max_monoid1132 := _t1988
-			_t1989 := &pb.Monoid{}
-			_t1989.Value = &pb.Monoid_MaxMonoid{MaxMonoid: max_monoid1132}
-			_t1987 = _t1989
+		var _t1985 *pb.Monoid
+		if prediction1128 == 2 {
+			_t1986 := p.parse_max_monoid()
+			max_monoid1131 := _t1986
+			_t1987 := &pb.Monoid{}
+			_t1987.Value = &pb.Monoid_MaxMonoid{MaxMonoid: max_monoid1131}
+			_t1985 = _t1987
 		} else {
-			var _t1990 *pb.Monoid
-			if prediction1129 == 1 {
-				_t1991 := p.parse_min_monoid()
-				min_monoid1131 := _t1991
-				_t1992 := &pb.Monoid{}
-				_t1992.Value = &pb.Monoid_MinMonoid{MinMonoid: min_monoid1131}
-				_t1990 = _t1992
+			var _t1988 *pb.Monoid
+			if prediction1128 == 1 {
+				_t1989 := p.parse_min_monoid()
+				min_monoid1130 := _t1989
+				_t1990 := &pb.Monoid{}
+				_t1990.Value = &pb.Monoid_MinMonoid{MinMonoid: min_monoid1130}
+				_t1988 = _t1990
 			} else {
-				var _t1993 *pb.Monoid
-				if prediction1129 == 0 {
-					_t1994 := p.parse_or_monoid()
-					or_monoid1130 := _t1994
-					_t1995 := &pb.Monoid{}
-					_t1995.Value = &pb.Monoid_OrMonoid{OrMonoid: or_monoid1130}
-					_t1993 = _t1995
+				var _t1991 *pb.Monoid
+				if prediction1128 == 0 {
+					_t1992 := p.parse_or_monoid()
+					or_monoid1129 := _t1992
+					_t1993 := &pb.Monoid{}
+					_t1993.Value = &pb.Monoid_OrMonoid{OrMonoid: or_monoid1129}
+					_t1991 = _t1993
 				} else {
 					panic(ParseError{msg: fmt.Sprintf("%s: %s=`%v`", "Unexpected token in monoid", p.lookahead(0).Type, p.lookahead(0).Value)})
 				}
-				_t1990 = _t1993
+				_t1988 = _t1991
 			}
-			_t1987 = _t1990
+			_t1985 = _t1988
 		}
-		_t1984 = _t1987
+		_t1982 = _t1985
 	}
-	result1135 := _t1984
-	p.recordSpan(int(span_start1134), "Monoid")
-	return result1135
+	result1134 := _t1982
+	p.recordSpan(int(span_start1133), "Monoid")
+	return result1134
 }
 
 func (p *Parser) parse_or_monoid() *pb.OrMonoid {
-	span_start1136 := int64(p.spanStart())
+	span_start1135 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("or")
 	p.consumeLiteral(")")
-	_t1996 := &pb.OrMonoid{}
-	result1137 := _t1996
-	p.recordSpan(int(span_start1136), "OrMonoid")
-	return result1137
+	_t1994 := &pb.OrMonoid{}
+	result1136 := _t1994
+	p.recordSpan(int(span_start1135), "OrMonoid")
+	return result1136
 }
 
 func (p *Parser) parse_min_monoid() *pb.MinMonoid {
-	span_start1139 := int64(p.spanStart())
+	span_start1138 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("min")
-	_t1997 := p.parse_type()
-	type1138 := _t1997
+	_t1995 := p.parse_type()
+	type1137 := _t1995
 	p.consumeLiteral(")")
-	_t1998 := &pb.MinMonoid{Type: type1138}
-	result1140 := _t1998
-	p.recordSpan(int(span_start1139), "MinMonoid")
-	return result1140
+	_t1996 := &pb.MinMonoid{Type: type1137}
+	result1139 := _t1996
+	p.recordSpan(int(span_start1138), "MinMonoid")
+	return result1139
 }
 
 func (p *Parser) parse_max_monoid() *pb.MaxMonoid {
-	span_start1142 := int64(p.spanStart())
+	span_start1141 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("max")
-	_t1999 := p.parse_type()
-	type1141 := _t1999
+	_t1997 := p.parse_type()
+	type1140 := _t1997
 	p.consumeLiteral(")")
-	_t2000 := &pb.MaxMonoid{Type: type1141}
-	result1143 := _t2000
-	p.recordSpan(int(span_start1142), "MaxMonoid")
-	return result1143
+	_t1998 := &pb.MaxMonoid{Type: type1140}
+	result1142 := _t1998
+	p.recordSpan(int(span_start1141), "MaxMonoid")
+	return result1142
 }
 
 func (p *Parser) parse_sum_monoid() *pb.SumMonoid {
-	span_start1145 := int64(p.spanStart())
+	span_start1144 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("sum")
-	_t2001 := p.parse_type()
-	type1144 := _t2001
+	_t1999 := p.parse_type()
+	type1143 := _t1999
 	p.consumeLiteral(")")
-	_t2002 := &pb.SumMonoid{Type: type1144}
-	result1146 := _t2002
-	p.recordSpan(int(span_start1145), "SumMonoid")
-	return result1146
+	_t2000 := &pb.SumMonoid{Type: type1143}
+	result1145 := _t2000
+	p.recordSpan(int(span_start1144), "SumMonoid")
+	return result1145
 }
 
 func (p *Parser) parse_monus_def() *pb.MonusDef {
-	span_start1151 := int64(p.spanStart())
+	span_start1150 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("monus")
-	_t2003 := p.parse_monoid()
-	monoid1147 := _t2003
-	_t2004 := p.parse_relation_id()
-	relation_id1148 := _t2004
-	_t2005 := p.parse_abstraction_with_arity()
-	abstraction_with_arity1149 := _t2005
-	var _t2006 []*pb.Attribute
+	_t2001 := p.parse_monoid()
+	monoid1146 := _t2001
+	_t2002 := p.parse_relation_id()
+	relation_id1147 := _t2002
+	_t2003 := p.parse_abstraction_with_arity()
+	abstraction_with_arity1148 := _t2003
+	var _t2004 []*pb.Attribute
 	if p.matchLookaheadLiteral("(", 0) {
-		_t2007 := p.parse_attrs()
-		_t2006 = _t2007
+		_t2005 := p.parse_attrs()
+		_t2004 = _t2005
 	}
-	attrs1150 := _t2006
+	attrs1149 := _t2004
 	p.consumeLiteral(")")
-	_t2008 := attrs1150
-	if attrs1150 == nil {
-		_t2008 = []*pb.Attribute{}
+	_t2006 := attrs1149
+	if attrs1149 == nil {
+		_t2006 = []*pb.Attribute{}
 	}
-	_t2009 := &pb.MonusDef{Monoid: monoid1147, Name: relation_id1148, Body: abstraction_with_arity1149[0].(*pb.Abstraction), Attrs: _t2008, ValueArity: abstraction_with_arity1149[1].(int64)}
-	result1152 := _t2009
-	p.recordSpan(int(span_start1151), "MonusDef")
-	return result1152
+	_t2007 := &pb.MonusDef{Monoid: monoid1146, Name: relation_id1147, Body: abstraction_with_arity1148[0].(*pb.Abstraction), Attrs: _t2006, ValueArity: abstraction_with_arity1148[1].(int64)}
+	result1151 := _t2007
+	p.recordSpan(int(span_start1150), "MonusDef")
+	return result1151
 }
 
 func (p *Parser) parse_constraint() *pb.Constraint {
-	span_start1157 := int64(p.spanStart())
+	span_start1156 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("functional_dependency")
-	_t2010 := p.parse_relation_id()
-	relation_id1153 := _t2010
-	_t2011 := p.parse_abstraction()
-	abstraction1154 := _t2011
-	_t2012 := p.parse_functional_dependency_keys()
-	functional_dependency_keys1155 := _t2012
-	_t2013 := p.parse_functional_dependency_values()
-	functional_dependency_values1156 := _t2013
+	_t2008 := p.parse_relation_id()
+	relation_id1152 := _t2008
+	_t2009 := p.parse_abstraction()
+	abstraction1153 := _t2009
+	_t2010 := p.parse_functional_dependency_keys()
+	functional_dependency_keys1154 := _t2010
+	_t2011 := p.parse_functional_dependency_values()
+	functional_dependency_values1155 := _t2011
 	p.consumeLiteral(")")
-	_t2014 := &pb.FunctionalDependency{Guard: abstraction1154, Keys: functional_dependency_keys1155, Values: functional_dependency_values1156}
-	_t2015 := &pb.Constraint{Name: relation_id1153}
-	_t2015.ConstraintType = &pb.Constraint_FunctionalDependency{FunctionalDependency: _t2014}
-	result1158 := _t2015
-	p.recordSpan(int(span_start1157), "Constraint")
-	return result1158
+	_t2012 := &pb.FunctionalDependency{Guard: abstraction1153, Keys: functional_dependency_keys1154, Values: functional_dependency_values1155}
+	_t2013 := &pb.Constraint{Name: relation_id1152}
+	_t2013.ConstraintType = &pb.Constraint_FunctionalDependency{FunctionalDependency: _t2012}
+	result1157 := _t2013
+	p.recordSpan(int(span_start1156), "Constraint")
+	return result1157
 }
 
 func (p *Parser) parse_functional_dependency_keys() []*pb.Var {
 	p.consumeLiteral("(")
 	p.consumeLiteral("keys")
-	xs1159 := []*pb.Var{}
-	cond1160 := p.matchLookaheadTerminal("SYMBOL", 0)
-	for cond1160 {
-		_t2016 := p.parse_var()
-		item1161 := _t2016
-		xs1159 = append(xs1159, item1161)
-		cond1160 = p.matchLookaheadTerminal("SYMBOL", 0)
+	xs1158 := []*pb.Var{}
+	cond1159 := p.matchLookaheadTerminal("SYMBOL", 0)
+	for cond1159 {
+		_t2014 := p.parse_var()
+		item1160 := _t2014
+		xs1158 = append(xs1158, item1160)
+		cond1159 = p.matchLookaheadTerminal("SYMBOL", 0)
 	}
-	vars1162 := xs1159
+	vars1161 := xs1158
 	p.consumeLiteral(")")
-	return vars1162
+	return vars1161
 }
 
 func (p *Parser) parse_functional_dependency_values() []*pb.Var {
 	p.consumeLiteral("(")
 	p.consumeLiteral("values")
-	xs1163 := []*pb.Var{}
-	cond1164 := p.matchLookaheadTerminal("SYMBOL", 0)
-	for cond1164 {
-		_t2017 := p.parse_var()
-		item1165 := _t2017
-		xs1163 = append(xs1163, item1165)
-		cond1164 = p.matchLookaheadTerminal("SYMBOL", 0)
+	xs1162 := []*pb.Var{}
+	cond1163 := p.matchLookaheadTerminal("SYMBOL", 0)
+	for cond1163 {
+		_t2015 := p.parse_var()
+		item1164 := _t2015
+		xs1162 = append(xs1162, item1164)
+		cond1163 = p.matchLookaheadTerminal("SYMBOL", 0)
 	}
-	vars1166 := xs1163
+	vars1165 := xs1162
 	p.consumeLiteral(")")
-	return vars1166
+	return vars1165
 }
 
 func (p *Parser) parse_data() *pb.Data {
-	span_start1172 := int64(p.spanStart())
-	var _t2018 int64
+	span_start1171 := int64(p.spanStart())
+	var _t2016 int64
 	if p.matchLookaheadLiteral("(", 0) {
-		var _t2019 int64
+		var _t2017 int64
 		if p.matchLookaheadLiteral("iceberg_data", 1) {
-			_t2019 = 3
+			_t2017 = 3
 		} else {
-			var _t2020 int64
+			var _t2018 int64
 			if p.matchLookaheadLiteral("edb", 1) {
-				_t2020 = 0
+				_t2018 = 0
 			} else {
-				var _t2021 int64
+				var _t2019 int64
 				if p.matchLookaheadLiteral("csv_data", 1) {
-					_t2021 = 2
+					_t2019 = 2
 				} else {
-					var _t2022 int64
+					var _t2020 int64
 					if p.matchLookaheadLiteral("betree_relation", 1) {
-						_t2022 = 1
+						_t2020 = 1
 					} else {
-						_t2022 = -1
+						_t2020 = -1
 					}
-					_t2021 = _t2022
+					_t2019 = _t2020
 				}
-				_t2020 = _t2021
+				_t2018 = _t2019
 			}
-			_t2019 = _t2020
+			_t2017 = _t2018
 		}
-		_t2018 = _t2019
+		_t2016 = _t2017
 	} else {
-		_t2018 = -1
+		_t2016 = -1
 	}
-	prediction1167 := _t2018
-	var _t2023 *pb.Data
-	if prediction1167 == 3 {
-		_t2024 := p.parse_iceberg_data()
-		iceberg_data1171 := _t2024
-		_t2025 := &pb.Data{}
-		_t2025.DataType = &pb.Data_IcebergData{IcebergData: iceberg_data1171}
-		_t2023 = _t2025
+	prediction1166 := _t2016
+	var _t2021 *pb.Data
+	if prediction1166 == 3 {
+		_t2022 := p.parse_iceberg_data()
+		iceberg_data1170 := _t2022
+		_t2023 := &pb.Data{}
+		_t2023.DataType = &pb.Data_IcebergData{IcebergData: iceberg_data1170}
+		_t2021 = _t2023
 	} else {
-		var _t2026 *pb.Data
-		if prediction1167 == 2 {
-			_t2027 := p.parse_csv_data()
-			csv_data1170 := _t2027
-			_t2028 := &pb.Data{}
-			_t2028.DataType = &pb.Data_CsvData{CsvData: csv_data1170}
-			_t2026 = _t2028
+		var _t2024 *pb.Data
+		if prediction1166 == 2 {
+			_t2025 := p.parse_csv_data()
+			csv_data1169 := _t2025
+			_t2026 := &pb.Data{}
+			_t2026.DataType = &pb.Data_CsvData{CsvData: csv_data1169}
+			_t2024 = _t2026
 		} else {
-			var _t2029 *pb.Data
-			if prediction1167 == 1 {
-				_t2030 := p.parse_betree_relation()
-				betree_relation1169 := _t2030
-				_t2031 := &pb.Data{}
-				_t2031.DataType = &pb.Data_BetreeRelation{BetreeRelation: betree_relation1169}
-				_t2029 = _t2031
+			var _t2027 *pb.Data
+			if prediction1166 == 1 {
+				_t2028 := p.parse_betree_relation()
+				betree_relation1168 := _t2028
+				_t2029 := &pb.Data{}
+				_t2029.DataType = &pb.Data_BetreeRelation{BetreeRelation: betree_relation1168}
+				_t2027 = _t2029
 			} else {
-				var _t2032 *pb.Data
-				if prediction1167 == 0 {
-					_t2033 := p.parse_edb()
-					edb1168 := _t2033
-					_t2034 := &pb.Data{}
-					_t2034.DataType = &pb.Data_Edb{Edb: edb1168}
-					_t2032 = _t2034
+				var _t2030 *pb.Data
+				if prediction1166 == 0 {
+					_t2031 := p.parse_edb()
+					edb1167 := _t2031
+					_t2032 := &pb.Data{}
+					_t2032.DataType = &pb.Data_Edb{Edb: edb1167}
+					_t2030 = _t2032
 				} else {
 					panic(ParseError{msg: fmt.Sprintf("%s: %s=`%v`", "Unexpected token in data", p.lookahead(0).Type, p.lookahead(0).Value)})
 				}
-				_t2029 = _t2032
+				_t2027 = _t2030
 			}
-			_t2026 = _t2029
+			_t2024 = _t2027
 		}
-		_t2023 = _t2026
+		_t2021 = _t2024
 	}
-	result1173 := _t2023
-	p.recordSpan(int(span_start1172), "Data")
-	return result1173
+	result1172 := _t2021
+	p.recordSpan(int(span_start1171), "Data")
+	return result1172
 }
 
 func (p *Parser) parse_edb() *pb.EDB {
-	span_start1177 := int64(p.spanStart())
+	span_start1176 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("edb")
-	_t2035 := p.parse_relation_id()
-	relation_id1174 := _t2035
-	_t2036 := p.parse_edb_path()
-	edb_path1175 := _t2036
-	_t2037 := p.parse_edb_types()
-	edb_types1176 := _t2037
+	_t2033 := p.parse_relation_id()
+	relation_id1173 := _t2033
+	_t2034 := p.parse_edb_path()
+	edb_path1174 := _t2034
+	_t2035 := p.parse_edb_types()
+	edb_types1175 := _t2035
 	p.consumeLiteral(")")
-	_t2038 := &pb.EDB{TargetId: relation_id1174, Path: edb_path1175, Types: edb_types1176}
-	result1178 := _t2038
-	p.recordSpan(int(span_start1177), "EDB")
-	return result1178
+	_t2036 := &pb.EDB{TargetId: relation_id1173, Path: edb_path1174, Types: edb_types1175}
+	result1177 := _t2036
+	p.recordSpan(int(span_start1176), "EDB")
+	return result1177
 }
 
 func (p *Parser) parse_edb_path() []string {
 	p.consumeLiteral("[")
-	xs1179 := []string{}
-	cond1180 := p.matchLookaheadTerminal("STRING", 0)
-	for cond1180 {
-		item1181 := p.consumeTerminal("STRING").Value.str
-		xs1179 = append(xs1179, item1181)
-		cond1180 = p.matchLookaheadTerminal("STRING", 0)
+	xs1178 := []string{}
+	cond1179 := p.matchLookaheadTerminal("STRING", 0)
+	for cond1179 {
+		item1180 := p.consumeTerminal("STRING").Value.str
+		xs1178 = append(xs1178, item1180)
+		cond1179 = p.matchLookaheadTerminal("STRING", 0)
 	}
-	strings1182 := xs1179
+	strings1181 := xs1178
 	p.consumeLiteral("]")
-	return strings1182
+	return strings1181
 }
 
 func (p *Parser) parse_edb_types() []*pb.Type {
 	p.consumeLiteral("[")
-	xs1183 := []*pb.Type{}
-	cond1184 := (((((((((((((p.matchLookaheadLiteral("(", 0) || p.matchLookaheadLiteral("BOOLEAN", 0)) || p.matchLookaheadLiteral("DATE", 0)) || p.matchLookaheadLiteral("DATETIME", 0)) || p.matchLookaheadLiteral("FLOAT", 0)) || p.matchLookaheadLiteral("FLOAT32", 0)) || p.matchLookaheadLiteral("INT", 0)) || p.matchLookaheadLiteral("INT128", 0)) || p.matchLookaheadLiteral("INT32", 0)) || p.matchLookaheadLiteral("MISSING", 0)) || p.matchLookaheadLiteral("STRING", 0)) || p.matchLookaheadLiteral("UINT128", 0)) || p.matchLookaheadLiteral("UINT32", 0)) || p.matchLookaheadLiteral("UNKNOWN", 0))
-	for cond1184 {
-		_t2039 := p.parse_type()
-		item1185 := _t2039
-		xs1183 = append(xs1183, item1185)
-		cond1184 = (((((((((((((p.matchLookaheadLiteral("(", 0) || p.matchLookaheadLiteral("BOOLEAN", 0)) || p.matchLookaheadLiteral("DATE", 0)) || p.matchLookaheadLiteral("DATETIME", 0)) || p.matchLookaheadLiteral("FLOAT", 0)) || p.matchLookaheadLiteral("FLOAT32", 0)) || p.matchLookaheadLiteral("INT", 0)) || p.matchLookaheadLiteral("INT128", 0)) || p.matchLookaheadLiteral("INT32", 0)) || p.matchLookaheadLiteral("MISSING", 0)) || p.matchLookaheadLiteral("STRING", 0)) || p.matchLookaheadLiteral("UINT128", 0)) || p.matchLookaheadLiteral("UINT32", 0)) || p.matchLookaheadLiteral("UNKNOWN", 0))
+	xs1182 := []*pb.Type{}
+	cond1183 := (((((((((((((p.matchLookaheadLiteral("(", 0) || p.matchLookaheadLiteral("BOOLEAN", 0)) || p.matchLookaheadLiteral("DATE", 0)) || p.matchLookaheadLiteral("DATETIME", 0)) || p.matchLookaheadLiteral("FLOAT", 0)) || p.matchLookaheadLiteral("FLOAT32", 0)) || p.matchLookaheadLiteral("INT", 0)) || p.matchLookaheadLiteral("INT128", 0)) || p.matchLookaheadLiteral("INT32", 0)) || p.matchLookaheadLiteral("MISSING", 0)) || p.matchLookaheadLiteral("STRING", 0)) || p.matchLookaheadLiteral("UINT128", 0)) || p.matchLookaheadLiteral("UINT32", 0)) || p.matchLookaheadLiteral("UNKNOWN", 0))
+	for cond1183 {
+		_t2037 := p.parse_type()
+		item1184 := _t2037
+		xs1182 = append(xs1182, item1184)
+		cond1183 = (((((((((((((p.matchLookaheadLiteral("(", 0) || p.matchLookaheadLiteral("BOOLEAN", 0)) || p.matchLookaheadLiteral("DATE", 0)) || p.matchLookaheadLiteral("DATETIME", 0)) || p.matchLookaheadLiteral("FLOAT", 0)) || p.matchLookaheadLiteral("FLOAT32", 0)) || p.matchLookaheadLiteral("INT", 0)) || p.matchLookaheadLiteral("INT128", 0)) || p.matchLookaheadLiteral("INT32", 0)) || p.matchLookaheadLiteral("MISSING", 0)) || p.matchLookaheadLiteral("STRING", 0)) || p.matchLookaheadLiteral("UINT128", 0)) || p.matchLookaheadLiteral("UINT32", 0)) || p.matchLookaheadLiteral("UNKNOWN", 0))
 	}
-	types1186 := xs1183
+	types1185 := xs1182
 	p.consumeLiteral("]")
-	return types1186
+	return types1185
 }
 
 func (p *Parser) parse_betree_relation() *pb.BeTreeRelation {
-	span_start1189 := int64(p.spanStart())
+	span_start1188 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("betree_relation")
-	_t2040 := p.parse_relation_id()
-	relation_id1187 := _t2040
-	_t2041 := p.parse_betree_info()
-	betree_info1188 := _t2041
+	_t2038 := p.parse_relation_id()
+	relation_id1186 := _t2038
+	_t2039 := p.parse_betree_info()
+	betree_info1187 := _t2039
 	p.consumeLiteral(")")
-	_t2042 := &pb.BeTreeRelation{Name: relation_id1187, RelationInfo: betree_info1188}
-	result1190 := _t2042
-	p.recordSpan(int(span_start1189), "BeTreeRelation")
-	return result1190
+	_t2040 := &pb.BeTreeRelation{Name: relation_id1186, RelationInfo: betree_info1187}
+	result1189 := _t2040
+	p.recordSpan(int(span_start1188), "BeTreeRelation")
+	return result1189
 }
 
 func (p *Parser) parse_betree_info() *pb.BeTreeInfo {
-	span_start1194 := int64(p.spanStart())
+	span_start1193 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("betree_info")
-	_t2043 := p.parse_betree_info_key_types()
-	betree_info_key_types1191 := _t2043
-	_t2044 := p.parse_betree_info_value_types()
-	betree_info_value_types1192 := _t2044
-	_t2045 := p.parse_config_dict()
-	config_dict1193 := _t2045
+	_t2041 := p.parse_betree_info_key_types()
+	betree_info_key_types1190 := _t2041
+	_t2042 := p.parse_betree_info_value_types()
+	betree_info_value_types1191 := _t2042
+	_t2043 := p.parse_config_dict()
+	config_dict1192 := _t2043
 	p.consumeLiteral(")")
-	_t2046 := p.construct_betree_info(betree_info_key_types1191, betree_info_value_types1192, config_dict1193)
-	result1195 := _t2046
-	p.recordSpan(int(span_start1194), "BeTreeInfo")
-	return result1195
+	_t2044 := p.construct_betree_info(betree_info_key_types1190, betree_info_value_types1191, config_dict1192)
+	result1194 := _t2044
+	p.recordSpan(int(span_start1193), "BeTreeInfo")
+	return result1194
 }
 
 func (p *Parser) parse_betree_info_key_types() []*pb.Type {
 	p.consumeLiteral("(")
 	p.consumeLiteral("key_types")
-	xs1196 := []*pb.Type{}
-	cond1197 := (((((((((((((p.matchLookaheadLiteral("(", 0) || p.matchLookaheadLiteral("BOOLEAN", 0)) || p.matchLookaheadLiteral("DATE", 0)) || p.matchLookaheadLiteral("DATETIME", 0)) || p.matchLookaheadLiteral("FLOAT", 0)) || p.matchLookaheadLiteral("FLOAT32", 0)) || p.matchLookaheadLiteral("INT", 0)) || p.matchLookaheadLiteral("INT128", 0)) || p.matchLookaheadLiteral("INT32", 0)) || p.matchLookaheadLiteral("MISSING", 0)) || p.matchLookaheadLiteral("STRING", 0)) || p.matchLookaheadLiteral("UINT128", 0)) || p.matchLookaheadLiteral("UINT32", 0)) || p.matchLookaheadLiteral("UNKNOWN", 0))
-	for cond1197 {
-		_t2047 := p.parse_type()
-		item1198 := _t2047
-		xs1196 = append(xs1196, item1198)
-		cond1197 = (((((((((((((p.matchLookaheadLiteral("(", 0) || p.matchLookaheadLiteral("BOOLEAN", 0)) || p.matchLookaheadLiteral("DATE", 0)) || p.matchLookaheadLiteral("DATETIME", 0)) || p.matchLookaheadLiteral("FLOAT", 0)) || p.matchLookaheadLiteral("FLOAT32", 0)) || p.matchLookaheadLiteral("INT", 0)) || p.matchLookaheadLiteral("INT128", 0)) || p.matchLookaheadLiteral("INT32", 0)) || p.matchLookaheadLiteral("MISSING", 0)) || p.matchLookaheadLiteral("STRING", 0)) || p.matchLookaheadLiteral("UINT128", 0)) || p.matchLookaheadLiteral("UINT32", 0)) || p.matchLookaheadLiteral("UNKNOWN", 0))
+	xs1195 := []*pb.Type{}
+	cond1196 := (((((((((((((p.matchLookaheadLiteral("(", 0) || p.matchLookaheadLiteral("BOOLEAN", 0)) || p.matchLookaheadLiteral("DATE", 0)) || p.matchLookaheadLiteral("DATETIME", 0)) || p.matchLookaheadLiteral("FLOAT", 0)) || p.matchLookaheadLiteral("FLOAT32", 0)) || p.matchLookaheadLiteral("INT", 0)) || p.matchLookaheadLiteral("INT128", 0)) || p.matchLookaheadLiteral("INT32", 0)) || p.matchLookaheadLiteral("MISSING", 0)) || p.matchLookaheadLiteral("STRING", 0)) || p.matchLookaheadLiteral("UINT128", 0)) || p.matchLookaheadLiteral("UINT32", 0)) || p.matchLookaheadLiteral("UNKNOWN", 0))
+	for cond1196 {
+		_t2045 := p.parse_type()
+		item1197 := _t2045
+		xs1195 = append(xs1195, item1197)
+		cond1196 = (((((((((((((p.matchLookaheadLiteral("(", 0) || p.matchLookaheadLiteral("BOOLEAN", 0)) || p.matchLookaheadLiteral("DATE", 0)) || p.matchLookaheadLiteral("DATETIME", 0)) || p.matchLookaheadLiteral("FLOAT", 0)) || p.matchLookaheadLiteral("FLOAT32", 0)) || p.matchLookaheadLiteral("INT", 0)) || p.matchLookaheadLiteral("INT128", 0)) || p.matchLookaheadLiteral("INT32", 0)) || p.matchLookaheadLiteral("MISSING", 0)) || p.matchLookaheadLiteral("STRING", 0)) || p.matchLookaheadLiteral("UINT128", 0)) || p.matchLookaheadLiteral("UINT32", 0)) || p.matchLookaheadLiteral("UNKNOWN", 0))
 	}
-	types1199 := xs1196
+	types1198 := xs1195
 	p.consumeLiteral(")")
-	return types1199
+	return types1198
 }
 
 func (p *Parser) parse_betree_info_value_types() []*pb.Type {
 	p.consumeLiteral("(")
 	p.consumeLiteral("value_types")
-	xs1200 := []*pb.Type{}
-	cond1201 := (((((((((((((p.matchLookaheadLiteral("(", 0) || p.matchLookaheadLiteral("BOOLEAN", 0)) || p.matchLookaheadLiteral("DATE", 0)) || p.matchLookaheadLiteral("DATETIME", 0)) || p.matchLookaheadLiteral("FLOAT", 0)) || p.matchLookaheadLiteral("FLOAT32", 0)) || p.matchLookaheadLiteral("INT", 0)) || p.matchLookaheadLiteral("INT128", 0)) || p.matchLookaheadLiteral("INT32", 0)) || p.matchLookaheadLiteral("MISSING", 0)) || p.matchLookaheadLiteral("STRING", 0)) || p.matchLookaheadLiteral("UINT128", 0)) || p.matchLookaheadLiteral("UINT32", 0)) || p.matchLookaheadLiteral("UNKNOWN", 0))
-	for cond1201 {
-		_t2048 := p.parse_type()
-		item1202 := _t2048
-		xs1200 = append(xs1200, item1202)
-		cond1201 = (((((((((((((p.matchLookaheadLiteral("(", 0) || p.matchLookaheadLiteral("BOOLEAN", 0)) || p.matchLookaheadLiteral("DATE", 0)) || p.matchLookaheadLiteral("DATETIME", 0)) || p.matchLookaheadLiteral("FLOAT", 0)) || p.matchLookaheadLiteral("FLOAT32", 0)) || p.matchLookaheadLiteral("INT", 0)) || p.matchLookaheadLiteral("INT128", 0)) || p.matchLookaheadLiteral("INT32", 0)) || p.matchLookaheadLiteral("MISSING", 0)) || p.matchLookaheadLiteral("STRING", 0)) || p.matchLookaheadLiteral("UINT128", 0)) || p.matchLookaheadLiteral("UINT32", 0)) || p.matchLookaheadLiteral("UNKNOWN", 0))
+	xs1199 := []*pb.Type{}
+	cond1200 := (((((((((((((p.matchLookaheadLiteral("(", 0) || p.matchLookaheadLiteral("BOOLEAN", 0)) || p.matchLookaheadLiteral("DATE", 0)) || p.matchLookaheadLiteral("DATETIME", 0)) || p.matchLookaheadLiteral("FLOAT", 0)) || p.matchLookaheadLiteral("FLOAT32", 0)) || p.matchLookaheadLiteral("INT", 0)) || p.matchLookaheadLiteral("INT128", 0)) || p.matchLookaheadLiteral("INT32", 0)) || p.matchLookaheadLiteral("MISSING", 0)) || p.matchLookaheadLiteral("STRING", 0)) || p.matchLookaheadLiteral("UINT128", 0)) || p.matchLookaheadLiteral("UINT32", 0)) || p.matchLookaheadLiteral("UNKNOWN", 0))
+	for cond1200 {
+		_t2046 := p.parse_type()
+		item1201 := _t2046
+		xs1199 = append(xs1199, item1201)
+		cond1200 = (((((((((((((p.matchLookaheadLiteral("(", 0) || p.matchLookaheadLiteral("BOOLEAN", 0)) || p.matchLookaheadLiteral("DATE", 0)) || p.matchLookaheadLiteral("DATETIME", 0)) || p.matchLookaheadLiteral("FLOAT", 0)) || p.matchLookaheadLiteral("FLOAT32", 0)) || p.matchLookaheadLiteral("INT", 0)) || p.matchLookaheadLiteral("INT128", 0)) || p.matchLookaheadLiteral("INT32", 0)) || p.matchLookaheadLiteral("MISSING", 0)) || p.matchLookaheadLiteral("STRING", 0)) || p.matchLookaheadLiteral("UINT128", 0)) || p.matchLookaheadLiteral("UINT32", 0)) || p.matchLookaheadLiteral("UNKNOWN", 0))
 	}
-	types1203 := xs1200
+	types1202 := xs1199
 	p.consumeLiteral(")")
-	return types1203
+	return types1202
 }
 
 func (p *Parser) parse_csv_data() *pb.CSVData {
-	span_start1209 := int64(p.spanStart())
+	span_start1208 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("csv_data")
-	_t2049 := p.parse_csvlocator()
-	csvlocator1204 := _t2049
-	_t2050 := p.parse_csv_config()
-	csv_config1205 := _t2050
-	var _t2051 []*pb.GNFColumn
+	_t2047 := p.parse_csvlocator()
+	csvlocator1203 := _t2047
+	_t2048 := p.parse_csv_config()
+	csv_config1204 := _t2048
+	var _t2049 []*pb.GNFColumn
 	if (p.matchLookaheadLiteral("(", 0) && p.matchLookaheadLiteral("columns", 1)) {
-		_t2052 := p.parse_gnf_columns()
+		_t2050 := p.parse_gnf_columns()
+		_t2049 = _t2050
+	}
+	gnf_columns1205 := _t2049
+	var _t2051 *pb.TargetRelations
+	if (p.matchLookaheadLiteral("(", 0) && p.matchLookaheadLiteral("relations", 1)) {
+		_t2052 := p.parse_target_relations()
 		_t2051 = _t2052
 	}
-	gnf_columns1206 := _t2051
-	var _t2053 *pb.TargetRelations
-	if (p.matchLookaheadLiteral("(", 0) && p.matchLookaheadLiteral("relations", 1)) {
-		_t2054 := p.parse_target_relations()
-		_t2053 = _t2054
-	}
-	target_relations1207 := _t2053
-	_t2055 := p.parse_csv_asof()
-	csv_asof1208 := _t2055
+	target_relations1206 := _t2051
+	_t2053 := p.parse_csv_asof()
+	csv_asof1207 := _t2053
 	p.consumeLiteral(")")
-	_t2056 := p.construct_csv_data(csvlocator1204, csv_config1205, gnf_columns1206, target_relations1207, csv_asof1208)
-	result1210 := _t2056
-	p.recordSpan(int(span_start1209), "CSVData")
-	return result1210
+	_t2054 := p.construct_csv_data(csvlocator1203, csv_config1204, gnf_columns1205, target_relations1206, csv_asof1207)
+	result1209 := _t2054
+	p.recordSpan(int(span_start1208), "CSVData")
+	return result1209
 }
 
 func (p *Parser) parse_csvlocator() *pb.CSVLocator {
-	span_start1213 := int64(p.spanStart())
+	span_start1212 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("csv_locator")
-	var _t2057 []string
+	var _t2055 []string
 	if (p.matchLookaheadLiteral("(", 0) && p.matchLookaheadLiteral("paths", 1)) {
-		_t2058 := p.parse_csv_locator_paths()
-		_t2057 = _t2058
+		_t2056 := p.parse_csv_locator_paths()
+		_t2055 = _t2056
 	}
-	csv_locator_paths1211 := _t2057
-	var _t2059 *string
+	csv_locator_paths1210 := _t2055
+	var _t2057 *string
 	if p.matchLookaheadLiteral("(", 0) {
-		_t2060 := p.parse_csv_locator_inline_data()
-		_t2059 = ptr(_t2060)
+		_t2058 := p.parse_csv_locator_inline_data()
+		_t2057 = ptr(_t2058)
 	}
-	csv_locator_inline_data1212 := _t2059
+	csv_locator_inline_data1211 := _t2057
 	p.consumeLiteral(")")
-	_t2061 := csv_locator_paths1211
-	if csv_locator_paths1211 == nil {
-		_t2061 = []string{}
+	_t2059 := csv_locator_paths1210
+	if csv_locator_paths1210 == nil {
+		_t2059 = []string{}
 	}
-	_t2062 := &pb.CSVLocator{Paths: _t2061, InlineData: []byte(deref(csv_locator_inline_data1212, ""))}
-	result1214 := _t2062
-	p.recordSpan(int(span_start1213), "CSVLocator")
-	return result1214
+	_t2060 := &pb.CSVLocator{Paths: _t2059, InlineData: []byte(deref(csv_locator_inline_data1211, ""))}
+	result1213 := _t2060
+	p.recordSpan(int(span_start1212), "CSVLocator")
+	return result1213
 }
 
 func (p *Parser) parse_csv_locator_paths() []string {
 	p.consumeLiteral("(")
 	p.consumeLiteral("paths")
-	xs1215 := []string{}
-	cond1216 := p.matchLookaheadTerminal("STRING", 0)
-	for cond1216 {
-		item1217 := p.consumeTerminal("STRING").Value.str
-		xs1215 = append(xs1215, item1217)
-		cond1216 = p.matchLookaheadTerminal("STRING", 0)
+	xs1214 := []string{}
+	cond1215 := p.matchLookaheadTerminal("STRING", 0)
+	for cond1215 {
+		item1216 := p.consumeTerminal("STRING").Value.str
+		xs1214 = append(xs1214, item1216)
+		cond1215 = p.matchLookaheadTerminal("STRING", 0)
 	}
-	strings1218 := xs1215
+	strings1217 := xs1214
 	p.consumeLiteral(")")
-	return strings1218
+	return strings1217
 }
 
 func (p *Parser) parse_csv_locator_inline_data() string {
 	p.consumeLiteral("(")
 	p.consumeLiteral("inline_data")
-	formatted_string1219 := p.consumeTerminal("STRING").Value.str
+	formatted_string1218 := p.consumeTerminal("STRING").Value.str
 	p.consumeLiteral(")")
-	return formatted_string1219
+	return formatted_string1218
 }
 
 func (p *Parser) parse_csv_config() *pb.CSVConfig {
-	span_start1222 := int64(p.spanStart())
+	span_start1221 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("csv_config")
-	_t2063 := p.parse_config_dict()
-	config_dict1220 := _t2063
-	var _t2064 [][]interface{}
+	_t2061 := p.parse_config_dict()
+	config_dict1219 := _t2061
+	var _t2062 [][]interface{}
 	if p.matchLookaheadLiteral("(", 0) {
-		_t2065 := p.parse__storage_integration()
-		_t2064 = _t2065
+		_t2063 := p.parse__storage_integration()
+		_t2062 = _t2063
 	}
-	_storage_integration1221 := _t2064
+	_storage_integration1220 := _t2062
 	p.consumeLiteral(")")
-	_t2066 := p.construct_csv_config(config_dict1220, _storage_integration1221)
-	result1223 := _t2066
-	p.recordSpan(int(span_start1222), "CSVConfig")
-	return result1223
+	_t2064 := p.construct_csv_config(config_dict1219, _storage_integration1220)
+	result1222 := _t2064
+	p.recordSpan(int(span_start1221), "CSVConfig")
+	return result1222
 }
 
 func (p *Parser) parse__storage_integration() [][]interface{} {
 	p.consumeLiteral("(")
 	p.consumeLiteral("storage_integration")
-	_t2067 := p.parse_config_dict()
-	config_dict1224 := _t2067
+	_t2065 := p.parse_config_dict()
+	config_dict1223 := _t2065
 	p.consumeLiteral(")")
-	return config_dict1224
+	return config_dict1223
 }
 
 func (p *Parser) parse_gnf_columns() []*pb.GNFColumn {
 	p.consumeLiteral("(")
 	p.consumeLiteral("columns")
-	xs1225 := []*pb.GNFColumn{}
-	cond1226 := p.matchLookaheadLiteral("(", 0)
-	for cond1226 {
-		_t2068 := p.parse_gnf_column()
-		item1227 := _t2068
-		xs1225 = append(xs1225, item1227)
-		cond1226 = p.matchLookaheadLiteral("(", 0)
+	xs1224 := []*pb.GNFColumn{}
+	cond1225 := p.matchLookaheadLiteral("(", 0)
+	for cond1225 {
+		_t2066 := p.parse_gnf_column()
+		item1226 := _t2066
+		xs1224 = append(xs1224, item1226)
+		cond1225 = p.matchLookaheadLiteral("(", 0)
 	}
-	gnf_columns1228 := xs1225
+	gnf_columns1227 := xs1224
 	p.consumeLiteral(")")
-	return gnf_columns1228
+	return gnf_columns1227
 }
 
 func (p *Parser) parse_gnf_column() *pb.GNFColumn {
-	span_start1235 := int64(p.spanStart())
+	span_start1234 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("column")
-	_t2069 := p.parse_gnf_column_path()
-	gnf_column_path1229 := _t2069
-	var _t2070 *pb.RelationId
+	_t2067 := p.parse_gnf_column_path()
+	gnf_column_path1228 := _t2067
+	var _t2068 *pb.RelationId
 	if (p.matchLookaheadLiteral(":", 0) || p.matchLookaheadTerminal("UINT128", 0)) {
-		_t2071 := p.parse_relation_id()
-		_t2070 = _t2071
+		_t2069 := p.parse_relation_id()
+		_t2068 = _t2069
 	}
-	relation_id1230 := _t2070
+	relation_id1229 := _t2068
 	p.consumeLiteral("[")
-	xs1231 := []*pb.Type{}
-	cond1232 := (((((((((((((p.matchLookaheadLiteral("(", 0) || p.matchLookaheadLiteral("BOOLEAN", 0)) || p.matchLookaheadLiteral("DATE", 0)) || p.matchLookaheadLiteral("DATETIME", 0)) || p.matchLookaheadLiteral("FLOAT", 0)) || p.matchLookaheadLiteral("FLOAT32", 0)) || p.matchLookaheadLiteral("INT", 0)) || p.matchLookaheadLiteral("INT128", 0)) || p.matchLookaheadLiteral("INT32", 0)) || p.matchLookaheadLiteral("MISSING", 0)) || p.matchLookaheadLiteral("STRING", 0)) || p.matchLookaheadLiteral("UINT128", 0)) || p.matchLookaheadLiteral("UINT32", 0)) || p.matchLookaheadLiteral("UNKNOWN", 0))
-	for cond1232 {
-		_t2072 := p.parse_type()
-		item1233 := _t2072
-		xs1231 = append(xs1231, item1233)
-		cond1232 = (((((((((((((p.matchLookaheadLiteral("(", 0) || p.matchLookaheadLiteral("BOOLEAN", 0)) || p.matchLookaheadLiteral("DATE", 0)) || p.matchLookaheadLiteral("DATETIME", 0)) || p.matchLookaheadLiteral("FLOAT", 0)) || p.matchLookaheadLiteral("FLOAT32", 0)) || p.matchLookaheadLiteral("INT", 0)) || p.matchLookaheadLiteral("INT128", 0)) || p.matchLookaheadLiteral("INT32", 0)) || p.matchLookaheadLiteral("MISSING", 0)) || p.matchLookaheadLiteral("STRING", 0)) || p.matchLookaheadLiteral("UINT128", 0)) || p.matchLookaheadLiteral("UINT32", 0)) || p.matchLookaheadLiteral("UNKNOWN", 0))
+	xs1230 := []*pb.Type{}
+	cond1231 := (((((((((((((p.matchLookaheadLiteral("(", 0) || p.matchLookaheadLiteral("BOOLEAN", 0)) || p.matchLookaheadLiteral("DATE", 0)) || p.matchLookaheadLiteral("DATETIME", 0)) || p.matchLookaheadLiteral("FLOAT", 0)) || p.matchLookaheadLiteral("FLOAT32", 0)) || p.matchLookaheadLiteral("INT", 0)) || p.matchLookaheadLiteral("INT128", 0)) || p.matchLookaheadLiteral("INT32", 0)) || p.matchLookaheadLiteral("MISSING", 0)) || p.matchLookaheadLiteral("STRING", 0)) || p.matchLookaheadLiteral("UINT128", 0)) || p.matchLookaheadLiteral("UINT32", 0)) || p.matchLookaheadLiteral("UNKNOWN", 0))
+	for cond1231 {
+		_t2070 := p.parse_type()
+		item1232 := _t2070
+		xs1230 = append(xs1230, item1232)
+		cond1231 = (((((((((((((p.matchLookaheadLiteral("(", 0) || p.matchLookaheadLiteral("BOOLEAN", 0)) || p.matchLookaheadLiteral("DATE", 0)) || p.matchLookaheadLiteral("DATETIME", 0)) || p.matchLookaheadLiteral("FLOAT", 0)) || p.matchLookaheadLiteral("FLOAT32", 0)) || p.matchLookaheadLiteral("INT", 0)) || p.matchLookaheadLiteral("INT128", 0)) || p.matchLookaheadLiteral("INT32", 0)) || p.matchLookaheadLiteral("MISSING", 0)) || p.matchLookaheadLiteral("STRING", 0)) || p.matchLookaheadLiteral("UINT128", 0)) || p.matchLookaheadLiteral("UINT32", 0)) || p.matchLookaheadLiteral("UNKNOWN", 0))
 	}
-	types1234 := xs1231
+	types1233 := xs1230
 	p.consumeLiteral("]")
 	p.consumeLiteral(")")
-	_t2073 := &pb.GNFColumn{ColumnPath: gnf_column_path1229, TargetId: relation_id1230, Types: types1234}
-	result1236 := _t2073
-	p.recordSpan(int(span_start1235), "GNFColumn")
-	return result1236
+	_t2071 := &pb.GNFColumn{ColumnPath: gnf_column_path1228, TargetId: relation_id1229, Types: types1233}
+	result1235 := _t2071
+	p.recordSpan(int(span_start1234), "GNFColumn")
+	return result1235
 }
 
 func (p *Parser) parse_gnf_column_path() []string {
-	var _t2074 int64
+	var _t2072 int64
 	if p.matchLookaheadLiteral("[", 0) {
-		_t2074 = 1
+		_t2072 = 1
 	} else {
-		var _t2075 int64
+		var _t2073 int64
 		if p.matchLookaheadTerminal("STRING", 0) {
-			_t2075 = 0
+			_t2073 = 0
 		} else {
-			_t2075 = -1
+			_t2073 = -1
 		}
-		_t2074 = _t2075
+		_t2072 = _t2073
 	}
-	prediction1237 := _t2074
-	var _t2076 []string
-	if prediction1237 == 1 {
+	prediction1236 := _t2072
+	var _t2074 []string
+	if prediction1236 == 1 {
 		p.consumeLiteral("[")
-		xs1239 := []string{}
-		cond1240 := p.matchLookaheadTerminal("STRING", 0)
-		for cond1240 {
-			item1241 := p.consumeTerminal("STRING").Value.str
-			xs1239 = append(xs1239, item1241)
-			cond1240 = p.matchLookaheadTerminal("STRING", 0)
+		xs1238 := []string{}
+		cond1239 := p.matchLookaheadTerminal("STRING", 0)
+		for cond1239 {
+			item1240 := p.consumeTerminal("STRING").Value.str
+			xs1238 = append(xs1238, item1240)
+			cond1239 = p.matchLookaheadTerminal("STRING", 0)
 		}
-		strings1242 := xs1239
+		strings1241 := xs1238
 		p.consumeLiteral("]")
-		_t2076 = strings1242
+		_t2074 = strings1241
 	} else {
-		var _t2077 []string
-		if prediction1237 == 0 {
-			string1238 := p.consumeTerminal("STRING").Value.str
-			_ = string1238
-			_t2077 = []string{string1238}
+		var _t2075 []string
+		if prediction1236 == 0 {
+			string1237 := p.consumeTerminal("STRING").Value.str
+			_ = string1237
+			_t2075 = []string{string1237}
 		} else {
 			panic(ParseError{msg: fmt.Sprintf("%s: %s=`%v`", "Unexpected token in gnf_column_path", p.lookahead(0).Type, p.lookahead(0).Value)})
 		}
-		_t2076 = _t2077
+		_t2074 = _t2075
 	}
-	return _t2076
+	return _t2074
 }
 
 func (p *Parser) parse_target_relations() *pb.TargetRelations {
-	span_start1245 := int64(p.spanStart())
+	span_start1244 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("relations")
-	_t2078 := p.parse_relation_keys()
-	relation_keys1243 := _t2078
-	_t2079 := p.parse_relation_body()
-	relation_body1244 := _t2079
+	_t2076 := p.parse_relation_keys()
+	relation_keys1242 := _t2076
+	_t2077 := p.parse_relation_body()
+	relation_body1243 := _t2077
 	p.consumeLiteral(")")
-	_t2080 := p.construct_relations(relation_keys1243, relation_body1244)
-	result1246 := _t2080
-	p.recordSpan(int(span_start1245), "TargetRelations")
-	return result1246
+	_t2078 := p.construct_relations(relation_keys1242, relation_body1243)
+	result1245 := _t2078
+	p.recordSpan(int(span_start1244), "TargetRelations")
+	return result1245
 }
 
 func (p *Parser) parse_relation_keys() []interface{} {
-	var _t2081 int64
+	var _t2079 int64
 	if p.matchLookaheadLiteral("(", 0) {
-		var _t2082 int64
+		var _t2080 int64
 		if p.matchLookaheadLiteral("keys", 1) {
-			var _t2083 int64
-			if p.matchLookaheadLiteral(":", 2) {
-				_t2083 = 1
+			var _t2081 int64
+			if p.matchLookaheadLiteral("synthetic", 2) {
+				_t2081 = 1
 			} else {
-				var _t2084 int64
+				var _t2082 int64
 				if p.matchLookaheadLiteral(")", 2) {
-					_t2084 = 0
+					_t2082 = 0
 				} else {
-					var _t2085 int64
+					var _t2083 int64
 					if p.matchLookaheadLiteral("(", 2) {
-						_t2085 = 0
+						_t2083 = 0
 					} else {
-						_t2085 = -1
+						_t2083 = -1
 					}
-					_t2084 = _t2085
+					_t2082 = _t2083
 				}
-				_t2083 = _t2084
+				_t2081 = _t2082
 			}
-			_t2082 = _t2083
+			_t2080 = _t2081
 		} else {
-			_t2082 = -1
+			_t2080 = -1
 		}
-		_t2081 = _t2082
+		_t2079 = _t2080
 	} else {
-		_t2081 = -1
+		_t2079 = -1
 	}
-	prediction1247 := _t2081
-	var _t2086 []interface{}
-	if prediction1247 == 1 {
+	prediction1246 := _t2079
+	var _t2084 []interface{}
+	if prediction1246 == 1 {
 		p.consumeLiteral("(")
 		p.consumeLiteral("keys")
-		p.consumeLiteral(":")
-		symbol1252 := p.consumeTerminal("SYMBOL").Value.str
+		p.consumeLiteral("synthetic")
 		p.consumeLiteral(")")
-		_t2087 := p.construct_synthetic_keys(symbol1252)
-		_t2086 = _t2087
+		_t2084 = []interface{}{[]*pb.NamedColumn{}, true}
 	} else {
-		var _t2088 []interface{}
-		if prediction1247 == 0 {
+		var _t2085 []interface{}
+		if prediction1246 == 0 {
 			p.consumeLiteral("(")
 			p.consumeLiteral("keys")
-			xs1248 := []*pb.NamedColumn{}
-			cond1249 := p.matchLookaheadLiteral("(", 0)
-			for cond1249 {
-				_t2089 := p.parse_named_column()
-				item1250 := _t2089
-				xs1248 = append(xs1248, item1250)
-				cond1249 = p.matchLookaheadLiteral("(", 0)
+			xs1247 := []*pb.NamedColumn{}
+			cond1248 := p.matchLookaheadLiteral("(", 0)
+			for cond1248 {
+				_t2086 := p.parse_named_column()
+				item1249 := _t2086
+				xs1247 = append(xs1247, item1249)
+				cond1248 = p.matchLookaheadLiteral("(", 0)
 			}
-			named_columns1251 := xs1248
+			named_columns1250 := xs1247
 			p.consumeLiteral(")")
-			_t2088 = []interface{}{named_columns1251, false}
+			_t2085 = []interface{}{named_columns1250, false}
 		} else {
 			panic(ParseError{msg: fmt.Sprintf("%s: %s=`%v`", "Unexpected token in relation_keys", p.lookahead(0).Type, p.lookahead(0).Value)})
 		}
-		_t2086 = _t2088
+		_t2084 = _t2085
 	}
-	return _t2086
+	return _t2084
 }
 
 func (p *Parser) parse_named_column() *pb.NamedColumn {
-	span_start1255 := int64(p.spanStart())
+	span_start1253 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("column")
-	string1253 := p.consumeTerminal("STRING").Value.str
-	_t2090 := p.parse_type()
-	type1254 := _t2090
+	string1251 := p.consumeTerminal("STRING").Value.str
+	_t2087 := p.parse_type()
+	type1252 := _t2087
 	p.consumeLiteral(")")
-	_t2091 := &pb.NamedColumn{Name: string1253, Type: type1254}
-	result1256 := _t2091
-	p.recordSpan(int(span_start1255), "NamedColumn")
-	return result1256
+	_t2088 := &pb.NamedColumn{Name: string1251, Type: type1252}
+	result1254 := _t2088
+	p.recordSpan(int(span_start1253), "NamedColumn")
+	return result1254
 }
 
 func (p *Parser) parse_relation_body() *pb.TargetRelations {
-	span_start1261 := int64(p.spanStart())
-	var _t2092 int64
+	span_start1259 := int64(p.spanStart())
+	var _t2089 int64
 	if p.matchLookaheadLiteral("(", 0) {
-		var _t2093 int64
+		var _t2090 int64
 		if p.matchLookaheadLiteral("relation", 1) {
-			_t2093 = 0
+			_t2090 = 0
 		} else {
-			var _t2094 int64
+			var _t2091 int64
 			if p.matchLookaheadLiteral("inserts", 1) {
-				_t2094 = 1
+				_t2091 = 1
 			} else {
-				_t2094 = 0
+				_t2091 = 0
 			}
-			_t2093 = _t2094
+			_t2090 = _t2091
 		}
-		_t2092 = _t2093
+		_t2089 = _t2090
 	} else {
-		_t2092 = 0
+		_t2089 = 0
 	}
-	prediction1257 := _t2092
-	var _t2095 *pb.TargetRelations
-	if prediction1257 == 1 {
-		_t2096 := p.parse_cdc_inserts()
-		cdc_inserts1259 := _t2096
-		_t2097 := p.parse_cdc_deletes()
-		cdc_deletes1260 := _t2097
-		_t2098 := p.construct_cdc_relations(cdc_inserts1259, cdc_deletes1260)
-		_t2095 = _t2098
+	prediction1255 := _t2089
+	var _t2092 *pb.TargetRelations
+	if prediction1255 == 1 {
+		_t2093 := p.parse_cdc_inserts()
+		cdc_inserts1257 := _t2093
+		_t2094 := p.parse_cdc_deletes()
+		cdc_deletes1258 := _t2094
+		_t2095 := p.construct_cdc_relations(cdc_inserts1257, cdc_deletes1258)
+		_t2092 = _t2095
 	} else {
-		var _t2099 *pb.TargetRelations
-		if prediction1257 == 0 {
-			_t2100 := p.parse_non_cdc_relations()
-			non_cdc_relations1258 := _t2100
-			_t2101 := p.construct_non_cdc_relations(non_cdc_relations1258)
-			_t2099 = _t2101
+		var _t2096 *pb.TargetRelations
+		if prediction1255 == 0 {
+			_t2097 := p.parse_non_cdc_relations()
+			non_cdc_relations1256 := _t2097
+			_t2098 := p.construct_non_cdc_relations(non_cdc_relations1256)
+			_t2096 = _t2098
 		} else {
 			panic(ParseError{msg: fmt.Sprintf("%s: %s=`%v`", "Unexpected token in relation_body", p.lookahead(0).Type, p.lookahead(0).Value)})
 		}
-		_t2095 = _t2099
+		_t2092 = _t2096
 	}
-	result1262 := _t2095
-	p.recordSpan(int(span_start1261), "TargetRelations")
-	return result1262
+	result1260 := _t2092
+	p.recordSpan(int(span_start1259), "TargetRelations")
+	return result1260
 }
 
 func (p *Parser) parse_non_cdc_relations() []*pb.TargetRelation {
-	xs1263 := []*pb.TargetRelation{}
-	cond1264 := p.matchLookaheadLiteral("(", 0)
-	for cond1264 {
-		_t2102 := p.parse_target_relation()
-		item1265 := _t2102
-		xs1263 = append(xs1263, item1265)
-		cond1264 = p.matchLookaheadLiteral("(", 0)
+	xs1261 := []*pb.TargetRelation{}
+	cond1262 := p.matchLookaheadLiteral("(", 0)
+	for cond1262 {
+		_t2099 := p.parse_target_relation()
+		item1263 := _t2099
+		xs1261 = append(xs1261, item1263)
+		cond1262 = p.matchLookaheadLiteral("(", 0)
 	}
-	return xs1263
+	return xs1261
 }
 
 func (p *Parser) parse_target_relation() *pb.TargetRelation {
-	span_start1271 := int64(p.spanStart())
+	span_start1269 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("relation")
-	_t2103 := p.parse_relation_id()
-	relation_id1266 := _t2103
-	xs1267 := []*pb.NamedColumn{}
-	cond1268 := p.matchLookaheadLiteral("(", 0)
-	for cond1268 {
-		_t2104 := p.parse_named_column()
-		item1269 := _t2104
-		xs1267 = append(xs1267, item1269)
-		cond1268 = p.matchLookaheadLiteral("(", 0)
+	_t2100 := p.parse_relation_id()
+	relation_id1264 := _t2100
+	xs1265 := []*pb.NamedColumn{}
+	cond1266 := p.matchLookaheadLiteral("(", 0)
+	for cond1266 {
+		_t2101 := p.parse_named_column()
+		item1267 := _t2101
+		xs1265 = append(xs1265, item1267)
+		cond1266 = p.matchLookaheadLiteral("(", 0)
 	}
-	named_columns1270 := xs1267
+	named_columns1268 := xs1265
 	p.consumeLiteral(")")
-	_t2105 := &pb.TargetRelation{TargetId: relation_id1266, Values: named_columns1270}
-	result1272 := _t2105
-	p.recordSpan(int(span_start1271), "TargetRelation")
-	return result1272
+	_t2102 := &pb.TargetRelation{TargetId: relation_id1264, Values: named_columns1268}
+	result1270 := _t2102
+	p.recordSpan(int(span_start1269), "TargetRelation")
+	return result1270
 }
 
 func (p *Parser) parse_cdc_inserts() []*pb.TargetRelation {
 	p.consumeLiteral("(")
 	p.consumeLiteral("inserts")
-	xs1273 := []*pb.TargetRelation{}
-	cond1274 := p.matchLookaheadLiteral("(", 0)
-	for cond1274 {
-		_t2106 := p.parse_target_relation()
-		item1275 := _t2106
-		xs1273 = append(xs1273, item1275)
-		cond1274 = p.matchLookaheadLiteral("(", 0)
+	xs1271 := []*pb.TargetRelation{}
+	cond1272 := p.matchLookaheadLiteral("(", 0)
+	for cond1272 {
+		_t2103 := p.parse_target_relation()
+		item1273 := _t2103
+		xs1271 = append(xs1271, item1273)
+		cond1272 = p.matchLookaheadLiteral("(", 0)
 	}
-	target_relations1276 := xs1273
+	target_relations1274 := xs1271
 	p.consumeLiteral(")")
-	return target_relations1276
+	return target_relations1274
 }
 
 func (p *Parser) parse_cdc_deletes() []*pb.TargetRelation {
 	p.consumeLiteral("(")
 	p.consumeLiteral("deletes")
-	xs1277 := []*pb.TargetRelation{}
-	cond1278 := p.matchLookaheadLiteral("(", 0)
-	for cond1278 {
-		_t2107 := p.parse_target_relation()
-		item1279 := _t2107
-		xs1277 = append(xs1277, item1279)
-		cond1278 = p.matchLookaheadLiteral("(", 0)
+	xs1275 := []*pb.TargetRelation{}
+	cond1276 := p.matchLookaheadLiteral("(", 0)
+	for cond1276 {
+		_t2104 := p.parse_target_relation()
+		item1277 := _t2104
+		xs1275 = append(xs1275, item1277)
+		cond1276 = p.matchLookaheadLiteral("(", 0)
 	}
-	target_relations1280 := xs1277
+	target_relations1278 := xs1275
 	p.consumeLiteral(")")
-	return target_relations1280
+	return target_relations1278
 }
 
 func (p *Parser) parse_csv_asof() string {
 	p.consumeLiteral("(")
 	p.consumeLiteral("asof")
-	string1281 := p.consumeTerminal("STRING").Value.str
+	string1279 := p.consumeTerminal("STRING").Value.str
 	p.consumeLiteral(")")
-	return string1281
+	return string1279
 }
 
 func (p *Parser) parse_iceberg_data() *pb.IcebergData {
-	span_start1288 := int64(p.spanStart())
+	span_start1286 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("iceberg_data")
-	_t2108 := p.parse_iceberg_locator()
-	iceberg_locator1282 := _t2108
-	_t2109 := p.parse_iceberg_catalog_config()
-	iceberg_catalog_config1283 := _t2109
-	_t2110 := p.parse_gnf_columns()
-	gnf_columns1284 := _t2110
-	var _t2111 *string
+	_t2105 := p.parse_iceberg_locator()
+	iceberg_locator1280 := _t2105
+	_t2106 := p.parse_iceberg_catalog_config()
+	iceberg_catalog_config1281 := _t2106
+	_t2107 := p.parse_gnf_columns()
+	gnf_columns1282 := _t2107
+	var _t2108 *string
 	if (p.matchLookaheadLiteral("(", 0) && p.matchLookaheadLiteral("from_snapshot", 1)) {
-		_t2112 := p.parse_iceberg_from_snapshot()
-		_t2111 = ptr(_t2112)
+		_t2109 := p.parse_iceberg_from_snapshot()
+		_t2108 = ptr(_t2109)
 	}
-	iceberg_from_snapshot1285 := _t2111
-	var _t2113 *string
+	iceberg_from_snapshot1283 := _t2108
+	var _t2110 *string
 	if p.matchLookaheadLiteral("(", 0) {
-		_t2114 := p.parse_iceberg_to_snapshot()
-		_t2113 = ptr(_t2114)
+		_t2111 := p.parse_iceberg_to_snapshot()
+		_t2110 = ptr(_t2111)
 	}
-	iceberg_to_snapshot1286 := _t2113
-	_t2115 := p.parse_boolean_value()
-	boolean_value1287 := _t2115
+	iceberg_to_snapshot1284 := _t2110
+	_t2112 := p.parse_boolean_value()
+	boolean_value1285 := _t2112
 	p.consumeLiteral(")")
-	_t2116 := p.construct_iceberg_data(iceberg_locator1282, iceberg_catalog_config1283, gnf_columns1284, iceberg_from_snapshot1285, iceberg_to_snapshot1286, boolean_value1287)
-	result1289 := _t2116
-	p.recordSpan(int(span_start1288), "IcebergData")
-	return result1289
+	_t2113 := p.construct_iceberg_data(iceberg_locator1280, iceberg_catalog_config1281, gnf_columns1282, iceberg_from_snapshot1283, iceberg_to_snapshot1284, boolean_value1285)
+	result1287 := _t2113
+	p.recordSpan(int(span_start1286), "IcebergData")
+	return result1287
 }
 
 func (p *Parser) parse_iceberg_locator() *pb.IcebergLocator {
-	span_start1293 := int64(p.spanStart())
+	span_start1291 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("iceberg_locator")
-	_t2117 := p.parse_iceberg_locator_table_name()
-	iceberg_locator_table_name1290 := _t2117
-	_t2118 := p.parse_iceberg_locator_namespace()
-	iceberg_locator_namespace1291 := _t2118
-	_t2119 := p.parse_iceberg_locator_warehouse()
-	iceberg_locator_warehouse1292 := _t2119
+	_t2114 := p.parse_iceberg_locator_table_name()
+	iceberg_locator_table_name1288 := _t2114
+	_t2115 := p.parse_iceberg_locator_namespace()
+	iceberg_locator_namespace1289 := _t2115
+	_t2116 := p.parse_iceberg_locator_warehouse()
+	iceberg_locator_warehouse1290 := _t2116
 	p.consumeLiteral(")")
-	_t2120 := &pb.IcebergLocator{TableName: iceberg_locator_table_name1290, Namespace: iceberg_locator_namespace1291, Warehouse: iceberg_locator_warehouse1292}
-	result1294 := _t2120
-	p.recordSpan(int(span_start1293), "IcebergLocator")
-	return result1294
+	_t2117 := &pb.IcebergLocator{TableName: iceberg_locator_table_name1288, Namespace: iceberg_locator_namespace1289, Warehouse: iceberg_locator_warehouse1290}
+	result1292 := _t2117
+	p.recordSpan(int(span_start1291), "IcebergLocator")
+	return result1292
 }
 
 func (p *Parser) parse_iceberg_locator_table_name() string {
 	p.consumeLiteral("(")
 	p.consumeLiteral("table_name")
-	string1295 := p.consumeTerminal("STRING").Value.str
+	string1293 := p.consumeTerminal("STRING").Value.str
 	p.consumeLiteral(")")
-	return string1295
+	return string1293
 }
 
 func (p *Parser) parse_iceberg_locator_namespace() []string {
 	p.consumeLiteral("(")
 	p.consumeLiteral("namespace")
-	xs1296 := []string{}
-	cond1297 := p.matchLookaheadTerminal("STRING", 0)
-	for cond1297 {
-		item1298 := p.consumeTerminal("STRING").Value.str
-		xs1296 = append(xs1296, item1298)
-		cond1297 = p.matchLookaheadTerminal("STRING", 0)
+	xs1294 := []string{}
+	cond1295 := p.matchLookaheadTerminal("STRING", 0)
+	for cond1295 {
+		item1296 := p.consumeTerminal("STRING").Value.str
+		xs1294 = append(xs1294, item1296)
+		cond1295 = p.matchLookaheadTerminal("STRING", 0)
 	}
-	strings1299 := xs1296
+	strings1297 := xs1294
 	p.consumeLiteral(")")
-	return strings1299
+	return strings1297
 }
 
 func (p *Parser) parse_iceberg_locator_warehouse() string {
 	p.consumeLiteral("(")
 	p.consumeLiteral("warehouse")
-	string1300 := p.consumeTerminal("STRING").Value.str
+	string1298 := p.consumeTerminal("STRING").Value.str
 	p.consumeLiteral(")")
-	return string1300
+	return string1298
 }
 
 func (p *Parser) parse_iceberg_catalog_config() *pb.IcebergCatalogConfig {
-	span_start1305 := int64(p.spanStart())
+	span_start1303 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("iceberg_catalog_config")
-	_t2121 := p.parse_iceberg_catalog_uri()
-	iceberg_catalog_uri1301 := _t2121
-	var _t2122 *string
+	_t2118 := p.parse_iceberg_catalog_uri()
+	iceberg_catalog_uri1299 := _t2118
+	var _t2119 *string
 	if (p.matchLookaheadLiteral("(", 0) && p.matchLookaheadLiteral("scope", 1)) {
-		_t2123 := p.parse_iceberg_catalog_config_scope()
-		_t2122 = ptr(_t2123)
+		_t2120 := p.parse_iceberg_catalog_config_scope()
+		_t2119 = ptr(_t2120)
 	}
-	iceberg_catalog_config_scope1302 := _t2122
-	_t2124 := p.parse_iceberg_properties()
-	iceberg_properties1303 := _t2124
-	_t2125 := p.parse_iceberg_auth_properties()
-	iceberg_auth_properties1304 := _t2125
+	iceberg_catalog_config_scope1300 := _t2119
+	_t2121 := p.parse_iceberg_properties()
+	iceberg_properties1301 := _t2121
+	_t2122 := p.parse_iceberg_auth_properties()
+	iceberg_auth_properties1302 := _t2122
 	p.consumeLiteral(")")
-	_t2126 := p.construct_iceberg_catalog_config(iceberg_catalog_uri1301, iceberg_catalog_config_scope1302, iceberg_properties1303, iceberg_auth_properties1304)
-	result1306 := _t2126
-	p.recordSpan(int(span_start1305), "IcebergCatalogConfig")
-	return result1306
+	_t2123 := p.construct_iceberg_catalog_config(iceberg_catalog_uri1299, iceberg_catalog_config_scope1300, iceberg_properties1301, iceberg_auth_properties1302)
+	result1304 := _t2123
+	p.recordSpan(int(span_start1303), "IcebergCatalogConfig")
+	return result1304
 }
 
 func (p *Parser) parse_iceberg_catalog_uri() string {
 	p.consumeLiteral("(")
 	p.consumeLiteral("catalog_uri")
-	string1307 := p.consumeTerminal("STRING").Value.str
+	string1305 := p.consumeTerminal("STRING").Value.str
 	p.consumeLiteral(")")
-	return string1307
+	return string1305
 }
 
 func (p *Parser) parse_iceberg_catalog_config_scope() string {
 	p.consumeLiteral("(")
 	p.consumeLiteral("scope")
-	string1308 := p.consumeTerminal("STRING").Value.str
+	string1306 := p.consumeTerminal("STRING").Value.str
 	p.consumeLiteral(")")
-	return string1308
+	return string1306
 }
 
 func (p *Parser) parse_iceberg_properties() [][]interface{} {
 	p.consumeLiteral("(")
 	p.consumeLiteral("properties")
-	xs1309 := [][]interface{}{}
-	cond1310 := p.matchLookaheadLiteral("(", 0)
-	for cond1310 {
-		_t2127 := p.parse_iceberg_property_entry()
-		item1311 := _t2127
-		xs1309 = append(xs1309, item1311)
-		cond1310 = p.matchLookaheadLiteral("(", 0)
+	xs1307 := [][]interface{}{}
+	cond1308 := p.matchLookaheadLiteral("(", 0)
+	for cond1308 {
+		_t2124 := p.parse_iceberg_property_entry()
+		item1309 := _t2124
+		xs1307 = append(xs1307, item1309)
+		cond1308 = p.matchLookaheadLiteral("(", 0)
 	}
-	iceberg_property_entrys1312 := xs1309
+	iceberg_property_entrys1310 := xs1307
 	p.consumeLiteral(")")
-	return iceberg_property_entrys1312
+	return iceberg_property_entrys1310
 }
 
 func (p *Parser) parse_iceberg_property_entry() []interface{} {
 	p.consumeLiteral("(")
 	p.consumeLiteral("prop")
-	string1313 := p.consumeTerminal("STRING").Value.str
-	string_31314 := p.consumeTerminal("STRING").Value.str
+	string1311 := p.consumeTerminal("STRING").Value.str
+	string_31312 := p.consumeTerminal("STRING").Value.str
 	p.consumeLiteral(")")
-	return []interface{}{string1313, string_31314}
+	return []interface{}{string1311, string_31312}
 }
 
 func (p *Parser) parse_iceberg_auth_properties() [][]interface{} {
 	p.consumeLiteral("(")
 	p.consumeLiteral("auth_properties")
-	xs1315 := [][]interface{}{}
-	cond1316 := p.matchLookaheadLiteral("(", 0)
-	for cond1316 {
-		_t2128 := p.parse_iceberg_masked_property_entry()
-		item1317 := _t2128
-		xs1315 = append(xs1315, item1317)
-		cond1316 = p.matchLookaheadLiteral("(", 0)
+	xs1313 := [][]interface{}{}
+	cond1314 := p.matchLookaheadLiteral("(", 0)
+	for cond1314 {
+		_t2125 := p.parse_iceberg_masked_property_entry()
+		item1315 := _t2125
+		xs1313 = append(xs1313, item1315)
+		cond1314 = p.matchLookaheadLiteral("(", 0)
 	}
-	iceberg_masked_property_entrys1318 := xs1315
+	iceberg_masked_property_entrys1316 := xs1313
 	p.consumeLiteral(")")
-	return iceberg_masked_property_entrys1318
+	return iceberg_masked_property_entrys1316
 }
 
 func (p *Parser) parse_iceberg_masked_property_entry() []interface{} {
 	p.consumeLiteral("(")
 	p.consumeLiteral("prop")
-	string1319 := p.consumeTerminal("STRING").Value.str
-	string_31320 := p.consumeTerminal("STRING").Value.str
+	string1317 := p.consumeTerminal("STRING").Value.str
+	string_31318 := p.consumeTerminal("STRING").Value.str
 	p.consumeLiteral(")")
-	return []interface{}{string1319, string_31320}
+	return []interface{}{string1317, string_31318}
 }
 
 func (p *Parser) parse_iceberg_from_snapshot() string {
 	p.consumeLiteral("(")
 	p.consumeLiteral("from_snapshot")
-	string1321 := p.consumeTerminal("STRING").Value.str
+	string1319 := p.consumeTerminal("STRING").Value.str
 	p.consumeLiteral(")")
-	return string1321
+	return string1319
 }
 
 func (p *Parser) parse_iceberg_to_snapshot() string {
 	p.consumeLiteral("(")
 	p.consumeLiteral("to_snapshot")
-	string1322 := p.consumeTerminal("STRING").Value.str
+	string1320 := p.consumeTerminal("STRING").Value.str
 	p.consumeLiteral(")")
-	return string1322
+	return string1320
 }
 
 func (p *Parser) parse_undefine() *pb.Undefine {
-	span_start1324 := int64(p.spanStart())
+	span_start1322 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("undefine")
-	_t2129 := p.parse_fragment_id()
-	fragment_id1323 := _t2129
+	_t2126 := p.parse_fragment_id()
+	fragment_id1321 := _t2126
 	p.consumeLiteral(")")
-	_t2130 := &pb.Undefine{FragmentId: fragment_id1323}
-	result1325 := _t2130
-	p.recordSpan(int(span_start1324), "Undefine")
-	return result1325
+	_t2127 := &pb.Undefine{FragmentId: fragment_id1321}
+	result1323 := _t2127
+	p.recordSpan(int(span_start1322), "Undefine")
+	return result1323
 }
 
 func (p *Parser) parse_context() *pb.Context {
-	span_start1330 := int64(p.spanStart())
+	span_start1328 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("context")
-	xs1326 := []*pb.RelationId{}
-	cond1327 := (p.matchLookaheadLiteral(":", 0) || p.matchLookaheadTerminal("UINT128", 0))
-	for cond1327 {
-		_t2131 := p.parse_relation_id()
-		item1328 := _t2131
-		xs1326 = append(xs1326, item1328)
-		cond1327 = (p.matchLookaheadLiteral(":", 0) || p.matchLookaheadTerminal("UINT128", 0))
+	xs1324 := []*pb.RelationId{}
+	cond1325 := (p.matchLookaheadLiteral(":", 0) || p.matchLookaheadTerminal("UINT128", 0))
+	for cond1325 {
+		_t2128 := p.parse_relation_id()
+		item1326 := _t2128
+		xs1324 = append(xs1324, item1326)
+		cond1325 = (p.matchLookaheadLiteral(":", 0) || p.matchLookaheadTerminal("UINT128", 0))
 	}
-	relation_ids1329 := xs1326
+	relation_ids1327 := xs1324
 	p.consumeLiteral(")")
-	_t2132 := &pb.Context{Relations: relation_ids1329}
-	result1331 := _t2132
-	p.recordSpan(int(span_start1330), "Context")
-	return result1331
+	_t2129 := &pb.Context{Relations: relation_ids1327}
+	result1329 := _t2129
+	p.recordSpan(int(span_start1328), "Context")
+	return result1329
 }
 
 func (p *Parser) parse_snapshot() *pb.Snapshot {
-	span_start1337 := int64(p.spanStart())
+	span_start1335 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("snapshot")
-	_t2133 := p.parse_edb_path()
-	edb_path1332 := _t2133
-	xs1333 := []*pb.SnapshotMapping{}
-	cond1334 := p.matchLookaheadLiteral("[", 0)
-	for cond1334 {
-		_t2134 := p.parse_snapshot_mapping()
-		item1335 := _t2134
-		xs1333 = append(xs1333, item1335)
-		cond1334 = p.matchLookaheadLiteral("[", 0)
+	_t2130 := p.parse_edb_path()
+	edb_path1330 := _t2130
+	xs1331 := []*pb.SnapshotMapping{}
+	cond1332 := p.matchLookaheadLiteral("[", 0)
+	for cond1332 {
+		_t2131 := p.parse_snapshot_mapping()
+		item1333 := _t2131
+		xs1331 = append(xs1331, item1333)
+		cond1332 = p.matchLookaheadLiteral("[", 0)
 	}
-	snapshot_mappings1336 := xs1333
+	snapshot_mappings1334 := xs1331
 	p.consumeLiteral(")")
-	_t2135 := &pb.Snapshot{Prefix: edb_path1332, Mappings: snapshot_mappings1336}
-	result1338 := _t2135
-	p.recordSpan(int(span_start1337), "Snapshot")
-	return result1338
+	_t2132 := &pb.Snapshot{Prefix: edb_path1330, Mappings: snapshot_mappings1334}
+	result1336 := _t2132
+	p.recordSpan(int(span_start1335), "Snapshot")
+	return result1336
 }
 
 func (p *Parser) parse_snapshot_mapping() *pb.SnapshotMapping {
-	span_start1341 := int64(p.spanStart())
-	_t2136 := p.parse_edb_path()
-	edb_path1339 := _t2136
-	_t2137 := p.parse_relation_id()
-	relation_id1340 := _t2137
-	_t2138 := &pb.SnapshotMapping{DestinationPath: edb_path1339, SourceRelation: relation_id1340}
-	result1342 := _t2138
-	p.recordSpan(int(span_start1341), "SnapshotMapping")
-	return result1342
+	span_start1339 := int64(p.spanStart())
+	_t2133 := p.parse_edb_path()
+	edb_path1337 := _t2133
+	_t2134 := p.parse_relation_id()
+	relation_id1338 := _t2134
+	_t2135 := &pb.SnapshotMapping{DestinationPath: edb_path1337, SourceRelation: relation_id1338}
+	result1340 := _t2135
+	p.recordSpan(int(span_start1339), "SnapshotMapping")
+	return result1340
 }
 
 func (p *Parser) parse_epoch_reads() []*pb.Read {
 	p.consumeLiteral("(")
 	p.consumeLiteral("reads")
-	xs1343 := []*pb.Read{}
-	cond1344 := p.matchLookaheadLiteral("(", 0)
-	for cond1344 {
-		_t2139 := p.parse_read()
-		item1345 := _t2139
-		xs1343 = append(xs1343, item1345)
-		cond1344 = p.matchLookaheadLiteral("(", 0)
+	xs1341 := []*pb.Read{}
+	cond1342 := p.matchLookaheadLiteral("(", 0)
+	for cond1342 {
+		_t2136 := p.parse_read()
+		item1343 := _t2136
+		xs1341 = append(xs1341, item1343)
+		cond1342 = p.matchLookaheadLiteral("(", 0)
 	}
-	reads1346 := xs1343
+	reads1344 := xs1341
 	p.consumeLiteral(")")
-	return reads1346
+	return reads1344
 }
 
 func (p *Parser) parse_read() *pb.Read {
-	span_start1353 := int64(p.spanStart())
-	var _t2140 int64
+	span_start1351 := int64(p.spanStart())
+	var _t2137 int64
 	if p.matchLookaheadLiteral("(", 0) {
-		var _t2141 int64
+		var _t2138 int64
 		if p.matchLookaheadLiteral("what_if", 1) {
-			_t2141 = 2
+			_t2138 = 2
 		} else {
-			var _t2142 int64
+			var _t2139 int64
 			if p.matchLookaheadLiteral("output", 1) {
-				_t2142 = 1
+				_t2139 = 1
 			} else {
-				var _t2143 int64
+				var _t2140 int64
 				if p.matchLookaheadLiteral("export_iceberg", 1) {
-					_t2143 = 4
+					_t2140 = 4
 				} else {
-					var _t2144 int64
+					var _t2141 int64
 					if p.matchLookaheadLiteral("export", 1) {
-						_t2144 = 4
+						_t2141 = 4
 					} else {
-						var _t2145 int64
+						var _t2142 int64
 						if p.matchLookaheadLiteral("demand", 1) {
-							_t2145 = 0
+							_t2142 = 0
 						} else {
-							var _t2146 int64
+							var _t2143 int64
 							if p.matchLookaheadLiteral("abort", 1) {
-								_t2146 = 3
+								_t2143 = 3
 							} else {
-								_t2146 = -1
+								_t2143 = -1
 							}
-							_t2145 = _t2146
+							_t2142 = _t2143
 						}
-						_t2144 = _t2145
+						_t2141 = _t2142
 					}
-					_t2143 = _t2144
+					_t2140 = _t2141
 				}
-				_t2142 = _t2143
+				_t2139 = _t2140
 			}
-			_t2141 = _t2142
+			_t2138 = _t2139
 		}
-		_t2140 = _t2141
+		_t2137 = _t2138
 	} else {
-		_t2140 = -1
+		_t2137 = -1
 	}
-	prediction1347 := _t2140
-	var _t2147 *pb.Read
-	if prediction1347 == 4 {
-		_t2148 := p.parse_export()
-		export1352 := _t2148
-		_t2149 := &pb.Read{}
-		_t2149.ReadType = &pb.Read_Export{Export: export1352}
-		_t2147 = _t2149
+	prediction1345 := _t2137
+	var _t2144 *pb.Read
+	if prediction1345 == 4 {
+		_t2145 := p.parse_export()
+		export1350 := _t2145
+		_t2146 := &pb.Read{}
+		_t2146.ReadType = &pb.Read_Export{Export: export1350}
+		_t2144 = _t2146
 	} else {
-		var _t2150 *pb.Read
-		if prediction1347 == 3 {
-			_t2151 := p.parse_abort()
-			abort1351 := _t2151
-			_t2152 := &pb.Read{}
-			_t2152.ReadType = &pb.Read_Abort{Abort: abort1351}
-			_t2150 = _t2152
+		var _t2147 *pb.Read
+		if prediction1345 == 3 {
+			_t2148 := p.parse_abort()
+			abort1349 := _t2148
+			_t2149 := &pb.Read{}
+			_t2149.ReadType = &pb.Read_Abort{Abort: abort1349}
+			_t2147 = _t2149
 		} else {
-			var _t2153 *pb.Read
-			if prediction1347 == 2 {
-				_t2154 := p.parse_what_if()
-				what_if1350 := _t2154
-				_t2155 := &pb.Read{}
-				_t2155.ReadType = &pb.Read_WhatIf{WhatIf: what_if1350}
-				_t2153 = _t2155
+			var _t2150 *pb.Read
+			if prediction1345 == 2 {
+				_t2151 := p.parse_what_if()
+				what_if1348 := _t2151
+				_t2152 := &pb.Read{}
+				_t2152.ReadType = &pb.Read_WhatIf{WhatIf: what_if1348}
+				_t2150 = _t2152
 			} else {
-				var _t2156 *pb.Read
-				if prediction1347 == 1 {
-					_t2157 := p.parse_output()
-					output1349 := _t2157
-					_t2158 := &pb.Read{}
-					_t2158.ReadType = &pb.Read_Output{Output: output1349}
-					_t2156 = _t2158
+				var _t2153 *pb.Read
+				if prediction1345 == 1 {
+					_t2154 := p.parse_output()
+					output1347 := _t2154
+					_t2155 := &pb.Read{}
+					_t2155.ReadType = &pb.Read_Output{Output: output1347}
+					_t2153 = _t2155
 				} else {
-					var _t2159 *pb.Read
-					if prediction1347 == 0 {
-						_t2160 := p.parse_demand()
-						demand1348 := _t2160
-						_t2161 := &pb.Read{}
-						_t2161.ReadType = &pb.Read_Demand{Demand: demand1348}
-						_t2159 = _t2161
+					var _t2156 *pb.Read
+					if prediction1345 == 0 {
+						_t2157 := p.parse_demand()
+						demand1346 := _t2157
+						_t2158 := &pb.Read{}
+						_t2158.ReadType = &pb.Read_Demand{Demand: demand1346}
+						_t2156 = _t2158
 					} else {
 						panic(ParseError{msg: fmt.Sprintf("%s: %s=`%v`", "Unexpected token in read", p.lookahead(0).Type, p.lookahead(0).Value)})
 					}
-					_t2156 = _t2159
+					_t2153 = _t2156
 				}
-				_t2153 = _t2156
+				_t2150 = _t2153
 			}
-			_t2150 = _t2153
+			_t2147 = _t2150
 		}
-		_t2147 = _t2150
+		_t2144 = _t2147
 	}
-	result1354 := _t2147
-	p.recordSpan(int(span_start1353), "Read")
-	return result1354
+	result1352 := _t2144
+	p.recordSpan(int(span_start1351), "Read")
+	return result1352
 }
 
 func (p *Parser) parse_demand() *pb.Demand {
-	span_start1356 := int64(p.spanStart())
+	span_start1354 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("demand")
-	_t2162 := p.parse_relation_id()
-	relation_id1355 := _t2162
+	_t2159 := p.parse_relation_id()
+	relation_id1353 := _t2159
 	p.consumeLiteral(")")
-	_t2163 := &pb.Demand{RelationId: relation_id1355}
-	result1357 := _t2163
-	p.recordSpan(int(span_start1356), "Demand")
-	return result1357
+	_t2160 := &pb.Demand{RelationId: relation_id1353}
+	result1355 := _t2160
+	p.recordSpan(int(span_start1354), "Demand")
+	return result1355
 }
 
 func (p *Parser) parse_output() *pb.Output {
-	span_start1360 := int64(p.spanStart())
+	span_start1358 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("output")
-	_t2164 := p.parse_name()
-	name1358 := _t2164
-	_t2165 := p.parse_relation_id()
-	relation_id1359 := _t2165
+	_t2161 := p.parse_name()
+	name1356 := _t2161
+	_t2162 := p.parse_relation_id()
+	relation_id1357 := _t2162
 	p.consumeLiteral(")")
-	_t2166 := &pb.Output{Name: name1358, RelationId: relation_id1359}
-	result1361 := _t2166
-	p.recordSpan(int(span_start1360), "Output")
-	return result1361
+	_t2163 := &pb.Output{Name: name1356, RelationId: relation_id1357}
+	result1359 := _t2163
+	p.recordSpan(int(span_start1358), "Output")
+	return result1359
 }
 
 func (p *Parser) parse_what_if() *pb.WhatIf {
-	span_start1364 := int64(p.spanStart())
+	span_start1362 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("what_if")
-	_t2167 := p.parse_name()
-	name1362 := _t2167
-	_t2168 := p.parse_epoch()
-	epoch1363 := _t2168
+	_t2164 := p.parse_name()
+	name1360 := _t2164
+	_t2165 := p.parse_epoch()
+	epoch1361 := _t2165
 	p.consumeLiteral(")")
-	_t2169 := &pb.WhatIf{Branch: name1362, Epoch: epoch1363}
-	result1365 := _t2169
-	p.recordSpan(int(span_start1364), "WhatIf")
-	return result1365
+	_t2166 := &pb.WhatIf{Branch: name1360, Epoch: epoch1361}
+	result1363 := _t2166
+	p.recordSpan(int(span_start1362), "WhatIf")
+	return result1363
 }
 
 func (p *Parser) parse_abort() *pb.Abort {
-	span_start1368 := int64(p.spanStart())
+	span_start1366 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("abort")
-	var _t2170 *string
+	var _t2167 *string
 	if (p.matchLookaheadLiteral(":", 0) && p.matchLookaheadTerminal("SYMBOL", 1)) {
-		_t2171 := p.parse_name()
-		_t2170 = ptr(_t2171)
+		_t2168 := p.parse_name()
+		_t2167 = ptr(_t2168)
 	}
-	name1366 := _t2170
-	_t2172 := p.parse_relation_id()
-	relation_id1367 := _t2172
+	name1364 := _t2167
+	_t2169 := p.parse_relation_id()
+	relation_id1365 := _t2169
 	p.consumeLiteral(")")
-	_t2173 := &pb.Abort{Name: deref(name1366, "abort"), RelationId: relation_id1367}
-	result1369 := _t2173
-	p.recordSpan(int(span_start1368), "Abort")
-	return result1369
+	_t2170 := &pb.Abort{Name: deref(name1364, "abort"), RelationId: relation_id1365}
+	result1367 := _t2170
+	p.recordSpan(int(span_start1366), "Abort")
+	return result1367
 }
 
 func (p *Parser) parse_export() *pb.Export {
-	span_start1373 := int64(p.spanStart())
-	var _t2174 int64
+	span_start1371 := int64(p.spanStart())
+	var _t2171 int64
 	if p.matchLookaheadLiteral("(", 0) {
-		var _t2175 int64
+		var _t2172 int64
 		if p.matchLookaheadLiteral("export_iceberg", 1) {
-			_t2175 = 1
+			_t2172 = 1
 		} else {
-			var _t2176 int64
+			var _t2173 int64
 			if p.matchLookaheadLiteral("export", 1) {
-				_t2176 = 0
+				_t2173 = 0
 			} else {
-				_t2176 = -1
+				_t2173 = -1
 			}
-			_t2175 = _t2176
+			_t2172 = _t2173
 		}
-		_t2174 = _t2175
+		_t2171 = _t2172
 	} else {
-		_t2174 = -1
+		_t2171 = -1
 	}
-	prediction1370 := _t2174
-	var _t2177 *pb.Export
-	if prediction1370 == 1 {
+	prediction1368 := _t2171
+	var _t2174 *pb.Export
+	if prediction1368 == 1 {
 		p.consumeLiteral("(")
 		p.consumeLiteral("export_iceberg")
-		_t2178 := p.parse_export_iceberg_config()
-		export_iceberg_config1372 := _t2178
+		_t2175 := p.parse_export_iceberg_config()
+		export_iceberg_config1370 := _t2175
 		p.consumeLiteral(")")
-		_t2179 := &pb.Export{}
-		_t2179.ExportConfig = &pb.Export_IcebergConfig{IcebergConfig: export_iceberg_config1372}
-		_t2177 = _t2179
+		_t2176 := &pb.Export{}
+		_t2176.ExportConfig = &pb.Export_IcebergConfig{IcebergConfig: export_iceberg_config1370}
+		_t2174 = _t2176
 	} else {
-		var _t2180 *pb.Export
-		if prediction1370 == 0 {
+		var _t2177 *pb.Export
+		if prediction1368 == 0 {
 			p.consumeLiteral("(")
 			p.consumeLiteral("export")
-			_t2181 := p.parse_export_csv_config()
-			export_csv_config1371 := _t2181
+			_t2178 := p.parse_export_csv_config()
+			export_csv_config1369 := _t2178
 			p.consumeLiteral(")")
-			_t2182 := &pb.Export{}
-			_t2182.ExportConfig = &pb.Export_CsvConfig{CsvConfig: export_csv_config1371}
-			_t2180 = _t2182
+			_t2179 := &pb.Export{}
+			_t2179.ExportConfig = &pb.Export_CsvConfig{CsvConfig: export_csv_config1369}
+			_t2177 = _t2179
 		} else {
 			panic(ParseError{msg: fmt.Sprintf("%s: %s=`%v`", "Unexpected token in export", p.lookahead(0).Type, p.lookahead(0).Value)})
 		}
-		_t2177 = _t2180
+		_t2174 = _t2177
 	}
-	result1374 := _t2177
-	p.recordSpan(int(span_start1373), "Export")
-	return result1374
+	result1372 := _t2174
+	p.recordSpan(int(span_start1371), "Export")
+	return result1372
 }
 
 func (p *Parser) parse_export_csv_config() *pb.ExportCSVConfig {
-	span_start1382 := int64(p.spanStart())
-	var _t2183 int64
+	span_start1380 := int64(p.spanStart())
+	var _t2180 int64
 	if p.matchLookaheadLiteral("(", 0) {
-		var _t2184 int64
+		var _t2181 int64
 		if p.matchLookaheadLiteral("export_csv_config_v2", 1) {
-			_t2184 = 0
+			_t2181 = 0
 		} else {
-			var _t2185 int64
+			var _t2182 int64
 			if p.matchLookaheadLiteral("export_csv_config", 1) {
-				_t2185 = 1
+				_t2182 = 1
 			} else {
-				_t2185 = -1
+				_t2182 = -1
 			}
-			_t2184 = _t2185
+			_t2181 = _t2182
 		}
-		_t2183 = _t2184
+		_t2180 = _t2181
 	} else {
-		_t2183 = -1
+		_t2180 = -1
 	}
-	prediction1375 := _t2183
-	var _t2186 *pb.ExportCSVConfig
-	if prediction1375 == 1 {
+	prediction1373 := _t2180
+	var _t2183 *pb.ExportCSVConfig
+	if prediction1373 == 1 {
 		p.consumeLiteral("(")
 		p.consumeLiteral("export_csv_config")
-		_t2187 := p.parse_export_csv_path()
-		export_csv_path1379 := _t2187
-		_t2188 := p.parse_export_csv_columns_list()
-		export_csv_columns_list1380 := _t2188
-		_t2189 := p.parse_config_dict()
-		config_dict1381 := _t2189
+		_t2184 := p.parse_export_csv_path()
+		export_csv_path1377 := _t2184
+		_t2185 := p.parse_export_csv_columns_list()
+		export_csv_columns_list1378 := _t2185
+		_t2186 := p.parse_config_dict()
+		config_dict1379 := _t2186
 		p.consumeLiteral(")")
-		_t2190 := p.construct_export_csv_config(export_csv_path1379, export_csv_columns_list1380, config_dict1381)
-		_t2186 = _t2190
+		_t2187 := p.construct_export_csv_config(export_csv_path1377, export_csv_columns_list1378, config_dict1379)
+		_t2183 = _t2187
 	} else {
-		var _t2191 *pb.ExportCSVConfig
-		if prediction1375 == 0 {
+		var _t2188 *pb.ExportCSVConfig
+		if prediction1373 == 0 {
 			p.consumeLiteral("(")
 			p.consumeLiteral("export_csv_config_v2")
-			_t2192 := p.parse_export_csv_output_location()
-			export_csv_output_location1376 := _t2192
-			_t2193 := p.parse_export_csv_source()
-			export_csv_source1377 := _t2193
-			_t2194 := p.parse_csv_config()
-			csv_config1378 := _t2194
+			_t2189 := p.parse_export_csv_output_location()
+			export_csv_output_location1374 := _t2189
+			_t2190 := p.parse_export_csv_source()
+			export_csv_source1375 := _t2190
+			_t2191 := p.parse_csv_config()
+			csv_config1376 := _t2191
 			p.consumeLiteral(")")
-			_t2195 := p.construct_export_csv_config_with_location(export_csv_output_location1376, export_csv_source1377, csv_config1378)
-			_t2191 = _t2195
+			_t2192 := p.construct_export_csv_config_with_location(export_csv_output_location1374, export_csv_source1375, csv_config1376)
+			_t2188 = _t2192
 		} else {
 			panic(ParseError{msg: fmt.Sprintf("%s: %s=`%v`", "Unexpected token in export_csv_config", p.lookahead(0).Type, p.lookahead(0).Value)})
 		}
-		_t2186 = _t2191
+		_t2183 = _t2188
 	}
-	result1383 := _t2186
-	p.recordSpan(int(span_start1382), "ExportCSVConfig")
-	return result1383
+	result1381 := _t2183
+	p.recordSpan(int(span_start1380), "ExportCSVConfig")
+	return result1381
 }
 
 func (p *Parser) parse_export_csv_output_location() []interface{} {
-	var _t2196 int64
+	var _t2193 int64
 	if p.matchLookaheadLiteral("(", 0) {
-		var _t2197 int64
+		var _t2194 int64
 		if p.matchLookaheadLiteral("transaction_output_name", 1) {
-			_t2197 = 1
+			_t2194 = 1
 		} else {
-			var _t2198 int64
+			var _t2195 int64
 			if p.matchLookaheadLiteral("path", 1) {
-				_t2198 = 0
+				_t2195 = 0
 			} else {
-				_t2198 = -1
+				_t2195 = -1
 			}
-			_t2197 = _t2198
+			_t2194 = _t2195
 		}
-		_t2196 = _t2197
+		_t2193 = _t2194
 	} else {
-		_t2196 = -1
+		_t2193 = -1
 	}
-	prediction1384 := _t2196
-	var _t2199 []interface{}
-	if prediction1384 == 1 {
+	prediction1382 := _t2193
+	var _t2196 []interface{}
+	if prediction1382 == 1 {
 		p.consumeLiteral("(")
 		p.consumeLiteral("transaction_output_name")
-		_t2200 := p.parse_name()
-		name1386 := _t2200
+		_t2197 := p.parse_name()
+		name1384 := _t2197
 		p.consumeLiteral(")")
-		_t2199 = []interface{}{"", name1386}
+		_t2196 = []interface{}{"", name1384}
 	} else {
-		var _t2201 []interface{}
-		if prediction1384 == 0 {
+		var _t2198 []interface{}
+		if prediction1382 == 0 {
 			p.consumeLiteral("(")
 			p.consumeLiteral("path")
-			string1385 := p.consumeTerminal("STRING").Value.str
+			string1383 := p.consumeTerminal("STRING").Value.str
 			p.consumeLiteral(")")
-			_t2201 = []interface{}{string1385, ""}
+			_t2198 = []interface{}{string1383, ""}
 		} else {
 			panic(ParseError{msg: fmt.Sprintf("%s: %s=`%v`", "Unexpected token in export_csv_output_location", p.lookahead(0).Type, p.lookahead(0).Value)})
 		}
-		_t2199 = _t2201
+		_t2196 = _t2198
 	}
-	return _t2199
+	return _t2196
 }
 
 func (p *Parser) parse_export_csv_source() *pb.ExportCSVSource {
-	span_start1393 := int64(p.spanStart())
-	var _t2202 int64
+	span_start1391 := int64(p.spanStart())
+	var _t2199 int64
 	if p.matchLookaheadLiteral("(", 0) {
-		var _t2203 int64
+		var _t2200 int64
 		if p.matchLookaheadLiteral("table_def", 1) {
-			_t2203 = 1
+			_t2200 = 1
 		} else {
-			var _t2204 int64
+			var _t2201 int64
 			if p.matchLookaheadLiteral("gnf_columns", 1) {
-				_t2204 = 0
+				_t2201 = 0
 			} else {
-				_t2204 = -1
+				_t2201 = -1
 			}
-			_t2203 = _t2204
+			_t2200 = _t2201
 		}
-		_t2202 = _t2203
+		_t2199 = _t2200
 	} else {
-		_t2202 = -1
+		_t2199 = -1
 	}
-	prediction1387 := _t2202
-	var _t2205 *pb.ExportCSVSource
-	if prediction1387 == 1 {
+	prediction1385 := _t2199
+	var _t2202 *pb.ExportCSVSource
+	if prediction1385 == 1 {
 		p.consumeLiteral("(")
 		p.consumeLiteral("table_def")
-		_t2206 := p.parse_relation_id()
-		relation_id1392 := _t2206
+		_t2203 := p.parse_relation_id()
+		relation_id1390 := _t2203
 		p.consumeLiteral(")")
-		_t2207 := &pb.ExportCSVSource{}
-		_t2207.CsvSource = &pb.ExportCSVSource_TableDef{TableDef: relation_id1392}
-		_t2205 = _t2207
+		_t2204 := &pb.ExportCSVSource{}
+		_t2204.CsvSource = &pb.ExportCSVSource_TableDef{TableDef: relation_id1390}
+		_t2202 = _t2204
 	} else {
-		var _t2208 *pb.ExportCSVSource
-		if prediction1387 == 0 {
+		var _t2205 *pb.ExportCSVSource
+		if prediction1385 == 0 {
 			p.consumeLiteral("(")
 			p.consumeLiteral("gnf_columns")
-			xs1388 := []*pb.ExportCSVColumn{}
-			cond1389 := p.matchLookaheadLiteral("(", 0)
-			for cond1389 {
-				_t2209 := p.parse_export_csv_column()
-				item1390 := _t2209
-				xs1388 = append(xs1388, item1390)
-				cond1389 = p.matchLookaheadLiteral("(", 0)
+			xs1386 := []*pb.ExportCSVColumn{}
+			cond1387 := p.matchLookaheadLiteral("(", 0)
+			for cond1387 {
+				_t2206 := p.parse_export_csv_column()
+				item1388 := _t2206
+				xs1386 = append(xs1386, item1388)
+				cond1387 = p.matchLookaheadLiteral("(", 0)
 			}
-			export_csv_columns1391 := xs1388
+			export_csv_columns1389 := xs1386
 			p.consumeLiteral(")")
-			_t2210 := &pb.ExportCSVColumns{Columns: export_csv_columns1391}
-			_t2211 := &pb.ExportCSVSource{}
-			_t2211.CsvSource = &pb.ExportCSVSource_GnfColumns{GnfColumns: _t2210}
-			_t2208 = _t2211
+			_t2207 := &pb.ExportCSVColumns{Columns: export_csv_columns1389}
+			_t2208 := &pb.ExportCSVSource{}
+			_t2208.CsvSource = &pb.ExportCSVSource_GnfColumns{GnfColumns: _t2207}
+			_t2205 = _t2208
 		} else {
 			panic(ParseError{msg: fmt.Sprintf("%s: %s=`%v`", "Unexpected token in export_csv_source", p.lookahead(0).Type, p.lookahead(0).Value)})
 		}
-		_t2205 = _t2208
+		_t2202 = _t2205
 	}
-	result1394 := _t2205
-	p.recordSpan(int(span_start1393), "ExportCSVSource")
-	return result1394
+	result1392 := _t2202
+	p.recordSpan(int(span_start1391), "ExportCSVSource")
+	return result1392
 }
 
 func (p *Parser) parse_export_csv_column() *pb.ExportCSVColumn {
-	span_start1397 := int64(p.spanStart())
+	span_start1395 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("column")
-	string1395 := p.consumeTerminal("STRING").Value.str
-	_t2212 := p.parse_relation_id()
-	relation_id1396 := _t2212
+	string1393 := p.consumeTerminal("STRING").Value.str
+	_t2209 := p.parse_relation_id()
+	relation_id1394 := _t2209
 	p.consumeLiteral(")")
-	_t2213 := &pb.ExportCSVColumn{ColumnName: string1395, ColumnData: relation_id1396}
-	result1398 := _t2213
-	p.recordSpan(int(span_start1397), "ExportCSVColumn")
-	return result1398
+	_t2210 := &pb.ExportCSVColumn{ColumnName: string1393, ColumnData: relation_id1394}
+	result1396 := _t2210
+	p.recordSpan(int(span_start1395), "ExportCSVColumn")
+	return result1396
 }
 
 func (p *Parser) parse_export_csv_path() string {
 	p.consumeLiteral("(")
 	p.consumeLiteral("path")
-	string1399 := p.consumeTerminal("STRING").Value.str
+	string1397 := p.consumeTerminal("STRING").Value.str
 	p.consumeLiteral(")")
-	return string1399
+	return string1397
 }
 
 func (p *Parser) parse_export_csv_columns_list() []*pb.ExportCSVColumn {
 	p.consumeLiteral("(")
 	p.consumeLiteral("columns")
-	xs1400 := []*pb.ExportCSVColumn{}
-	cond1401 := p.matchLookaheadLiteral("(", 0)
-	for cond1401 {
-		_t2214 := p.parse_export_csv_column()
-		item1402 := _t2214
-		xs1400 = append(xs1400, item1402)
-		cond1401 = p.matchLookaheadLiteral("(", 0)
+	xs1398 := []*pb.ExportCSVColumn{}
+	cond1399 := p.matchLookaheadLiteral("(", 0)
+	for cond1399 {
+		_t2211 := p.parse_export_csv_column()
+		item1400 := _t2211
+		xs1398 = append(xs1398, item1400)
+		cond1399 = p.matchLookaheadLiteral("(", 0)
 	}
-	export_csv_columns1403 := xs1400
+	export_csv_columns1401 := xs1398
 	p.consumeLiteral(")")
-	return export_csv_columns1403
+	return export_csv_columns1401
 }
 
 func (p *Parser) parse_export_iceberg_config() *pb.ExportIcebergConfig {
-	span_start1409 := int64(p.spanStart())
+	span_start1407 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("export_iceberg_config")
-	_t2215 := p.parse_iceberg_locator()
-	iceberg_locator1404 := _t2215
-	_t2216 := p.parse_iceberg_catalog_config()
-	iceberg_catalog_config1405 := _t2216
-	_t2217 := p.parse_export_iceberg_table_def()
-	export_iceberg_table_def1406 := _t2217
-	_t2218 := p.parse_iceberg_table_properties()
-	iceberg_table_properties1407 := _t2218
-	var _t2219 [][]interface{}
+	_t2212 := p.parse_iceberg_locator()
+	iceberg_locator1402 := _t2212
+	_t2213 := p.parse_iceberg_catalog_config()
+	iceberg_catalog_config1403 := _t2213
+	_t2214 := p.parse_export_iceberg_table_def()
+	export_iceberg_table_def1404 := _t2214
+	_t2215 := p.parse_iceberg_table_properties()
+	iceberg_table_properties1405 := _t2215
+	var _t2216 [][]interface{}
 	if p.matchLookaheadLiteral("{", 0) {
-		_t2220 := p.parse_config_dict()
-		_t2219 = _t2220
+		_t2217 := p.parse_config_dict()
+		_t2216 = _t2217
 	}
-	config_dict1408 := _t2219
+	config_dict1406 := _t2216
 	p.consumeLiteral(")")
-	_t2221 := p.construct_export_iceberg_config_full(iceberg_locator1404, iceberg_catalog_config1405, export_iceberg_table_def1406, iceberg_table_properties1407, config_dict1408)
-	result1410 := _t2221
-	p.recordSpan(int(span_start1409), "ExportIcebergConfig")
-	return result1410
+	_t2218 := p.construct_export_iceberg_config_full(iceberg_locator1402, iceberg_catalog_config1403, export_iceberg_table_def1404, iceberg_table_properties1405, config_dict1406)
+	result1408 := _t2218
+	p.recordSpan(int(span_start1407), "ExportIcebergConfig")
+	return result1408
 }
 
 func (p *Parser) parse_export_iceberg_table_def() *pb.RelationId {
-	span_start1412 := int64(p.spanStart())
+	span_start1410 := int64(p.spanStart())
 	p.consumeLiteral("(")
 	p.consumeLiteral("table_def")
-	_t2222 := p.parse_relation_id()
-	relation_id1411 := _t2222
+	_t2219 := p.parse_relation_id()
+	relation_id1409 := _t2219
 	p.consumeLiteral(")")
-	result1413 := relation_id1411
-	p.recordSpan(int(span_start1412), "RelationId")
-	return result1413
+	result1411 := relation_id1409
+	p.recordSpan(int(span_start1410), "RelationId")
+	return result1411
 }
 
 func (p *Parser) parse_iceberg_table_properties() [][]interface{} {
 	p.consumeLiteral("(")
 	p.consumeLiteral("table_properties")
-	xs1414 := [][]interface{}{}
-	cond1415 := p.matchLookaheadLiteral("(", 0)
-	for cond1415 {
-		_t2223 := p.parse_iceberg_property_entry()
-		item1416 := _t2223
-		xs1414 = append(xs1414, item1416)
-		cond1415 = p.matchLookaheadLiteral("(", 0)
+	xs1412 := [][]interface{}{}
+	cond1413 := p.matchLookaheadLiteral("(", 0)
+	for cond1413 {
+		_t2220 := p.parse_iceberg_property_entry()
+		item1414 := _t2220
+		xs1412 = append(xs1412, item1414)
+		cond1413 = p.matchLookaheadLiteral("(", 0)
 	}
-	iceberg_property_entrys1417 := xs1414
+	iceberg_property_entrys1415 := xs1412
 	p.consumeLiteral(")")
-	return iceberg_property_entrys1417
+	return iceberg_property_entrys1415
 }
 
 

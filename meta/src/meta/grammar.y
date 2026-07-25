@@ -1137,10 +1137,9 @@ relation_keys
       construct: $$ = builtin.tuple($3, False)
       deconstruct if not $$[1]:
         $3: Sequence[logic.NamedColumn] = $$[0]
-    | "(" "keys" ":" SYMBOL ")"
-      construct: $$ = construct_synthetic_keys($4)
+    | "(" "keys" "synthetic" ")"
+      construct: $$ = builtin.tuple(list[logic.NamedColumn](), True)
       deconstruct if $$[1]:
-        $4: String = "synthetic_key"
 
 target_relation
     : "(" "relation" relation_id named_column* ")"
@@ -1563,14 +1562,6 @@ def construct_cdc_relations(
         keys=list[logic.NamedColumn](),
         cdc=logic.CDCTargets(inserts=inserts, deletes=deletes),
     )
-
-
-def construct_synthetic_keys(
-    marker: String,
-) -> Tuple[Sequence[logic.NamedColumn], Boolean]:
-    if marker != "synthetic_key":
-        builtin.error("expected the `:synthetic_key` marker in the relation keys clause")
-    return builtin.tuple(list[logic.NamedColumn](), True)
 
 
 def deconstruct_relation_keys(

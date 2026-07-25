@@ -4237,7 +4237,7 @@ function pretty_relation_keys(pp::PrettyPrinter, msg::Tuple{Vector{Proto.NamedCo
         else
             _dollar_dollar = msg
             if _dollar_dollar[2]
-                _t1861 = "synthetic_key"
+                _t1861 = ()
             else
                 _t1861 = nothing
             end
@@ -4245,12 +4245,8 @@ function pretty_relation_keys(pp::PrettyPrinter, msg::Tuple{Vector{Proto.NamedCo
             if !isnothing(deconstruct_result1493)
                 unwrapped1494 = deconstruct_result1493
                 write(pp, "(keys")
-                indent_sexp!(pp)
                 newline(pp)
-                write(pp, ":")
-                write(pp, unwrapped1494)
-                dedent!(pp)
-                write(pp, ")")
+                write(pp, "synthetic)")
             else
                 throw(ParseError("No matching rule for relation_keys"))
             end

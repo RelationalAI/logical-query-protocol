@@ -18,7 +18,7 @@
                :csv_quotechar "\""
                :csv_skip 0})
             (relations
-              (keys :synthetic_key)
+              (keys synthetic)
               (inserts (relation 0x678037975b01b6389c78bc1cc79abde (column "weight" FLOAT))) (deletes
                 (relation 0xb214f85adaa2e403bed30d3721f4363 (column "weight" FLOAT))))
             (asof "2025-06-01T00:00:00Z")))))

@@ -4152,20 +4152,18 @@ func (p *PrettyPrinter) pretty_relation_keys(msg []interface{}) interface{} {
 			p.write(")")
 		} else {
 			_dollar_dollar := msg
-			var _t1830 *string
+			var _t1830 []interface{}
 			if _dollar_dollar[1].(bool) {
-				_t1830 = ptr("synthetic_key")
+				_t1830 = []interface{}{}
 			}
 			deconstruct_result1493 := _t1830
 			if deconstruct_result1493 != nil {
-				unwrapped1494 := *deconstruct_result1493
+				unwrapped1494 := deconstruct_result1493
+				_ = unwrapped1494
 				p.write("(")
 				p.write("keys")
-				p.indentSexp()
 				p.newline()
-				p.write(":")
-				p.write(unwrapped1494)
-				p.dedent()
+				p.write("synthetic")
 				p.write(")")
 			} else {
 				panic(ParseError{msg: "No matching rule for relation_keys"})

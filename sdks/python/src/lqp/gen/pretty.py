@@ -3635,7 +3635,7 @@ class PrettyPrinter:
             else:
                 _dollar_dollar = msg
                 if _dollar_dollar[1]:
-                    _t1830 = "synthetic_key"
+                    _t1830 = ()
                 else:
                     _t1830 = None
                 deconstruct_result1493 = _t1830
@@ -3643,12 +3643,8 @@ class PrettyPrinter:
                     assert deconstruct_result1493 is not None
                     unwrapped1494 = deconstruct_result1493
                     self.write("(keys")
-                    self.indent_sexp()
                     self.newline()
-                    self.write(":")
-                    self.write(unwrapped1494)
-                    self.dedent()
-                    self.write(")")
+                    self.write("synthetic)")
                 else:
                     raise ParseError("No matching rule for relation_keys")
 

@@ -11,7 +11,7 @@
               (paths "s3://bucket/edges.csv"))
             (csv_config {})
             (relations
-              (keys :synthetic_key)
+              (keys synthetic)
               (inserts
                 (relation :weight_ins
                   (column "weight" FLOAT)))
