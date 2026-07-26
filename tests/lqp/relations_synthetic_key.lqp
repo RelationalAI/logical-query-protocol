@@ -1,0 +1,23 @@
+(transaction
+  (epoch
+    (writes
+      (define
+        (fragment :f1
+          ;; Generalized CSV loading with a synthetic (loader-generated) shared key instead
+          ;; of explicit key columns. Two output relations still share that synthetic key,
+          ;; each carrying its own value column.
+          (csv_data
+            (csv_locator
+              (paths "s3://bucket/nodes.csv"))
+            (csv_config {})
+            (relations
+              (keys synthetic)
+              (relation :weights
+                (column "weight" FLOAT))
+              (relation :labels
+                (column "label" STRING)))
+            (asof "2025-06-01T00:00:00Z")))))
+
+    (reads
+      (output :weights :weights)
+      (output :labels :labels))))
