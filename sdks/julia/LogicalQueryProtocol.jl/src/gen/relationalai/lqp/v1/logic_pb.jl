@@ -2164,18 +2164,20 @@ struct TargetRelations
     keys::Vector{NamedColumn}
     body::Union{Nothing,OneOf{<:Union{PlainTargets,CDCTargets}}}
     synthetic_key::Bool
+    load_errors::Union{Nothing,RelationId}
 end
-TargetRelations(;keys = Vector{NamedColumn}(), body = nothing, synthetic_key = false) = TargetRelations(keys, body, synthetic_key)
+TargetRelations(;keys = Vector{NamedColumn}(), body = nothing, synthetic_key = false, load_errors = nothing) = TargetRelations(keys, body, synthetic_key, load_errors)
 PB.oneof_field_types(::Type{TargetRelations}) = (;
     body = (;plain=PlainTargets, cdc=CDCTargets),
 )
-PB.default_values(::Type{TargetRelations}) = (;keys = Vector{NamedColumn}(), plain = nothing, cdc = nothing, synthetic_key = false)
-PB.field_numbers(::Type{TargetRelations}) = (;keys = 1, plain = 2, cdc = 3, synthetic_key = 4)
+PB.default_values(::Type{TargetRelations}) = (;keys = Vector{NamedColumn}(), plain = nothing, cdc = nothing, synthetic_key = false, load_errors = nothing)
+PB.field_numbers(::Type{TargetRelations}) = (;keys = 1, plain = 2, cdc = 3, synthetic_key = 4, load_errors = 5)
 
 function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:TargetRelations}, _endpos::Int=0, _group::Bool=false)
     keys = PB.BufferedVector{NamedColumn}()
     body = nothing
     synthetic_key = false
+    load_errors = Ref{Union{Nothing,RelationId}}(nothing)
     while !PB.message_done(d, _endpos, _group)
         field_number, wire_type = PB.decode_tag(d)
         if field_number == 1
@@ -2186,11 +2188,13 @@ function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:TargetRelations}, _endpo
             body = OneOf(:cdc, PB.decode(d, Ref{CDCTargets}))
         elseif field_number == 4
             synthetic_key = PB.decode(d, Bool)
+        elseif field_number == 5
+            PB.decode!(d, load_errors)
         else
             Base.skip(d, wire_type)
         end
     end
-    return TargetRelations(keys[], body, synthetic_key)
+    return TargetRelations(keys[], body, synthetic_key, load_errors[])
 end
 
 function PB.encode(e::PB.AbstractProtoEncoder, x::TargetRelations)
@@ -2203,6 +2207,7 @@ function PB.encode(e::PB.AbstractProtoEncoder, x::TargetRelations)
         PB.encode(e, 3, x.body[]::CDCTargets)
     end
     x.synthetic_key != false && PB.encode(e, 4, x.synthetic_key)
+    !isnothing(x.load_errors) && PB.encode(e, 5, x.load_errors)
     return position(e.io) - initpos
 end
 function PB._encoded_size(x::TargetRelations)
@@ -2215,6 +2220,7 @@ function PB._encoded_size(x::TargetRelations)
         encoded_size += PB._encoded_size(x.body[]::CDCTargets, 3)
     end
     x.synthetic_key != false && (encoded_size += PB._encoded_size(x.synthetic_key, 4))
+    !isnothing(x.load_errors) && (encoded_size += PB._encoded_size(x.load_errors, 5))
     return encoded_size
 end
 
