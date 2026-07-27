@@ -315,11 +315,14 @@ message CDCTargets {
 // Generalized loading: shared key columns plus the target relations, loaded either as a
 // plain snapshot or as CDC insert/delete deltas. The two modes are mutually exclusive.
 message TargetRelations {
-  repeated NamedColumn keys = 1; // Shared key columns
+  repeated NamedColumn keys = 1; // Shared key columns; must be empty when synthetic_key is set
   oneof body {
     PlainTargets plain = 2;
     CDCTargets cdc = 3;
   }
+  // If true, the shared key is synthesized by the loader (e.g. a generated row key)
+  // instead of being drawn from CSV columns. Mutually exclusive with `keys`.
+  bool synthetic_key = 4;
 }
 
 message CSVData {

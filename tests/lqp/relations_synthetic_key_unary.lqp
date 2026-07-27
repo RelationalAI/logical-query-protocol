@@ -1,0 +1,18 @@
+(transaction
+  (epoch
+    (writes
+      (define
+        (fragment :f1
+          ;; Generalized CSV loading with a synthetic (loader-generated) key and a single
+          ;; unary relation that carries no value columns — the relation holds just the key.
+          (csv_data
+            (csv_locator
+              (paths "s3://bucket/keys.csv"))
+            (csv_config {})
+            (relations
+              (keys synthetic)
+              (relation :keys))
+            (asof "2025-06-01T00:00:00Z")))))
+
+    (reads
+      (output :keys :keys))))

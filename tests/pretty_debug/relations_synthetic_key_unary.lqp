@@ -1,0 +1,27 @@
+(transaction
+  (configure { :ivm.maintenance_level "off" :semantics_version 0})
+  (epoch
+    (writes
+      (define
+        (fragment
+          :f1
+          (csv_data
+            (csv_locator (paths "s3://bucket/keys.csv"))
+            (csv_config
+              {
+               :csv_compression ""
+               :csv_decimal_separator "."
+               :csv_delimiter ","
+               :csv_encoding "utf-8"
+               :csv_escapechar "\""
+               :csv_header_row 1i32
+               :csv_quotechar "\""
+               :csv_skip 0})
+            (relations (keys synthetic) (relation 0xd382b3db273cff4344b6d39d5379c923))
+            (asof "2025-06-01T00:00:00Z")))))
+    (reads (output :keys 0xd382b3db273cff4344b6d39d5379c923))))
+
+;; Debug information
+;; -----------------------
+;; Original names
+;; 	 ID `0xd382b3db273cff4344b6d39d5379c923` -> `keys`
