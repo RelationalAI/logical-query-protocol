@@ -2339,6 +2339,14 @@ end
 
     # Different oneof arms are unequal even when they share a relation.
     @test g1 != cdc1
+
+    # `synthetic_key` participates in equality and hashing.
+    s1 = TargetRelations(keys=[], body=plain([rel1]), synthetic_key=true)
+    s2 = TargetRelations(keys=[], body=plain([rel1]), synthetic_key=true)
+    @test s1 == s2
+    @test hash(s1) == hash(s2)
+    @test isequal(s1, s2)
+    @test s1 != g3   # same keys and body, differs only in synthetic_key
 end
 
 @testitem "Equality for CSVData" tags=[:ring1, :unit] begin

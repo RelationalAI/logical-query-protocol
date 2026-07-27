@@ -607,9 +607,9 @@ Base.hash(a::CDCTargets, h::UInt) = hash(a.deletes, hash(a.inserts, h))
 Base.isequal(a::CDCTargets, b::CDCTargets) = isequal(a.inserts, b.inserts) && isequal(a.deletes, b.deletes)
 
 # TargetRelations
-Base.:(==)(a::TargetRelations, b::TargetRelations) = a.keys == b.keys && _isequal_oneof(a.body, b.body)
-Base.hash(a::TargetRelations, h::UInt) = _hash_oneof(a.body, hash(a.keys, h))
-Base.isequal(a::TargetRelations, b::TargetRelations) = isequal(a.keys, b.keys) && _isequal_oneof(a.body, b.body)
+Base.:(==)(a::TargetRelations, b::TargetRelations) = a.keys == b.keys && a.synthetic_key == b.synthetic_key && _isequal_oneof(a.body, b.body)
+Base.hash(a::TargetRelations, h::UInt) = _hash_oneof(a.body, hash(a.synthetic_key, hash(a.keys, h)))
+Base.isequal(a::TargetRelations, b::TargetRelations) = isequal(a.keys, b.keys) && isequal(a.synthetic_key, b.synthetic_key) && _isequal_oneof(a.body, b.body)
 
 # CSVData
 Base.:(==)(a::CSVData, b::CSVData) = a.locator == b.locator && a.config == b.config && a.columns == b.columns && a.asof == b.asof && a.relations == b.relations
