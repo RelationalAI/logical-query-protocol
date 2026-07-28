@@ -1714,9 +1714,15 @@ def construct_configure(config_dict: Sequence[Tuple[String, logic.Value]]) -> tr
             maintenance_level = transactions.MaintenanceLevel.MAINTENANCE_LEVEL_OFF
     ivm_config: transactions.IVMConfig = transactions.IVMConfig(level=maintenance_level)
     semantics_version: int = _extract_value_int64(builtin.dict_get(config, "semantics_version"), 0)
+    config_values_pairs: List[Tuple[String, logic.Value]] = list[Tuple[String, logic.Value]]()
+    for pair in config_dict:
+        if pair[0] != "semantics_version" and pair[0] != "ivm.maintenance_level":
+            builtin.list_push(config_values_pairs, pair)
+    configuration_values: Dict[String, logic.Value] = builtin.value_map_from_pairs(config_values_pairs)
     return transactions.Configure(
         semantics_version=semantics_version,
         ivm_config=ivm_config,
+        configuration_values=configuration_values,
     )
 
 def construct_export_csv_config(
@@ -1789,6 +1795,8 @@ def is_default_configure(cfg: transactions.Configure) -> bool:
         return False
     if cfg.ivm_config.level != transactions.MaintenanceLevel.MAINTENANCE_LEVEL_OFF:
         return False
+    if builtin.length(builtin.value_map_to_pairs(cfg.configuration_values)) != 0:
+        return False
     return True
 
 
@@ -1801,6 +1809,8 @@ def deconstruct_configure(msg: transactions.Configure) -> List[Tuple[String, log
     elif msg.ivm_config.level == transactions.MaintenanceLevel.MAINTENANCE_LEVEL_OFF:
         builtin.list_push(result, builtin.tuple("ivm.maintenance_level", _make_value_string("off")))
     builtin.list_push(result, builtin.tuple("semantics_version", _make_value_int64(msg.semantics_version)))
+    for pair in builtin.value_map_to_pairs(msg.configuration_values):
+        builtin.list_push(result, pair)
     return builtin.list_sort(result)
 
 

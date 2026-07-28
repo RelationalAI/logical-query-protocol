@@ -657,7 +657,12 @@ class Parser:
         ivm_config = _t2268
         _t2269 = self._extract_value_int64(config.get("semantics_version"), 0)
         semantics_version = _t2269
-        _t2270 = transactions_pb2.Configure(semantics_version=semantics_version, ivm_config=ivm_config)
+        config_values_pairs = []
+        for pair in config_dict:
+            if (pair[0] != "semantics_version" and pair[0] != "ivm.maintenance_level"):
+                config_values_pairs.append(pair)
+        configuration_values = dict(config_values_pairs)
+        _t2270 = transactions_pb2.Configure(semantics_version=semantics_version, ivm_config=ivm_config, configuration_values=configuration_values)
         return _t2270
 
     def construct_export_csv_config(self, path: str, columns: Sequence[transactions_pb2.ExportCSVColumn], config_dict: Sequence[tuple[str, logic_pb2.Value]]) -> transactions_pb2.ExportCSVConfig:

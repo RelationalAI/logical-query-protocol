@@ -276,6 +276,8 @@ class PrettyPrinter:
                     result.append(("ivm.maintenance_level", _t1864,))
         _t1865 = self._make_value_int64(msg.semantics_version)
         result.append(("semantics_version", _t1865,))
+        for pair in sorted(msg.configuration_values.items()):
+            result.append(pair)
         return sorted(result)
 
     def deconstruct_csv_config(self, msg: logic_pb2.CSVConfig) -> list[tuple[str, logic_pb2.Value]]:

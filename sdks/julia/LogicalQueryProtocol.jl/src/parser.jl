@@ -586,7 +586,14 @@ function construct_configure(parser::ParserState, config_dict::Vector{Tuple{Stri
     ivm_config = _t2260
     _t2261 = _extract_value_int64(parser, get(config, "semantics_version", nothing), 0)
     semantics_version = _t2261
-    _t2262 = Proto.Configure(semantics_version=semantics_version, ivm_config=ivm_config)
+    config_values_pairs = Tuple{String, Proto.Value}[]
+    for pair in config_dict
+        if (pair[1] != "semantics_version" && pair[1] != "ivm.maintenance_level")
+            push!(config_values_pairs, pair)
+        end
+    end
+    configuration_values = Dict(config_values_pairs)
+    _t2262 = Proto.Configure(semantics_version=semantics_version, ivm_config=ivm_config, configuration_values=configuration_values)
     return _t2262
 end
 

@@ -224,6 +224,15 @@ register_builtin(
 )
 register_builtin("dict_get", [DictType(K, V), K], OptionType(V))
 register_builtin("dict_to_pairs", [DictType(K, V)], ListType(TupleType([K, V])))
+# Typed map helpers for map<string, Value> proto fields. Same semantics as
+# dict_from_list / dict_to_pairs, but Go generates typed helpers (*pb.Value)
+# instead of generic interface{}/string helpers.
+register_builtin(
+    "value_map_from_pairs",
+    [SequenceType(TupleType([K, V]))],
+    DictType(K, V),
+)
+register_builtin("value_map_to_pairs", [DictType(K, V)], ListType(TupleType([K, V])))
 
 # === Protobuf operations ===
 register_builtin("has_proto_field", [T, STRING], BOOLEAN)  # msg.HasField(field_name)

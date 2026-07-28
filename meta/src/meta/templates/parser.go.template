@@ -543,6 +543,19 @@ func dictFromList(pairs [][]interface{{}}) map[string]interface{{}} {{
 	return result
 }}
 
+// valueMapFromPairs builds map[string]*pb.Value from (key, *pb.Value) pair rows.
+func valueMapFromPairs(pairs [][]interface{{}}) map[string]*pb.Value {{
+	out := make(map[string]*pb.Value)
+	for _, pair := range pairs {{
+		if len(pair) >= 2 {{
+			k, _ := pair[0].(string)
+			v, _ := pair[1].(*pb.Value)
+			out[k] = v
+		}}
+	}}
+	return out
+}}
+
 // stringMapFromPairs builds map[string]string from (prop key value) pair rows.
 func stringMapFromPairs(pairs [][]interface{{}}) map[string]string {{
 	out := make(map[string]string)

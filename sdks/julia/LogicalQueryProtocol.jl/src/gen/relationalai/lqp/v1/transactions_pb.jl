@@ -536,37 +536,43 @@ end
 struct Configure
     semantics_version::Int64
     ivm_config::Union{Nothing,IVMConfig}
+    configuration_values::Dict{String,Value}
 end
-Configure(;semantics_version = zero(Int64), ivm_config = nothing) = Configure(semantics_version, ivm_config)
-PB.default_values(::Type{Configure}) = (;semantics_version = zero(Int64), ivm_config = nothing)
-PB.field_numbers(::Type{Configure}) = (;semantics_version = 1, ivm_config = 2)
+Configure(;semantics_version = zero(Int64), ivm_config = nothing, configuration_values = Dict{String,Value}()) = Configure(semantics_version, ivm_config, configuration_values)
+PB.default_values(::Type{Configure}) = (;semantics_version = zero(Int64), ivm_config = nothing, configuration_values = Dict{String,Value}())
+PB.field_numbers(::Type{Configure}) = (;semantics_version = 1, ivm_config = 2, configuration_values = 3)
 
 function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:Configure}, _endpos::Int=0, _group::Bool=false)
     semantics_version = zero(Int64)
     ivm_config = Ref{Union{Nothing,IVMConfig}}(nothing)
+    configuration_values = Dict{String,Value}()
     while !PB.message_done(d, _endpos, _group)
         field_number, wire_type = PB.decode_tag(d)
         if field_number == 1
             semantics_version = PB.decode(d, Int64)
         elseif field_number == 2
             PB.decode!(d, ivm_config)
+        elseif field_number == 3
+            PB.decode!(d, configuration_values)
         else
             Base.skip(d, wire_type)
         end
     end
-    return Configure(semantics_version, ivm_config[])
+    return Configure(semantics_version, ivm_config[], configuration_values)
 end
 
 function PB.encode(e::PB.AbstractProtoEncoder, x::Configure)
     initpos = position(e.io)
     x.semantics_version != zero(Int64) && PB.encode(e, 1, x.semantics_version)
     !isnothing(x.ivm_config) && PB.encode(e, 2, x.ivm_config)
+    !isempty(x.configuration_values) && PB.encode(e, 3, x.configuration_values)
     return position(e.io) - initpos
 end
 function PB._encoded_size(x::Configure)
     encoded_size = 0
     x.semantics_version != zero(Int64) && (encoded_size += PB._encoded_size(x.semantics_version, 1))
     !isnothing(x.ivm_config) && (encoded_size += PB._encoded_size(x.ivm_config, 2))
+    !isempty(x.configuration_values) && (encoded_size += PB._encoded_size(x.configuration_values, 3))
     return encoded_size
 end
 

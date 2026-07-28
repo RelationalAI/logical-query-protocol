@@ -31,12 +31,21 @@ class Transaction(_message.Message):
     def __init__(self, epochs: _Optional[_Iterable[_Union[Epoch, _Mapping]]] = ..., configure: _Optional[_Union[Configure, _Mapping]] = ..., sync: _Optional[_Union[Sync, _Mapping]] = ...) -> None: ...
 
 class Configure(_message.Message):
-    __slots__ = ("semantics_version", "ivm_config")
+    __slots__ = ("semantics_version", "ivm_config", "configuration_values")
+    class ConfigurationValuesEntry(_message.Message):
+        __slots__ = ("key", "value")
+        KEY_FIELD_NUMBER: _ClassVar[int]
+        VALUE_FIELD_NUMBER: _ClassVar[int]
+        key: str
+        value: _logic_pb2.Value
+        def __init__(self, key: _Optional[str] = ..., value: _Optional[_Union[_logic_pb2.Value, _Mapping]] = ...) -> None: ...
     SEMANTICS_VERSION_FIELD_NUMBER: _ClassVar[int]
     IVM_CONFIG_FIELD_NUMBER: _ClassVar[int]
+    CONFIGURATION_VALUES_FIELD_NUMBER: _ClassVar[int]
     semantics_version: int
     ivm_config: IVMConfig
-    def __init__(self, semantics_version: _Optional[int] = ..., ivm_config: _Optional[_Union[IVMConfig, _Mapping]] = ...) -> None: ...
+    configuration_values: _containers.MessageMap[str, _logic_pb2.Value]
+    def __init__(self, semantics_version: _Optional[int] = ..., ivm_config: _Optional[_Union[IVMConfig, _Mapping]] = ..., configuration_values: _Optional[_Mapping[str, _logic_pb2.Value]] = ...) -> None: ...
 
 class IVMConfig(_message.Message):
     __slots__ = ("level",)

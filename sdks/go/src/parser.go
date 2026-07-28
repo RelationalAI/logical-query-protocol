@@ -572,6 +572,19 @@ func dictFromList(pairs [][]interface{}) map[string]interface{} {
 	return result
 }
 
+// valueMapFromPairs builds map[string]*pb.Value from (key, *pb.Value) pair rows.
+func valueMapFromPairs(pairs [][]interface{}) map[string]*pb.Value {
+	out := make(map[string]*pb.Value)
+	for _, pair := range pairs {
+		if len(pair) >= 2 {
+			k, _ := pair[0].(string)
+			v, _ := pair[1].(*pb.Value)
+			out[k] = v
+		}
+	}
+	return out
+}
+
 // stringMapFromPairs builds map[string]string from (prop key value) pair rows.
 func stringMapFromPairs(pairs [][]interface{}) map[string]string {
 	out := make(map[string]string)
@@ -885,7 +898,14 @@ func (p *Parser) construct_configure(config_dict [][]interface{}) *pb.Configure 
 	ivm_config := _t2274
 	_t2275 := p._extract_value_int64(dictGetValue(config, "semantics_version"), 0)
 	semantics_version := _t2275
-	_t2276 := &pb.Configure{SemanticsVersion: semantics_version, IvmConfig: ivm_config}
+	config_values_pairs := [][]interface{}{}
+	for _, pair := range config_dict {
+		if (pair[0].(string) != "semantics_version" && pair[0].(string) != "ivm.maintenance_level") {
+			config_values_pairs = append(config_values_pairs, pair)
+		}
+	}
+	configuration_values := valueMapFromPairs(config_values_pairs)
+	_t2276 := &pb.Configure{SemanticsVersion: semantics_version, IvmConfig: ivm_config, ConfigurationValues: configuration_values}
 	return _t2276
 }
 

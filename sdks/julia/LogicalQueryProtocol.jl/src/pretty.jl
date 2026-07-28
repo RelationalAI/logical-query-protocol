@@ -450,6 +450,9 @@ function deconstruct_configure(pp::PrettyPrinter, msg::Proto.Configure)::Vector{
     end
     _t1909 = _make_value_int64(pp, msg.semantics_version)
     push!(result, ("semantics_version", _t1909,))
+    for pair in sort([(k, v) for (k, v) in msg.configuration_values])
+        push!(result, pair)
+    end
     return sort(result)
 end
 

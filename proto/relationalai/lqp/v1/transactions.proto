@@ -16,6 +16,11 @@ message Transaction {
 message Configure {
   int64 semantics_version = 1;
   IVMConfig ivm_config = 2;
+
+  // A generic configuration dictionary. The engine can choose how to interpret any entries
+  // in this config dict. Absence of an entry must be interpreted with safe defaults in the
+  // engine.
+  map<string, Value> configuration_values = 3;
 }
 
 message IVMConfig {

@@ -264,6 +264,23 @@ func listSort(pairs [][]interface{}) [][]interface{} {
 	return pairs
 }
 
+// valueMapToPairs converts map[string]*pb.Value to sorted key/value rows for pretty printing.
+func valueMapToPairs(m map[string]*pb.Value) [][]interface{} {
+	if len(m) == 0 {
+		return nil
+	}
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	out := make([][]interface{}, 0, len(keys))
+	for _, k := range keys {
+		out = append(out, []interface{}{k, m[k]})
+	}
+	return out
+}
+
 // dictToPairs converts map[string]string to sorted key/value rows for pretty printing.
 func dictToPairs(m map[string]string) [][]interface{} {
 	if len(m) == 0 {
@@ -422,6 +439,9 @@ func (p *PrettyPrinter) deconstruct_configure(msg *pb.Configure) [][]interface{}
 	}
 	_t1865 := p._make_value_int64(msg.GetSemanticsVersion())
 	result = append(result, []interface{}{"semantics_version", _t1865})
+	for _, pair := range valueMapToPairs(msg.GetConfigurationValues()) {
+		result = append(result, pair)
+	}
 	return listSort(result)
 }
 

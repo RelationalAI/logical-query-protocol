@@ -494,9 +494,9 @@ Base.hash(a::IVMConfig, h::UInt) = hash(a.level, h)
 Base.isequal(a::IVMConfig, b::IVMConfig) = isequal(a.level, b.level)
 
 # Configure
-Base.:(==)(a::Configure, b::Configure) = a.semantics_version == b.semantics_version && a.ivm_config == b.ivm_config
-Base.hash(a::Configure, h::UInt) = hash(a.ivm_config, hash(a.semantics_version, h))
-Base.isequal(a::Configure, b::Configure) = isequal(a.semantics_version, b.semantics_version) && isequal(a.ivm_config, b.ivm_config)
+Base.:(==)(a::Configure, b::Configure) = a.semantics_version == b.semantics_version && a.ivm_config == b.ivm_config && a.configuration_values == b.configuration_values
+Base.hash(a::Configure, h::UInt) = hash(a.configuration_values, hash(a.ivm_config, hash(a.semantics_version, h)))
+Base.isequal(a::Configure, b::Configure) = isequal(a.semantics_version, b.semantics_version) && isequal(a.ivm_config, b.ivm_config) && isequal(a.configuration_values, b.configuration_values)
 
 # Epoch
 Base.:(==)(a::Epoch, b::Epoch) = a.writes == b.writes && a.reads == b.reads
