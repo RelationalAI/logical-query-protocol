@@ -138,7 +138,8 @@ type Configure struct {
 	SemanticsVersion int64                  `protobuf:"varint,1,opt,name=semantics_version,json=semanticsVersion,proto3" json:"semantics_version,omitempty"`
 	IvmConfig        *IVMConfig             `protobuf:"bytes,2,opt,name=ivm_config,json=ivmConfig,proto3" json:"ivm_config,omitempty"`
 	// A generic configuration dictionary. The engine can choose how to interpret any entries
-	// in this config dict.
+	// in this config dict. Absence of an entry must be interpreted with safe defaults in the
+	// engine.
 	ConfigurationValues map[string]*Value `protobuf:"bytes,3,rep,name=configuration_values,json=configurationValues,proto3" json:"configuration_values,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
