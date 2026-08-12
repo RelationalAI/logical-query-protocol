@@ -451,16 +451,18 @@ class CDCTargets(_message.Message):
     def __init__(self, inserts: _Optional[_Iterable[_Union[TargetRelation, _Mapping]]] = ..., deletes: _Optional[_Iterable[_Union[TargetRelation, _Mapping]]] = ...) -> None: ...
 
 class TargetRelations(_message.Message):
-    __slots__ = ("keys", "plain", "cdc", "synthetic_key")
+    __slots__ = ("keys", "plain", "cdc", "synthetic_key", "load_errors")
     KEYS_FIELD_NUMBER: _ClassVar[int]
     PLAIN_FIELD_NUMBER: _ClassVar[int]
     CDC_FIELD_NUMBER: _ClassVar[int]
     SYNTHETIC_KEY_FIELD_NUMBER: _ClassVar[int]
+    LOAD_ERRORS_FIELD_NUMBER: _ClassVar[int]
     keys: _containers.RepeatedCompositeFieldContainer[NamedColumn]
     plain: PlainTargets
     cdc: CDCTargets
     synthetic_key: bool
-    def __init__(self, keys: _Optional[_Iterable[_Union[NamedColumn, _Mapping]]] = ..., plain: _Optional[_Union[PlainTargets, _Mapping]] = ..., cdc: _Optional[_Union[CDCTargets, _Mapping]] = ..., synthetic_key: _Optional[bool] = ...) -> None: ...
+    load_errors: RelationId
+    def __init__(self, keys: _Optional[_Iterable[_Union[NamedColumn, _Mapping]]] = ..., plain: _Optional[_Union[PlainTargets, _Mapping]] = ..., cdc: _Optional[_Union[CDCTargets, _Mapping]] = ..., synthetic_key: _Optional[bool] = ..., load_errors: _Optional[_Union[RelationId, _Mapping]] = ...) -> None: ...
 
 class CSVData(_message.Message):
     __slots__ = ("locator", "config", "columns", "asof", "relations")

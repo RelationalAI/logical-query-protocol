@@ -94,6 +94,7 @@
 %nonterm cdc_inserts Sequence[logic.TargetRelation]
 %nonterm cdc_deletes Sequence[logic.TargetRelation]
 %nonterm relation_body logic.TargetRelations
+%nonterm load_errors logic.RelationId
 %nonterm target_relations logic.TargetRelations
 %nonterm csv_config logic.CSVConfig
 %nonterm csv_data logic.CSVData
@@ -1168,12 +1169,16 @@ relation_body
         $1: Sequence[logic.TargetRelation] = $$.cdc.inserts
         $2: Sequence[logic.TargetRelation] = $$.cdc.deletes
 
+load_errors
+    : "(" "load_errors" relation_id ")"
+
 target_relations
-    : "(" "relations" relation_keys relation_body ")"
-      construct: $$ = construct_relations($3, $4)
+    : "(" "relations" relation_keys relation_body load_errors? ")"
+      construct: $$ = construct_relations($3, $4, $5)
       deconstruct:
         $3: Tuple[Sequence[logic.NamedColumn], Boolean] = deconstruct_relation_keys($$)
         $4: logic.TargetRelations = $$
+        $5: Optional[logic.RelationId] = deconstruct_load_errors_optional($$)
 
 csv_locator_paths
     : "(" "paths" STRING* ")"
@@ -1570,13 +1575,26 @@ def deconstruct_relation_keys(
     return builtin.tuple(msg.keys, msg.synthetic_key)
 
 
+def deconstruct_load_errors_optional(
+    msg: logic.TargetRelations,
+) -> Optional[logic.RelationId]:
+    if builtin.has_proto_field(msg, "load_errors"):
+        return builtin.some(builtin.unwrap_option(msg.load_errors))
+    return builtin.none()
+
+
 def construct_relations(
     keys: Tuple[Sequence[logic.NamedColumn], Boolean],
     body: logic.TargetRelations,
+    load_errors_opt: Optional[logic.RelationId],
 ) -> logic.TargetRelations:
     if builtin.has_proto_field(body, "plain"):
-        return logic.TargetRelations(keys=keys[0], synthetic_key=keys[1], plain=body.plain)
-    return logic.TargetRelations(keys=keys[0], synthetic_key=keys[1], cdc=body.cdc)
+        return logic.TargetRelations(
+            keys=keys[0], synthetic_key=keys[1], plain=body.plain, load_errors=load_errors_opt
+        )
+    return logic.TargetRelations(
+        keys=keys[0], synthetic_key=keys[1], cdc=body.cdc, load_errors=load_errors_opt
+    )
 
 
 def construct_csv_data(

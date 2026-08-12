@@ -323,6 +323,10 @@ message TargetRelations {
   // If true, the shared key is synthesized by the loader (e.g. a generated row key)
   // instead of being drawn from CSV columns. Mutually exclusive with `keys`.
   bool synthetic_key = 4;
+  // If present, rows that fail to load are collected into this relation. Its schema is
+  // determined by the loader and differs from `keys` plus the per-relation value columns,
+  // which is why it is called out separately instead of being a regular target relation.
+  optional RelationId load_errors = 5;
 }
 
 message CSVData {

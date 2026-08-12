@@ -1,0 +1,24 @@
+(transaction
+  (epoch
+    (writes
+      (define
+        (fragment :f1
+          ;; Generalized CSV loading with a `load_errors` sink: rows that fail to load are
+          ;; collected into :my_load_errors. Its schema is fixed by the loader and differs
+          ;; from the declared keys, so it is a special case rather than a target relation.
+          (csv_data
+            (csv_locator
+              (paths "s3://bucket/nodes.csv"))
+            (csv_config {})
+            (relations
+              (keys
+                (column "id" INT))
+              (relation :wide
+                (column "label" STRING)
+                (column "ratio" FLOAT))
+              (load_errors :my_load_errors))
+            (asof "2025-06-01T00:00:00Z")))))
+
+    (reads
+      (output :wide :wide)
+      (output :my_load_errors :my_load_errors))))

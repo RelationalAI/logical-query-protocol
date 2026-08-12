@@ -1,0 +1,36 @@
+(transaction
+  (configure { :ivm.maintenance_level "off" :semantics_version 0})
+  (epoch
+    (writes
+      (define
+        (fragment
+          :f1
+          (csv_data
+            (csv_locator (paths "s3://bucket/nodes.csv"))
+            (csv_config
+              {
+               :csv_compression ""
+               :csv_decimal_separator "."
+               :csv_delimiter ","
+               :csv_encoding "utf-8"
+               :csv_escapechar "\""
+               :csv_header_row 1i32
+               :csv_quotechar "\""
+               :csv_skip 0})
+            (relations
+              (keys (column "id" INT))
+              (relation
+                0xa06f7aa0fd12a488f1ee358ed04fb942
+                (column "label" STRING)
+                (column "ratio" FLOAT))
+              (load_errors 0xf94dbe3c669b1241e9fd5f8c0bd99e0b))
+            (asof "2025-06-01T00:00:00Z")))))
+    (reads
+      (output :wide 0xa06f7aa0fd12a488f1ee358ed04fb942)
+      (output :my_load_errors 0xf94dbe3c669b1241e9fd5f8c0bd99e0b))))
+
+;; Debug information
+;; -----------------------
+;; Original names
+;; 	 ID `0xf94dbe3c669b1241e9fd5f8c0bd99e0b` -> `my_load_errors`
+;; 	 ID `0xa06f7aa0fd12a488f1ee358ed04fb942` -> `wide`

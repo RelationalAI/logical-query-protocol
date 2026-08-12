@@ -1,0 +1,26 @@
+(transaction
+  (epoch
+    (writes
+      (define
+        (fragment :f1
+          ;; A `load_errors` sink combined with CDC loading: the insert/delete deltas are
+          ;; unaffected, and failed rows still land in :my_load_errors.
+          (csv_data
+            (csv_locator
+              (paths "s3://bucket/edges.csv"))
+            (csv_config {})
+            (relations
+              (keys synthetic)
+              (inserts
+                (relation :weight_ins
+                  (column "weight" FLOAT)))
+              (deletes
+                (relation :weight_del
+                  (column "weight" FLOAT)))
+              (load_errors :my_load_errors))
+            (asof "2025-06-01T00:00:00Z")))))
+
+    (reads
+      (output :weight_ins :weight_ins)
+      (output :weight_del :weight_del)
+      (output :my_load_errors :my_load_errors))))

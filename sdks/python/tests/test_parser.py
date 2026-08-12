@@ -148,6 +148,59 @@ def test_synthetic_key_rejects_unknown_marker():
         parse_fragment(_relations_fragment("(keys bogus)"))
 
 
+def _load_errors_fragment(load_errors_clause: str) -> str:
+    # Minimal fragment exercising the optional `(load_errors ...)` clause that
+    # trails the target relations.
+    return (
+        '(fragment :f (csv_data (csv_locator (paths "x.csv")) (csv_config {}) '
+        '(relations (keys (column "id" INT)) (relation :r (column "v" INT)) '
+        f"{load_errors_clause}) "
+        '(asof "2025-01-01T00:00:00Z")))'
+    )
+
+
+def test_load_errors_clause():
+    # `(load_errors :name)` names the relation collecting rows that fail to load.
+    relations = _relations_of(_load_errors_fragment("(load_errors :my_load_errors)"))
+    assert relations.HasField("load_errors")
+    parser = Parser([], "")
+    assert relations.load_errors == parser.relation_id_from_string("my_load_errors")
+    # The clause is trailing and does not disturb the target relations.
+    assert len(relations.plain.targets) == 1
+
+    # Omitting the clause leaves the field unset rather than defaulted.
+    relations = _relations_of(_load_errors_fragment(""))
+    assert not relations.HasField("load_errors")
+
+
+def test_load_errors_with_cdc():
+    # The clause also trails CDC insert/delete deltas.
+    fragment = (
+        '(fragment :f (csv_data (csv_locator (paths "x.csv")) (csv_config {}) '
+        "(relations (keys synthetic) "
+        '(inserts (relation :ins (column "v" INT))) '
+        '(deletes (relation :del (column "v" INT))) '
+        "(load_errors :my_load_errors)) "
+        '(asof "2025-01-01T00:00:00Z")))'
+    )
+    relations = _relations_of(fragment)
+    assert relations.HasField("load_errors")
+    assert len(relations.cdc.inserts) == 1
+    assert len(relations.cdc.deletes) == 1
+
+
+def test_load_errors_must_follow_relations():
+    # The clause is trailing: it may not appear before the target relations.
+    fragment = (
+        '(fragment :f (csv_data (csv_locator (paths "x.csv")) (csv_config {}) '
+        '(relations (keys (column "id" INT)) (load_errors :e) '
+        '(relation :r (column "v" INT))) '
+        '(asof "2025-01-01T00:00:00Z")))'
+    )
+    with pytest.raises(ParseError):
+        parse_fragment(fragment)
+
+
 class TestSymbolLexing:
     """Tests for SYMBOL token regex — hyphen must be literal, not a range."""
 
