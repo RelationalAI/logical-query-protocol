@@ -227,8 +227,9 @@ function global_ids(data::Data)
         if !isnothing(csv_data.relations)
             # Generalized form: collect target relations from whichever body group is set — the
             # plain group's `targets`, or the CDC `inserts`/`deletes` groups (which may share a
-            # target, so deduplicate).
-            body = csv_data.relations.body
+            # target, so deduplicate). The optional `load_errors` sink is declared here too.
+            relations = csv_data.relations
+            body = relations.body
             if !isnothing(body)
                 payload = body[]
                 # `isa` (not `body.name`) so the branch narrows the concrete type for inference.
@@ -240,6 +241,9 @@ function global_ids(data::Data)
                         end
                     end
                 end
+            end
+            if !isnothing(relations.load_errors)
+                push!(ids, persistent_id(relations.load_errors))
             end
             return unique(ids)
         end
