@@ -164,6 +164,58 @@ end
     data_csv2 = Data(; data_type=OneOf(:csv_data, csv2))
     @test global_ids(data_csv2) == [persistent_id(rid1), persistent_id(rid2)]
 
+    # Generalized CSVData: plain targets, without and with a `load_errors` sink
+    key = NamedColumn(; name="k", var"#type"=t1)
+    tr1 = TargetRelation(; target_id=rid1, values=NamedColumn[])
+    tr2 = TargetRelation(; target_id=rid2, values=NamedColumn[])
+    plain = TargetRelations(; keys=[key], body=OneOf(:plain, PlainTargets(; targets=[tr1, tr2])))
+    csv_plain = CSVData(; columns=GNFColumn[], relations=plain)
+    data_csv_plain = Data(; data_type=OneOf(:csv_data, csv_plain))
+    @test global_ids(data_csv_plain) == [persistent_id(rid1), persistent_id(rid2)]
+
+    plain_errs = TargetRelations(;
+        keys=[key],
+        body=OneOf(:plain, PlainTargets(; targets=[tr1, tr2])),
+        load_errors=rid3,
+    )
+    csv_plain_errs = CSVData(; columns=GNFColumn[], relations=plain_errs)
+    data_csv_plain_errs = Data(; data_type=OneOf(:csv_data, csv_plain_errs))
+    @test global_ids(data_csv_plain_errs) == [
+        persistent_id(rid1), persistent_id(rid2), persistent_id(rid3),
+    ]
+
+    # Generalized CSVData: CDC targets, without and with a `load_errors` sink. `inserts` and
+    # `deletes` share a target here, which must appear only once.
+    cdc_body = CDCTargets(; inserts=[tr1, tr2], deletes=[tr1])
+    cdc = TargetRelations(; keys=[key], body=OneOf(:cdc, cdc_body))
+    csv_cdc = CSVData(; columns=GNFColumn[], relations=cdc)
+    data_csv_cdc = Data(; data_type=OneOf(:csv_data, csv_cdc))
+    @test global_ids(data_csv_cdc) == [persistent_id(rid1), persistent_id(rid2)]
+
+    cdc_errs = TargetRelations(; keys=[key], body=OneOf(:cdc, cdc_body), load_errors=rid3)
+    csv_cdc_errs = CSVData(; columns=GNFColumn[], relations=cdc_errs)
+    data_csv_cdc_errs = Data(; data_type=OneOf(:csv_data, csv_cdc_errs))
+    @test global_ids(data_csv_cdc_errs) == [
+        persistent_id(rid1), persistent_id(rid2), persistent_id(rid3),
+    ]
+
+    # The sink is reported once even when it is also a regular target relation
+    tr3 = TargetRelation(; target_id=rid3, values=NamedColumn[])
+    dup = TargetRelations(;
+        keys=[key],
+        body=OneOf(:plain, PlainTargets(; targets=[tr1, tr3])),
+        load_errors=rid3,
+    )
+    csv_dup = CSVData(; columns=GNFColumn[], relations=dup)
+    data_csv_dup = Data(; data_type=OneOf(:csv_data, csv_dup))
+    @test global_ids(data_csv_dup) == [persistent_id(rid1), persistent_id(rid3)]
+
+    # A `load_errors` sink alone, with no body set
+    only_errs = TargetRelations(; keys=[key], load_errors=rid3)
+    csv_only_errs = CSVData(; columns=GNFColumn[], relations=only_errs)
+    data_csv_only_errs = Data(; data_type=OneOf(:csv_data, csv_only_errs))
+    @test global_ids(data_csv_only_errs) == [persistent_id(rid3)]
+
     # IcebergData declaration with multiple columns
     loc = IcebergLocator(; table_name="t", namespace=["n"], warehouse="w")
     cfg = IcebergCatalogConfig(;
