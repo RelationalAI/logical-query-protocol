@@ -231,6 +231,8 @@
 
 %%
 
+# The top-level unit of communication. Groups one or more epochs
+# with optional configuration and synchronization directives.
 transaction
     : "(" "transaction" configure? sync? epoch* ")"
       construct: $$ = transactions.Transaction(epochs=$5, configure=builtin.unwrap_option_or($3, default_configure()), sync=$4)
@@ -239,14 +241,17 @@ transaction
         $4: Optional[transactions.Sync] = $$.sync if builtin.has_proto_field($$, "sync") else None
         $5: Sequence[transactions.Epoch] = $$.epochs
 
+# Transaction-level configuration settings (e.g., IVM maintenance level, semantics version).
 configure
     : "(" "configure" config_dict ")"
       construct: $$ = construct_configure($3)
       deconstruct: $3: Sequence[Tuple[String, logic.Value]] = deconstruct_configure($$)
 
+# A dictionary of key-value pairs enclosed in braces.
 config_dict
     : "{" config_key_value* "}"
 
+# A single key-value entry in a config dictionary. The key is a colon-prefixed symbol.
 config_key_value
     : ":" SYMBOL raw_value
       construct: $$ = builtin.tuple($2, $3)
@@ -254,6 +259,7 @@ config_key_value
         $2: String = $$[0]
         $3: logic.Value = $$[1]
 
+# A typed constant value. Uses formatted token variants for pretty-printable output.
 value
     : date
       construct: $$ = logic.Value(date_value=$1)
@@ -306,6 +312,7 @@ value
       deconstruct if builtin.has_proto_field($$, 'boolean_value'):
         $1: Boolean = $$.boolean_value
 
+# A typed constant value using raw (unformatted) token variants.
 raw_value
     : raw_date
       construct: $$ = logic.Value(date_value=$1)
@@ -358,6 +365,7 @@ raw_value
       deconstruct if builtin.has_proto_field($$, 'boolean_value'):
         $1: Boolean = $$.boolean_value
 
+# A date literal with year, month, day components (raw token variant).
 raw_date
     : "(" "date" INT INT INT ")"
       construct: $$ = logic.DateValue(year=builtin.int64_to_int32($3), month=builtin.int64_to_int32($4), day=builtin.int64_to_int32($5))
@@ -366,6 +374,7 @@ raw_date
         $4: Int64 = builtin.int32_to_int64($$.month)
         $5: Int64 = builtin.int32_to_int64($$.day)
 
+# A date literal with year, month, day components (formatted token variant).
 date
     : "(" "date" FORMATTED_INT FORMATTED_INT FORMATTED_INT ")"
       construct: $$ = logic.DateValue(year=builtin.int64_to_int32($3), month=builtin.int64_to_int32($4), day=builtin.int64_to_int32($5))
@@ -374,6 +383,8 @@ date
         $4: Int64 = builtin.int32_to_int64($$.month)
         $5: Int64 = builtin.int32_to_int64($$.day)
 
+# A datetime literal with year, month, day, hour, minute, second, and optional
+# microsecond components (raw token variant).
 raw_datetime
     : "(" "datetime" INT INT INT INT INT INT INT? ")"
       construct: $$ = logic.DateTimeValue(year=builtin.int64_to_int32($3), month=builtin.int64_to_int32($4), day=builtin.int64_to_int32($5), hour=builtin.int64_to_int32($6), minute=builtin.int64_to_int32($7), second=builtin.int64_to_int32($8), microsecond=builtin.int64_to_int32(builtin.unwrap_option_or($9, 0)))
@@ -386,6 +397,8 @@ raw_datetime
         $8: Int64 = builtin.int32_to_int64($$.second)
         $9: Optional[Int64] = builtin.some(builtin.int32_to_int64($$.microsecond))
 
+# A datetime literal with year, month, day, hour, minute, second, and optional
+# microsecond components (formatted token variant).
 datetime
     : "(" "datetime" FORMATTED_INT FORMATTED_INT FORMATTED_INT FORMATTED_INT FORMATTED_INT FORMATTED_INT FORMATTED_INT? ")"
       construct: $$ = logic.DateTimeValue(year=builtin.int64_to_int32($3), month=builtin.int64_to_int32($4), day=builtin.int64_to_int32($5), hour=builtin.int64_to_int32($6), minute=builtin.int64_to_int32($7), second=builtin.int64_to_int32($8), microsecond=builtin.int64_to_int32(builtin.unwrap_option_or($9, 0)))
@@ -398,6 +411,7 @@ datetime
         $8: Int64 = builtin.int32_to_int64($$.second)
         $9: Optional[Int64] = builtin.some(builtin.int32_to_int64($$.microsecond))
 
+# A boolean literal: `true` or `false`.
 boolean_value
     : "true"
       construct: $$ = True
@@ -408,16 +422,19 @@ boolean_value
       deconstruct if not $$:
         pass
 
+# Synchronization directive listing fragments that must be loaded before evaluation.
 sync
     : "(" "sync" fragment_id* ")"
       construct: $$ = transactions.Sync(fragments=$3)
       deconstruct: $3: Sequence[fragments.FragmentId] = $$.fragments
 
+# A colon-prefixed identifier for a fragment.
 fragment_id
     : ":" SYMBOL
       construct: $$ = builtin.fragment_id_from_string($2)
       deconstruct: $2: String = builtin.fragment_id_to_string($$)
 
+# An epoch is a unit of execution within a transaction, containing optional writes and reads.
 epoch
     : "(" "epoch" epoch_writes? epoch_reads? ")"
       construct: $$ = transactions.Epoch(writes=builtin.unwrap_option_or($3, list[transactions.Write]()), reads=builtin.unwrap_option_or($4, list[transactions.Read]()))
@@ -425,9 +442,11 @@ epoch
         $3: Optional[Sequence[transactions.Write]] = $$.writes if not builtin.is_empty($$.writes) else None
         $4: Optional[Sequence[transactions.Read]] = $$.reads if not builtin.is_empty($$.reads) else None
 
+# The write section of an epoch, containing zero or more write operations.
 epoch_writes
     : "(" "writes" write* ")"
 
+# A single write operation: define, undefine, context, or snapshot.
 write
     : define
       construct: $$ = transactions.Write(define=$1)
@@ -446,11 +465,13 @@ write
       deconstruct if builtin.has_proto_field($$, 'snapshot'):
         $1: transactions.Snapshot = $$.snapshot
 
+# Installs a fragment of declarations into the database.
 define
     : "(" "define" fragment ")"
       construct: $$ = transactions.Define(fragment=$3)
       deconstruct: $3: fragments.Fragment = $$.fragment
 
+# A named group of declarations (defs, algorithms, constraints, data).
 fragment
     : "(" "fragment" new_fragment_id declaration* ")"
       construct: $$ = builtin.construct_fragment($3, $4)
@@ -465,6 +486,7 @@ new_fragment_id
         builtin.start_fragment($1)
         $$ = $1
 
+# A single declaration within a fragment.
 declaration
     : def
       construct: $$ = logic.Declaration(def=$1)
@@ -483,6 +505,8 @@ declaration
       deconstruct if builtin.has_proto_field($$, 'data'):
         $1: logic.Data = $$.data
 
+# A rule definition: binds a relation name to an abstraction (the rule body),
+# with optional attributes.
 def
     : "(" "def" relation_id abstraction attrs? ")"
       construct: $$ = logic.Def(name=$3, body=$4, attrs=builtin.unwrap_option_or($5, list[logic.Attribute]()))
@@ -491,6 +515,7 @@ def
         $4: logic.Abstraction = $$.body
         $5: Optional[Sequence[logic.Attribute]] = $$.attrs if not builtin.is_empty($$.attrs) else None
 
+# Identifies a relation, either by a colon-prefixed symbolic name or a numeric hash.
 relation_id
     : ":" SYMBOL
       construct: $$ = builtin.relation_id_from_string($2)
@@ -501,6 +526,7 @@ relation_id
       deconstruct:
         $1: logic.UInt128Value = deconstruct_relation_id_uint128($$)
 
+# A lambda-like construct: a list of typed variable bindings followed by a formula body.
 abstraction
     : "(" bindings formula ")"
       construct: $$ = logic.Abstraction(vars=builtin.list_concat($2[0], $2[1]), value=$3)
@@ -508,6 +534,8 @@ abstraction
         $2: Tuple[Sequence[logic.Binding], Sequence[logic.Binding]] = deconstruct_bindings($$)
         $3: logic.Formula = $$.value
 
+# A bracketed list of variable bindings, with an optional value-bindings section
+# separated by `|`.
 bindings
     : "[" binding* value_bindings? "]"
       construct: $$ = builtin.tuple($2, builtin.unwrap_option_or($3, list[logic.Binding]()))
@@ -515,6 +543,7 @@ bindings
         $2: Sequence[logic.Binding] = $$[0]
         $3: Optional[Sequence[logic.Binding]] = $$[1] if not builtin.is_empty($$[1]) else None
 
+# A single typed variable binding: `name :: type`.
 binding
     : SYMBOL "::" type
       construct: $$ = logic.Binding(var=logic.Var(name=$1), type=$3)
@@ -522,6 +551,7 @@ binding
         $1: String = $$.var.name
         $3: logic.Type = $$.type
 
+# A type annotation for a variable binding.
 type
     : unspecified_type
       construct: $$ = logic.Type(unspecified_type=$1)
@@ -628,6 +658,7 @@ missing_type
     : "MISSING"
       construct: $$ = logic.MissingType()
 
+# A fixed-point decimal type with precision and scale parameters.
 decimal_type
     : "(" "DECIMAL" INT INT ")"
       construct: $$ = logic.DecimalType(precision=builtin.int64_to_int32($3), scale=builtin.int64_to_int32($4))
@@ -639,9 +670,13 @@ boolean_type
     : "BOOLEAN"
       construct: $$ = logic.BooleanType()
 
+# The value-bindings section of a bindings list, separated from key bindings by `|`.
+# Used to distinguish key and value variables in upsert and monoid operations.
 value_bindings
     : "|" binding*
 
+# A logical formula: the body of an abstraction. Can be a conjunction, disjunction,
+# negation, existential quantification, reduction, atom, primitive, or other form.
 formula
     : true
       construct: $$ = logic.Formula(conjunction=$1)
@@ -696,14 +731,17 @@ formula
       deconstruct if builtin.has_proto_field($$, 'cast'):
         $1: logic.Cast = $$.cast
 
+# The trivially true formula (empty conjunction).
 true
     : "(" "true" ")"
       construct: $$ = logic.Conjunction(args=list[logic.Formula]())
 
+# The trivially false formula (empty disjunction).
 false
     : "(" "false" ")"
       construct: $$ = logic.Disjunction(args=list[logic.Formula]())
 
+# Existential quantification: introduces locally scoped variables.
 exists
     : "(" "exists" bindings formula ")"
       construct: $$ = logic.Exists(body=logic.Abstraction(vars=builtin.list_concat($3[0], $3[1]), value=$4))
@@ -711,6 +749,8 @@ exists
         $3: Tuple[Sequence[logic.Binding], Sequence[logic.Binding]] = deconstruct_bindings($$.body)
         $4: logic.Formula = $$.body.value
 
+# Aggregation: applies a binary operator (op) over the results of a body abstraction,
+# with initial seed terms.
 reduce
     : "(" "reduce" abstraction abstraction terms ")"
       construct: $$ = logic.Reduce(op=$3, body=$4, terms=$5)
@@ -719,6 +759,7 @@ reduce
         $4: logic.Abstraction = $$.body
         $5: Sequence[logic.Term] = $$.terms
 
+# A term is either a variable or a constant value.
 term
     : var
       construct: $$ = logic.Term(var=$1)
@@ -729,26 +770,31 @@ term
       deconstruct if builtin.has_proto_field($$, 'constant'):
         $1: logic.Value = $$.constant
 
+# A variable reference.
 var
     : SYMBOL
       construct: $$ = logic.Var(name=$1)
       deconstruct: $1: String = $$.name
 
+# Logical AND of zero or more formulas.
 conjunction
     : "(" "and" formula* ")"
       construct: $$ = logic.Conjunction(args=$3)
       deconstruct: $3: Sequence[logic.Formula] = $$.args
 
+# Logical OR of zero or more formulas.
 disjunction
     : "(" "or" formula* ")"
       construct: $$ = logic.Disjunction(args=$3)
       deconstruct: $3: Sequence[logic.Formula] = $$.args
 
+# Logical negation of a formula.
 not
     : "(" "not" formula ")"
       construct: $$ = logic.Not(arg=$3)
       deconstruct: $3: logic.Formula = $$.arg
 
+# A foreign function interface call with a name, abstraction arguments, and terms.
 ffi
     : "(" "ffi" name ffi_args terms ")"
       construct: $$ = logic.FFI(name=$3, args=$4, terms=$5)
@@ -757,15 +803,19 @@ ffi
         $4: Sequence[logic.Abstraction] = $$.args
         $5: Sequence[logic.Term] = $$.terms
 
+# The argument abstractions of an FFI call.
 ffi_args
     : "(" "args" abstraction* ")"
 
+# A parenthesized list of terms.
 terms
     : "(" "terms" term* ")"
 
+# A colon-prefixed symbolic name.
 name
     : ":" SYMBOL
 
+# A relational atom: applies a named relation to a list of terms.
 atom
     : "(" "atom" relation_id term* ")"
       construct: $$ = logic.Atom(name=$3, terms=$4)
@@ -773,6 +823,7 @@ atom
         $3: logic.RelationId = $$.name
         $4: Sequence[logic.Term] = $$.terms
 
+# A compiler pragma: a named directive with term arguments.
 pragma
     : "(" "pragma" name term* ")"
       construct: $$ = logic.Pragma(name=$3, terms=$4)
@@ -780,6 +831,8 @@ pragma
         $3: String = $$.name
         $4: Sequence[logic.Term] = $$.terms
 
+# A built-in primitive operation. Includes syntactic sugar for common comparisons
+# and arithmetic (`=`, `<`, `+`, etc.) as well as a generic named form.
 primitive
     : eq
     | lt
@@ -863,6 +916,7 @@ divide
         $4: logic.Term = $$.terms[1].term
         $5: logic.Term = $$.terms[2].term
 
+# A relational term: either a regular term or a specialized (hash-prefixed) constant value.
 rel_term
     : specialized_value
       construct: $$ = logic.RelTerm(specialized_value=$1)
@@ -873,9 +927,11 @@ rel_term
       deconstruct if builtin.has_proto_field($$, 'term'):
         $1: logic.Term = $$.term
 
+# A hash-prefixed constant value used for type specialization in primitives and rel_atoms.
 specialized_value
     : "#" raw_value
 
+# A relational atom with support for specialized value terms.
 rel_atom
     : "(" "relatom" name rel_term* ")"
       construct: $$ = logic.RelAtom(name=$3, terms=$4)
@@ -883,6 +939,7 @@ rel_atom
         $3: String = $$.name
         $4: Sequence[logic.RelTerm] = $$.terms
 
+# A type cast from an input term to a result term.
 cast
     : "(" "cast" term term ")"
       construct: $$ = logic.Cast(input=$3, result=$4)
@@ -890,9 +947,11 @@ cast
         $3: logic.Term = $$.input
         $4: logic.Term = $$.result
 
+# A list of attributes attached to a def, algorithm, or instruction.
 attrs
     : "(" "attrs" attribute* ")"
 
+# A single named attribute with zero or more value arguments.
 attribute
     : "(" "attribute" name raw_value* ")"
       construct: $$ = logic.Attribute(name=$3, args=$4)
@@ -900,6 +959,8 @@ attribute
         $3: String = $$.name
         $4: Sequence[logic.Value] = $$.args
 
+# An imperative algorithm declaration with global relation references, a script body,
+# and optional attributes.
 algorithm
     : "(" "algorithm" relation_id* script attrs? ")"
       construct: $$ = logic.Algorithm(global=$3, body=$4, attrs=builtin.unwrap_option_or($5, list[logic.Attribute]()))
@@ -908,11 +969,13 @@ algorithm
         $4: logic.Script = $$.body
         $5: Optional[Sequence[logic.Attribute]] = $$.attrs if not builtin.is_empty($$.attrs) else None
 
+# The body of an algorithm: a sequence of constructs (loops and instructions).
 script
     : "(" "script" construct* ")"
       construct: $$ = logic.Script(constructs=$3)
       deconstruct: $3: Sequence[logic.Construct] = $$.constructs
 
+# A single construct within a script: either a loop or an instruction.
 construct
     : loop
       construct: $$ = logic.Construct(loop=$1)
@@ -923,6 +986,7 @@ construct
       deconstruct if builtin.has_proto_field($$, 'instruction'):
         $1: logic.Instruction = $$.instruction
 
+# A loop construct with initialization instructions and a script body.
 loop
     : "(" "loop" init script attrs? ")"
       construct: $$ = logic.Loop(init=$3, body=$4, attrs=builtin.unwrap_option_or($5, list[logic.Attribute]()))
@@ -931,9 +995,11 @@ loop
         $4: logic.Script = $$.body
         $5: Optional[Sequence[logic.Attribute]] = $$.attrs if not builtin.is_empty($$.attrs) else None
 
+# The initialization block of a loop.
 init
     : "(" "init" instruction* ")"
 
+# A single imperative instruction within a script or loop.
 instruction
     : assign
       construct: $$ = logic.Instruction(assign=$1)
@@ -956,6 +1022,7 @@ instruction
       deconstruct if builtin.has_proto_field($$, 'monus_def'):
         $1: logic.MonusDef = $$.monus_def
 
+# Assigns a relation to the result of an abstraction (replaces existing tuples).
 assign
     : "(" "assign" relation_id abstraction attrs? ")"
       construct: $$ = logic.Assign(name=$3, body=$4, attrs=builtin.unwrap_option_or($5, list[logic.Attribute]()))
@@ -964,6 +1031,7 @@ assign
         $4: logic.Abstraction = $$.body
         $5: Optional[Sequence[logic.Attribute]] = $$.attrs if not builtin.is_empty($$.attrs) else None
 
+# Merges tuples into a relation using a monoid-based update (insert or update existing).
 upsert
     : "(" "upsert" relation_id abstraction_with_arity attrs? ")"
       construct: $$ = logic.Upsert(name=$3, body=$4[0], attrs=builtin.unwrap_option_or($5, list[logic.Attribute]()), value_arity=$4[1])
@@ -972,6 +1040,8 @@ upsert
         $4: Tuple[logic.Abstraction, Int64] = builtin.tuple($$.body, $$.value_arity)
         $5: Optional[Sequence[logic.Attribute]] = $$.attrs if not builtin.is_empty($$.attrs) else None
 
+# An abstraction that distinguishes key bindings from value bindings via the `|` separator.
+# The value arity is derived from the number of value bindings.
 abstraction_with_arity
     : "(" bindings formula ")"
       construct: $$ = builtin.tuple(logic.Abstraction(vars=builtin.list_concat($2[0], $2[1]), value=$3), builtin.length($2[1]))
@@ -979,6 +1049,7 @@ abstraction_with_arity
         $2: Tuple[Sequence[logic.Binding], Sequence[logic.Binding]] = deconstruct_bindings_with_arity($$[0], $$[1])
         $3: logic.Formula = $$[0].value
 
+# A loop termination condition: breaks when the relation matches the abstraction.
 break
     : "(" "break" relation_id abstraction attrs? ")"
       construct: $$ = logic.Break(name=$3, body=$4, attrs=builtin.unwrap_option_or($5, list[logic.Attribute]()))
@@ -987,6 +1058,7 @@ break
         $4: logic.Abstraction = $$.body
         $5: Optional[Sequence[logic.Attribute]] = $$.attrs if not builtin.is_empty($$.attrs) else None
 
+# Defines an aggregation over a relation using a monoid (or, min, max, sum).
 monoid_def
     : "(" "monoid" monoid relation_id abstraction_with_arity attrs? ")"
       construct: $$ = logic.MonoidDef(monoid=$3, name=$4, body=$5[0], attrs=builtin.unwrap_option_or($6, list[logic.Attribute]()), value_arity=$5[1])
@@ -996,6 +1068,7 @@ monoid_def
         $5: Tuple[logic.Abstraction, Int64] = builtin.tuple($$.body, $$.value_arity)
         $6: Optional[Sequence[logic.Attribute]] = $$.attrs if not builtin.is_empty($$.attrs) else None
 
+# The type of aggregation monoid.
 monoid
     : or_monoid
       construct: $$ = logic.Monoid(or_monoid=$1)
@@ -1033,6 +1106,7 @@ sum_monoid
       construct: $$ = logic.SumMonoid(type=$3)
       deconstruct: $3: logic.Type = $$.type
 
+# Defines a monus (subtraction) operation over a relation using a monoid.
 monus_def
     : "(" "monus" monoid relation_id abstraction_with_arity attrs? ")"
       construct: $$ = logic.MonusDef(monoid=$3, name=$4, body=$5[0], attrs=builtin.unwrap_option_or($6, list[logic.Attribute]()), value_arity=$5[1])
@@ -1042,6 +1116,8 @@ monus_def
         $5: Tuple[logic.Abstraction, Int64] = builtin.tuple($$.body, $$.value_arity)
         $6: Optional[Sequence[logic.Attribute]] = $$.attrs if not builtin.is_empty($$.attrs) else None
 
+# A functional dependency constraint on a relation: given the key variables,
+# the value variables are uniquely determined.
 constraint
     : "(" "functional_dependency" relation_id abstraction functional_dependency_keys functional_dependency_values ")"
       construct: $$ = logic.Constraint(name=$3, functional_dependency=logic.FunctionalDependency(guard=$4, keys=$5, values=$6))
@@ -1057,6 +1133,7 @@ functional_dependency_keys
 functional_dependency_values
     : "(" "values" var* ")"
 
+# A data source declaration: external data (EDB), B-tree, CSV, or Iceberg.
 data
     : edb
       construct: $$ = logic.Data(edb=$1)
@@ -1081,6 +1158,8 @@ edb_path
 edb_types
     : "[" type* "]"
 
+# An extensional database (EDB) declaration: maps a relation to stored data at a given
+# path with specified column types.
 edb
     : "(" "edb" relation_id edb_path edb_types ")"
       construct: $$ = logic.EDB(target_id=$3, path=$4, types=$5)
@@ -1089,6 +1168,7 @@ edb
         $4: Sequence[String] = $$.path
         $5: Sequence[logic.Type] = $$.types
 
+# A B-epsilon-tree backed relation with storage configuration and locator info.
 betree_relation
     : "(" "betree_relation" relation_id betree_info ")"
       construct: $$ = logic.BeTreeRelation(name=$3, relation_info=$4)
@@ -1096,6 +1176,7 @@ betree_relation
         $3: logic.RelationId = $$.name
         $4: logic.BeTreeInfo = $$.relation_info
 
+# Storage metadata for a B-tree relation: key/value types and configuration parameters.
 betree_info
     : "(" "betree_info" betree_info_key_types betree_info_value_types config_dict ")"
       construct: $$ = construct_betree_info($3, $4, $5)
@@ -1110,12 +1191,15 @@ betree_info_key_types
 betree_info_value_types
     : "(" "value_types" type* ")"
 
+# A list of GNF (Generalized Normal Form) column definitions.
 gnf_columns
     : "(" "columns" gnf_column* ")"
 
+# A timestamp indicating the point-in-time for the CSV data snapshot.
 csv_asof
     : "(" "asof" STRING ")"
 
+# A CSV data source with locator, configuration, column definitions, and a snapshot timestamp.
 csv_data
     : "(" "csv_data" csvlocator csv_config gnf_columns? target_relations? csv_asof ")"
       construct: $$ = construct_csv_data($3, $4, $5, $6, $7)
@@ -1186,6 +1270,7 @@ csv_locator_paths
 csv_locator_inline_data
     : "(" "inline_data" FORMATTED_STRING ")"
 
+# Locates CSV data: either by file paths, inline data, or both.
 csvlocator
     : "(" "csv_locator" csv_locator_paths? csv_locator_inline_data? ")"
       construct: $$ = logic.CSVLocator(paths=builtin.unwrap_option_or($3, list[str]()), inline_data=builtin.encode_string(builtin.unwrap_option_or($4, "")))
@@ -1193,6 +1278,7 @@ csvlocator
         $3: Optional[Sequence[String]] = $$.paths if not builtin.is_empty($$.paths) else None
         $4: Optional[String] = builtin.decode_string($$.inline_data) if builtin.decode_string($$.inline_data) != "" else None
 
+# CSV parsing configuration (delimiter, quotechar, escapechar, encoding, etc.).
 csv_config
     : "(" "csv_config" config_dict _storage_integration? ")"
       construct: $$ = construct_csv_config($3, $4)
@@ -1205,6 +1291,7 @@ _storage_integration
       construct: $$ = $3
       deconstruct: $3: Sequence[Tuple[String, logic.Value]] = $$
 
+# The path identifying a column: a single string or a bracketed list of strings for nested paths.
 gnf_column_path
     : STRING
       construct: $$ = [$1]
@@ -1215,6 +1302,7 @@ gnf_column_path
       deconstruct if builtin.length($$) != 1:
         $2: Sequence[String] = $$
 
+# A single GNF column definition with a path, optional target relation, and column types.
 gnf_column
     : "(" "column" gnf_column_path relation_id? "[" type* "]" ")"
       construct: $$ = logic.GNFColumn(column_path=$3, target_id=$4, types=$6)
@@ -1257,6 +1345,7 @@ iceberg_locator_warehouse
       construct: $$ = $3
       deconstruct: $3: String = $$
 
+# Identifies an Iceberg table by its name, namespace, and warehouse.
 iceberg_locator
     : "(" "iceberg_locator" iceberg_locator_table_name iceberg_locator_namespace iceberg_locator_warehouse ")"
       construct: $$ = logic.IcebergLocator(table_name=$3, namespace=$4, warehouse=$5)
@@ -1285,6 +1374,7 @@ iceberg_auth_properties
       construct: $$ = $3
       deconstruct: $3: Sequence[Tuple[String, String]] = $$
 
+# Configuration for an Iceberg catalog: URI, optional scope, properties, and auth properties.
 iceberg_catalog_config
     : "(" "iceberg_catalog_config" iceberg_catalog_uri iceberg_catalog_config_scope? iceberg_properties iceberg_auth_properties ")"
       construct: $$ = construct_iceberg_catalog_config($3, $4, $5, $6)
@@ -1299,6 +1389,8 @@ iceberg_to_snapshot
       construct: $$ = $3
       deconstruct: $3: String = $$
 
+# An Iceberg data source with locator, catalog config, columns, optional snapshot range,
+# and a flag indicating whether it returns delta data.
 iceberg_data
     : "(" "iceberg_data" iceberg_locator iceberg_catalog_config gnf_columns iceberg_from_snapshot? iceberg_to_snapshot? boolean_value ")"
       construct: $$ = construct_iceberg_data($3, $4, $5, $6, $7, $8)
@@ -1310,16 +1402,19 @@ iceberg_data
         $7: Optional[String] = deconstruct_iceberg_data_to_snapshot_optional($$)
         $8: Boolean = $$.returns_delta
 
+# Removes a previously defined fragment from the database.
 undefine
     : "(" "undefine" fragment_id ")"
       construct: $$ = transactions.Undefine(fragment_id=$3)
       deconstruct: $3: fragments.FragmentId = $$.fragment_id
 
+# Declares the context relations that are visible for the current epoch.
 context
     : "(" "context" relation_id* ")"
       construct: $$ = transactions.Context(relations=$3)
       deconstruct: $3: Sequence[logic.RelationId] = $$.relations
 
+# Maps a destination EDB path to a source relation for snapshotting.
 snapshot_mapping
     : edb_path relation_id
       construct: $$ = transactions.SnapshotMapping(destination_path=$1, source_relation=$2)
@@ -1327,6 +1422,7 @@ snapshot_mapping
         $1: Sequence[String] = $$.destination_path
         $2: logic.RelationId = $$.source_relation
 
+# Snapshots relations into EDB storage at a given prefix path.
 snapshot
     : "(" "snapshot" edb_path snapshot_mapping* ")"
       construct: $$ = transactions.Snapshot(prefix=$3, mappings=$4)
@@ -1334,9 +1430,11 @@ snapshot
         $3: Sequence[String] = $$.prefix
         $4: Sequence[transactions.SnapshotMapping] = $$.mappings
 
+# The read section of an epoch, containing zero or more read operations.
 epoch_reads
     : "(" "reads" read* ")"
 
+# A single read operation: demand, output, what-if, abort, or export.
 read
     : demand
       construct: $$ = transactions.Read(demand=$1)
@@ -1359,11 +1457,13 @@ read
       deconstruct if builtin.has_proto_field($$, 'export'):
         $1: transactions.Export = $$.export
 
+# Requests evaluation of a relation without naming the output.
 demand
     : "(" "demand" relation_id ")"
       construct: $$ = transactions.Demand(relation_id=$3)
       deconstruct: $3: logic.RelationId = $$.relation_id
 
+# Requests evaluation of a relation and assigns a name to the output.
 output
     : "(" "output" name relation_id ")"
       construct: $$ = transactions.Output(name=$3, relation_id=$4)
@@ -1371,6 +1471,7 @@ output
         $3: String = $$.name
         $4: logic.RelationId = $$.relation_id
 
+# A hypothetical branch: evaluates an epoch in a named sandbox without committing writes.
 what_if
     : "(" "what_if" name epoch ")"
       construct: $$ = transactions.WhatIf(branch=$3, epoch=$4)
@@ -1378,6 +1479,7 @@ what_if
         $3: String = $$.branch
         $4: transactions.Epoch = $$.epoch
 
+# Aborts the transaction if the given relation is non-empty, with an optional name.
 abort
     : "(" "abort" name? relation_id ")"
       construct: $$ = transactions.Abort(name=builtin.unwrap_option_or($3, "abort"), relation_id=$4)
@@ -1385,6 +1487,7 @@ abort
         $3: Optional[String] = $$.name if $$.name != "abort" else None
         $4: logic.RelationId = $$.relation_id
 
+# Exports data to an external format (CSV or Iceberg).
 export
     : "(" "export" export_csv_config ")"
       construct: $$ = transactions.Export(csv_config=$3)
@@ -1395,6 +1498,8 @@ export
       deconstruct if builtin.has_proto_field($$, 'iceberg_config'):
         $3: transactions.ExportIcebergConfig = $$.iceberg_config
 
+# Configuration for CSV export. The v2 variant uses a source specification and csv_config;
+# the legacy variant uses explicit column list and config dict.
 export_csv_config
     : "(" "export_csv_config_v2" export_csv_output_location export_csv_source csv_config ")"
       construct: $$ = construct_export_csv_config_with_location($3, $4, $5)
@@ -1432,6 +1537,7 @@ export_csv_column
         $3: String = $$.column_name
         $4: logic.RelationId = $$.column_data
 
+# The data source for a v2 CSV export: either explicit GNF columns or a table definition.
 export_csv_source
     : "(" "gnf_columns" export_csv_column* ")"
       construct: $$ = transactions.ExportCSVSource(gnf_columns=transactions.ExportCSVColumns(columns=$3))
@@ -1452,6 +1558,8 @@ iceberg_table_properties
       construct: $$ = $3
       deconstruct: $3: Sequence[Tuple[String, String]] = $$
 
+# Configuration for Iceberg export: locator, catalog config, table definition,
+# table properties, and optional additional config.
 export_iceberg_config
     : "(" "export_iceberg_config" iceberg_locator iceberg_catalog_config export_iceberg_table_def iceberg_table_properties config_dict? ")"
       construct: $$ = construct_export_iceberg_config_full($3, $4, $5, $6, $7)
