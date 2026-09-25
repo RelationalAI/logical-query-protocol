@@ -587,7 +587,7 @@ class RelationId(_message.Message):
     def __init__(self, id_low: _Optional[int] = ..., id_high: _Optional[int] = ...) -> None: ...
 
 class Type(_message.Message):
-    __slots__ = ("unspecified_type", "string_type", "int_type", "float_type", "uint128_type", "int128_type", "date_type", "datetime_type", "missing_type", "decimal_type", "boolean_type", "int32_type", "float32_type", "uint32_type")
+    __slots__ = ("unspecified_type", "string_type", "int_type", "float_type", "uint128_type", "int128_type", "date_type", "datetime_type", "missing_type", "decimal_type", "boolean_type", "int32_type", "float32_type", "uint32_type", "fixed_type")
     UNSPECIFIED_TYPE_FIELD_NUMBER: _ClassVar[int]
     STRING_TYPE_FIELD_NUMBER: _ClassVar[int]
     INT_TYPE_FIELD_NUMBER: _ClassVar[int]
@@ -602,6 +602,7 @@ class Type(_message.Message):
     INT32_TYPE_FIELD_NUMBER: _ClassVar[int]
     FLOAT32_TYPE_FIELD_NUMBER: _ClassVar[int]
     UINT32_TYPE_FIELD_NUMBER: _ClassVar[int]
+    FIXED_TYPE_FIELD_NUMBER: _ClassVar[int]
     unspecified_type: UnspecifiedType
     string_type: StringType
     int_type: IntType
@@ -616,7 +617,8 @@ class Type(_message.Message):
     int32_type: Int32Type
     float32_type: Float32Type
     uint32_type: UInt32Type
-    def __init__(self, unspecified_type: _Optional[_Union[UnspecifiedType, _Mapping]] = ..., string_type: _Optional[_Union[StringType, _Mapping]] = ..., int_type: _Optional[_Union[IntType, _Mapping]] = ..., float_type: _Optional[_Union[FloatType, _Mapping]] = ..., uint128_type: _Optional[_Union[UInt128Type, _Mapping]] = ..., int128_type: _Optional[_Union[Int128Type, _Mapping]] = ..., date_type: _Optional[_Union[DateType, _Mapping]] = ..., datetime_type: _Optional[_Union[DateTimeType, _Mapping]] = ..., missing_type: _Optional[_Union[MissingType, _Mapping]] = ..., decimal_type: _Optional[_Union[DecimalType, _Mapping]] = ..., boolean_type: _Optional[_Union[BooleanType, _Mapping]] = ..., int32_type: _Optional[_Union[Int32Type, _Mapping]] = ..., float32_type: _Optional[_Union[Float32Type, _Mapping]] = ..., uint32_type: _Optional[_Union[UInt32Type, _Mapping]] = ...) -> None: ...
+    fixed_type: FixedType
+    def __init__(self, unspecified_type: _Optional[_Union[UnspecifiedType, _Mapping]] = ..., string_type: _Optional[_Union[StringType, _Mapping]] = ..., int_type: _Optional[_Union[IntType, _Mapping]] = ..., float_type: _Optional[_Union[FloatType, _Mapping]] = ..., uint128_type: _Optional[_Union[UInt128Type, _Mapping]] = ..., int128_type: _Optional[_Union[Int128Type, _Mapping]] = ..., date_type: _Optional[_Union[DateType, _Mapping]] = ..., datetime_type: _Optional[_Union[DateTimeType, _Mapping]] = ..., missing_type: _Optional[_Union[MissingType, _Mapping]] = ..., decimal_type: _Optional[_Union[DecimalType, _Mapping]] = ..., boolean_type: _Optional[_Union[BooleanType, _Mapping]] = ..., int32_type: _Optional[_Union[Int32Type, _Mapping]] = ..., float32_type: _Optional[_Union[Float32Type, _Mapping]] = ..., uint32_type: _Optional[_Union[UInt32Type, _Mapping]] = ..., fixed_type: _Optional[_Union[FixedType, _Mapping]] = ...) -> None: ...
 
 class UnspecifiedType(_message.Message):
     __slots__ = ()
@@ -677,6 +679,12 @@ class Float32Type(_message.Message):
 class UInt32Type(_message.Message):
     __slots__ = ()
     def __init__(self) -> None: ...
+
+class FixedType(_message.Message):
+    __slots__ = ("length",)
+    LENGTH_FIELD_NUMBER: _ClassVar[int]
+    length: int
+    def __init__(self, length: _Optional[int] = ...) -> None: ...
 
 class Value(_message.Message):
     __slots__ = ("string_value", "int_value", "float_value", "uint128_value", "int128_value", "missing_value", "date_value", "datetime_value", "decimal_value", "boolean_value", "int32_value", "float32_value", "uint32_value")

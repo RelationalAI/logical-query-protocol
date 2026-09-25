@@ -425,6 +425,7 @@ message Type {
     Int32Type int32_type = 12;
     Float32Type float32_type = 13;
     UInt32Type uint32_type = 14;
+    FixedType fixed_type = 15;
   }
 }
 
@@ -458,6 +459,12 @@ message Int32Type {}
 message Float32Type {}
 
 message UInt32Type {}
+
+// A fixed-length byte array of `length` bytes. In CSV data, a value is written as
+// 2 * `length` hex digits, most significant byte first.
+message FixedType {
+  int32 length = 1;
+}
 
 message Value {
   oneof value {

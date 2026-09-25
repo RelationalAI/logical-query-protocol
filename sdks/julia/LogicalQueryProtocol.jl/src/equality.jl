@@ -73,6 +73,11 @@ Base.:(==)(a::DecimalType, b::DecimalType) = a.precision == b.precision && a.sca
 Base.hash(a::DecimalType, h::UInt) = hash(a.scale, hash(a.precision, h))
 Base.isequal(a::DecimalType, b::DecimalType) = isequal(a.precision, b.precision) && isequal(a.scale, b.scale)
 
+# FixedType
+Base.:(==)(a::FixedType, b::FixedType) = a.length == b.length
+Base.hash(a::FixedType, h::UInt) = hash(a.length, hash(:FixedType, h))
+Base.isequal(a::FixedType, b::FixedType) = isequal(a.length, b.length)
+
 # Int128Value
 Base.:(==)(a::Int128Value, b::Int128Value) = a.low == b.low && a.high == b.high
 Base.hash(a::Int128Value, h::UInt) = hash(a.high, hash(a.low, h))

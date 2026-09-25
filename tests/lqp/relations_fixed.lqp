@@ -1,0 +1,22 @@
+(transaction
+  (epoch
+    (writes
+      (define
+        (fragment :f1
+          ;; Generalized CSV loading with fixed-length byte-array columns: `node` is keyed
+          ;; by a 16-byte `id` and carries a 16-byte `parent` and an 8-byte `tag`.
+          (csv_data
+            (csv_locator
+              (paths "s3://bucket/nodes.csv"))
+            (csv_config {})
+            (relations
+              (keys
+                (column "id" (FIXED 16)))
+              (relation :node
+                (column "parent" (FIXED 16))
+                (column "tag" (FIXED 8))))
+            (asof "2025-06-01T00:00:00Z"))
+          (def :root_ids ([v::(FIXED 16)] (exists [p::(FIXED 16) t::(FIXED 8)] (atom :node v p t)))))))
+
+    (reads
+      (output :root_ids :root_ids))))

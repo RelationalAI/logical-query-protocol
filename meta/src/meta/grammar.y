@@ -147,6 +147,7 @@
 %nonterm false logic.Disjunction
 %nonterm ffi logic.FFI
 %nonterm ffi_args Sequence[logic.Abstraction]
+%nonterm fixed_type logic.FixedType
 %nonterm float_type logic.FloatType
 %nonterm float32_type logic.Float32Type
 %nonterm formula logic.Formula
@@ -579,6 +580,10 @@ type
       construct: $$ = logic.Type(uint32_type=$1)
       deconstruct if builtin.has_proto_field($$, 'uint32_type'):
         $1: logic.UInt32Type = $$.uint32_type
+    | fixed_type
+      construct: $$ = logic.Type(fixed_type=$1)
+      deconstruct if builtin.has_proto_field($$, 'fixed_type'):
+        $1: logic.FixedType = $$.fixed_type
 
 unspecified_type
     : "UNKNOWN"
@@ -634,6 +639,12 @@ decimal_type
       deconstruct:
         $3: Int64 = builtin.int32_to_int64($$.precision)
         $4: Int64 = builtin.int32_to_int64($$.scale)
+
+fixed_type
+    : "(" "FIXED" INT ")"
+      construct: $$ = logic.FixedType(length=builtin.int64_to_int32($3))
+      deconstruct:
+        $3: Int64 = builtin.int32_to_int64($$.length)
 
 boolean_type
     : "BOOLEAN"
