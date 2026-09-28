@@ -4743,8 +4743,7 @@ func (*UInt32Type) Descriptor() ([]byte, []int) {
 	return file_relationalai_lqp_v1_logic_proto_rawDescGZIP(), []int{71}
 }
 
-// A fixed-length byte array of `length` bytes. In CSV data, a value is written as
-// 2 * `length` hex digits, most significant byte first.
+// A fixed-length byte array of `length` bytes.
 type FixedType struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Length        int32                  `protobuf:"varint,1,opt,name=length,proto3" json:"length,omitempty"`
