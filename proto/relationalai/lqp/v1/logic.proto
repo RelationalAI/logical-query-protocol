@@ -460,8 +460,7 @@ message Float32Type {}
 
 message UInt32Type {}
 
-// A fixed-length byte array of `length` bytes. In CSV data, a value is written as
-// 2 * `length` hex digits, most significant byte first.
+// A fixed-length byte array of `length` bytes.
 message FixedType {
   int32 length = 1;
 }
