@@ -1,0 +1,27 @@
+(transaction
+  (configure { :ivm.maintenance_level "off" :semantics_version 0})
+  (epoch
+    (writes
+      (define
+        (fragment
+          :f1
+          (csv_data
+            (csv_locator (paths "s3://bucket/nodes.csv"))
+            (csv_config
+              {
+               :csv_compression ""
+               :csv_decimal_separator "."
+               :csv_delimiter ","
+               :csv_encoding "utf-8"
+               :csv_escapechar "\""
+               :csv_header_row 1i32
+               :csv_quotechar "\""
+               :csv_skip 0})
+            (relations
+              (keys (column "id" (FIXED 16)))
+              (relation :node (column "parent" (FIXED 16)) (column "tag" (FIXED 8))))
+            (asof "2025-06-01T00:00:00Z"))
+          (def
+            :root_ids
+            ([v::(FIXED 16)] (exists [p::(FIXED 16) t::(FIXED 8)] (atom :node v p t)))))))
+    (reads (output :root_ids :root_ids))))

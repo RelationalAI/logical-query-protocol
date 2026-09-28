@@ -9,12 +9,12 @@ export DateTimeType, RelationId, Var, FloatType, IcebergCatalogConfig, UInt128Ty
 export Int32Type, Float32Type, BeTreeConfig, DateTimeValue, IcebergLocator, DateValue
 export OrMonoid, CSVLocator, Int128Type, DecimalType, UnspecifiedType, DateType
 export MissingType, MissingValue, IntType, StringType, Int128Value, UInt128Value
-export StorageIntegration, BooleanType, UInt32Type, DecimalValue, BeTreeLocator, CSVConfig
-export var"#Type", Value, NamedColumn, GNFColumn, MinMonoid, SumMonoid, MaxMonoid
-export BeTreeInfo, Binding, EDB, Attribute, Term, TargetRelation, IcebergData, Monoid
-export BeTreeRelation, Cast, Pragma, Atom, RelTerm, CDCTargets, PlainTargets, Primitive
-export RelAtom, TargetRelations, CSVData, Data, Abstraction, Algorithm, Assign, Break
-export Conjunction, Constraint, Def, Disjunction, Exists, FFI, FunctionalDependency
+export StorageIntegration, BooleanType, FixedType, UInt32Type, DecimalValue, BeTreeLocator
+export CSVConfig, var"#Type", Value, NamedColumn, GNFColumn, MinMonoid, SumMonoid
+export MaxMonoid, BeTreeInfo, Binding, EDB, Attribute, Term, TargetRelation, IcebergData
+export Monoid, BeTreeRelation, Cast, Pragma, Atom, RelTerm, CDCTargets, PlainTargets
+export Primitive, RelAtom, TargetRelations, CSVData, Data, Abstraction, Algorithm, Assign
+export Break, Conjunction, Constraint, Def, Disjunction, Exists, FFI, FunctionalDependency
 export MonoidDef, MonusDef, Not, Reduce, Script, Upsert, Construct, Loop, Declaration
 export Instruction, Formula
 abstract type var"##Abstract#Abstraction" end
@@ -829,6 +829,37 @@ function PB._encoded_size(x::BooleanType)
     return encoded_size
 end
 
+struct FixedType
+    length::Int32
+end
+FixedType(;length = zero(Int32)) = FixedType(length)
+PB.default_values(::Type{FixedType}) = (;length = zero(Int32))
+PB.field_numbers(::Type{FixedType}) = (;length = 1)
+
+function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:FixedType}, _endpos::Int=0, _group::Bool=false)
+    length = zero(Int32)
+    while !PB.message_done(d, _endpos, _group)
+        field_number, wire_type = PB.decode_tag(d)
+        if field_number == 1
+            length = PB.decode(d, Int32)
+        else
+            Base.skip(d, wire_type)
+        end
+    end
+    return FixedType(length)
+end
+
+function PB.encode(e::PB.AbstractProtoEncoder, x::FixedType)
+    initpos = position(e.io)
+    x.length != zero(Int32) && PB.encode(e, 1, x.length)
+    return position(e.io) - initpos
+end
+function PB._encoded_size(x::FixedType)
+    encoded_size = 0
+    x.length != zero(Int32) && (encoded_size += PB._encoded_size(x.length, 1))
+    return encoded_size
+end
+
 struct UInt32Type end
 
 function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:UInt32Type}, _endpos::Int=0, _group::Bool=false)
@@ -1053,14 +1084,14 @@ function PB._encoded_size(x::CSVConfig)
 end
 
 struct var"#Type"
-    var"#type"::Union{Nothing,OneOf{<:Union{UnspecifiedType,StringType,IntType,FloatType,UInt128Type,Int128Type,DateType,DateTimeType,MissingType,DecimalType,BooleanType,Int32Type,Float32Type,UInt32Type}}}
+    var"#type"::Union{Nothing,OneOf{<:Union{UnspecifiedType,StringType,IntType,FloatType,UInt128Type,Int128Type,DateType,DateTimeType,MissingType,DecimalType,BooleanType,Int32Type,Float32Type,UInt32Type,FixedType}}}
 end
 var"#Type"(;var"#type" = nothing) = var"#Type"(var"#type")
 PB.oneof_field_types(::Type{var"#Type"}) = (;
-    var"#type" = (;unspecified_type=UnspecifiedType, string_type=StringType, int_type=IntType, float_type=FloatType, uint128_type=UInt128Type, int128_type=Int128Type, date_type=DateType, datetime_type=DateTimeType, missing_type=MissingType, decimal_type=DecimalType, boolean_type=BooleanType, int32_type=Int32Type, float32_type=Float32Type, uint32_type=UInt32Type),
+    var"#type" = (;unspecified_type=UnspecifiedType, string_type=StringType, int_type=IntType, float_type=FloatType, uint128_type=UInt128Type, int128_type=Int128Type, date_type=DateType, datetime_type=DateTimeType, missing_type=MissingType, decimal_type=DecimalType, boolean_type=BooleanType, int32_type=Int32Type, float32_type=Float32Type, uint32_type=UInt32Type, fixed_type=FixedType),
 )
-PB.default_values(::Type{var"#Type"}) = (;unspecified_type = nothing, string_type = nothing, int_type = nothing, float_type = nothing, uint128_type = nothing, int128_type = nothing, date_type = nothing, datetime_type = nothing, missing_type = nothing, decimal_type = nothing, boolean_type = nothing, int32_type = nothing, float32_type = nothing, uint32_type = nothing)
-PB.field_numbers(::Type{var"#Type"}) = (;unspecified_type = 1, string_type = 2, int_type = 3, float_type = 4, uint128_type = 5, int128_type = 6, date_type = 7, datetime_type = 8, missing_type = 9, decimal_type = 10, boolean_type = 11, int32_type = 12, float32_type = 13, uint32_type = 14)
+PB.default_values(::Type{var"#Type"}) = (;unspecified_type = nothing, string_type = nothing, int_type = nothing, float_type = nothing, uint128_type = nothing, int128_type = nothing, date_type = nothing, datetime_type = nothing, missing_type = nothing, decimal_type = nothing, boolean_type = nothing, int32_type = nothing, float32_type = nothing, uint32_type = nothing, fixed_type = nothing)
+PB.field_numbers(::Type{var"#Type"}) = (;unspecified_type = 1, string_type = 2, int_type = 3, float_type = 4, uint128_type = 5, int128_type = 6, date_type = 7, datetime_type = 8, missing_type = 9, decimal_type = 10, boolean_type = 11, int32_type = 12, float32_type = 13, uint32_type = 14, fixed_type = 15)
 
 function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:var"#Type"}, _endpos::Int=0, _group::Bool=false)
     var"#type" = nothing
@@ -1094,6 +1125,8 @@ function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:var"#Type"}, _endpos::In
             var"#type" = OneOf(:float32_type, PB.decode(d, Ref{Float32Type}))
         elseif field_number == 14
             var"#type" = OneOf(:uint32_type, PB.decode(d, Ref{UInt32Type}))
+        elseif field_number == 15
+            var"#type" = OneOf(:fixed_type, PB.decode(d, Ref{FixedType}))
         else
             Base.skip(d, wire_type)
         end
@@ -1132,6 +1165,8 @@ function PB.encode(e::PB.AbstractProtoEncoder, x::var"#Type")
         PB.encode(e, 13, x.var"#type"[]::Float32Type)
     elseif x.var"#type".name === :uint32_type
         PB.encode(e, 14, x.var"#type"[]::UInt32Type)
+    elseif x.var"#type".name === :fixed_type
+        PB.encode(e, 15, x.var"#type"[]::FixedType)
     end
     return position(e.io) - initpos
 end
@@ -1166,6 +1201,8 @@ function PB._encoded_size(x::var"#Type")
         encoded_size += PB._encoded_size(x.var"#type"[]::Float32Type, 13)
     elseif x.var"#type".name === :uint32_type
         encoded_size += PB._encoded_size(x.var"#type"[]::UInt32Type, 14)
+    elseif x.var"#type".name === :fixed_type
+        encoded_size += PB._encoded_size(x.var"#type"[]::FixedType, 15)
     end
     return encoded_size
 end

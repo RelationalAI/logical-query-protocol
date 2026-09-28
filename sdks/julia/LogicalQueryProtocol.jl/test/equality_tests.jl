@@ -142,6 +142,20 @@ end
     @test u1 == u2 && u2 == u4 && u1 == u4
 end
 
+@testitem "Equality for FixedType" tags=[:ring1, :unit] begin
+    using LogicalQueryProtocol: FixedType
+
+    ft1 = FixedType(length=16)
+    ft2 = FixedType(length=16)
+    ft3 = FixedType(length=8)
+
+    @test ft1 == ft2
+    @test ft1 != ft3
+    @test isequal(ft1, ft2)
+    @test !isequal(ft1, ft3)
+    @test hash(ft1) == hash(ft2)
+end
+
 @testitem "Equality for DecimalType and DecimalValue" tags=[:ring1, :unit] begin
     using LogicalQueryProtocol: DecimalType, DecimalValue, Int128Value
 

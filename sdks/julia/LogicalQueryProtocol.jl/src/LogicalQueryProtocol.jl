@@ -16,7 +16,7 @@ const LQPInstruction = Union{Assign,Break,Upsert,MonoidDef,MonusDef}
 
 const LQPSyntax = Union{
     DateTimeType,RelationId,Var,FloatType,UInt128Type,OrMonoid,Int128Type,
-    DecimalType,UnspecifiedType,DateType,UInt128Value,MissingType,MissingValue,
+    DecimalType,FixedType,UnspecifiedType,DateType,UInt128Value,MissingType,MissingValue,
     IntType,BooleanType,Int128Value,StringType,var"#Type",Value,MinMonoid,SumMonoid,
     MaxMonoid,Binding,Attribute,Term,Monoid,Cast,Pragma,Atom,RelTerm,Primitive,
     RelAtom,Abstraction,Algorithm,Assign,Break,Conjunction,Def,Disjunction,

@@ -44,6 +44,7 @@ _TYPE_ONEOF_TO_NAME = {
     "missing_type": "MISSING",
     "decimal_type": "DECIMAL",
     "boolean_type": "BOOLEAN",
+    "fixed_type": "FIXED",
 }
 
 
