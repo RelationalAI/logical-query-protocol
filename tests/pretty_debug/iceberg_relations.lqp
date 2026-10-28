@@ -1,0 +1,33 @@
+(transaction
+  (configure { :ivm.maintenance_level "off" :semantics_version 0})
+  (epoch
+    (writes
+      (define
+        (fragment
+          :f1
+          (iceberg_data
+            (iceberg_locator
+              (table_name "events")
+              (namespace "analytics" "raw")
+              (warehouse "wh"))
+            (iceberg_catalog_config
+              (catalog_uri "https://catalog.example")
+              (properties (prop "type" "rest"))
+              (auth_properties))
+            (relations
+              (keys (column "METADATA$KEY" UINT128))
+              (relation 0xc88e608def56f1241d8757cf302b007f)
+              (relation 0x2d5e00e57947e0dc9c9f4e49cfdf6dfa (column "kind" STRING))
+              (relation
+                0x168d8aaff5e3391a33b325b4b190c6d
+                (column "amount" (DECIMAL 18 2))
+                (column "count" INT)))
+            (to_snapshot "snap-abc")
+            false))))))
+
+;; Debug information
+;; -----------------------
+;; Original names
+;; 	 ID `0x168d8aaff5e3391a33b325b4b190c6d` -> `event_amounts`
+;; 	 ID `0x2d5e00e57947e0dc9c9f4e49cfdf6dfa` -> `event_kind`
+;; 	 ID `0xc88e608def56f1241d8757cf302b007f` -> `event_row`

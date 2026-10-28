@@ -223,30 +223,9 @@ function global_ids(data::Data)
         return [persistent_id(betree_relation.name)]
     elseif dt.name == :csv_data
         csv_data = dt[]::CSVData
+        relations = csv_data.relations
+        isnothing(relations) || return global_ids(relations)
         ids = LQPRelationId[]
-        if !isnothing(csv_data.relations)
-            # Generalized form: collect target relations from whichever body group is set — the
-            # plain group's `targets`, or the CDC `inserts`/`deletes` groups (which may share a
-            # target, so deduplicate). The optional `load_errors` sink is declared here too.
-            relations = csv_data.relations
-            body = relations.body
-            if !isnothing(body)
-                payload = body[]
-                # `isa` (not `body.name`) so the branch narrows the concrete type for inference.
-                groups = payload isa PlainTargets ? (payload.targets,) : (payload.inserts, payload.deletes)
-                for group in groups
-                    for outrel in group
-                        if !isnothing(outrel.target_id)
-                            push!(ids, persistent_id(outrel.target_id))
-                        end
-                    end
-                end
-            end
-            if !isnothing(relations.load_errors)
-                push!(ids, persistent_id(relations.load_errors))
-            end
-            return unique(ids)
-        end
         for column in csv_data.columns
             if !isnothing(column.target_id)
                 push!(ids, persistent_id(column.target_id))
@@ -255,6 +234,8 @@ function global_ids(data::Data)
         return ids
     elseif dt.name == :iceberg_data
         iceberg_data = dt[]::IcebergData
+        relations = iceberg_data.relations
+        isnothing(relations) || return global_ids(relations)
         ids = LQPRelationId[]
         for column in iceberg_data.columns
             if !isnothing(column.target_id)
@@ -265,6 +246,31 @@ function global_ids(data::Data)
     else
         @assert _is_valid_data(data)
     end
+end
+
+# The generalized `(relations …)` form, shared by `csv_data` and `iceberg_data`: collect target
+# relations from whichever body group is set — the plain group's `targets`, or the CDC
+# `inserts`/`deletes` groups (which may share a target, so deduplicate). The optional
+# `load_errors` sink is declared here too.
+function global_ids(relations::TargetRelations)
+    ids = LQPRelationId[]
+    body = relations.body
+    if !isnothing(body)
+        payload = body[]
+        # `isa` (not `body.name`) so the branch narrows the concrete type for inference.
+        groups = payload isa PlainTargets ? (payload.targets,) : (payload.inserts, payload.deletes)
+        for group in groups
+            for outrel in group
+                if !isnothing(outrel.target_id)
+                    push!(ids, persistent_id(outrel.target_id))
+                end
+            end
+        end
+    end
+    if !isnothing(relations.load_errors)
+        push!(ids, persistent_id(relations.load_errors))
+    end
+    return unique(ids)
 end
 
 function _is_valid_data(data::Data)

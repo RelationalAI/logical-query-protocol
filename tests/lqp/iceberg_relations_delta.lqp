@@ -1,0 +1,26 @@
+(transaction
+  (epoch
+    (writes
+      (define
+        (fragment :f1
+          (iceberg_data
+            (iceberg_locator
+              (table_name "events")
+              (namespace "analytics" "raw")
+              (warehouse "wh"))
+            (iceberg_catalog_config
+              (catalog_uri "https://catalog.example")
+              (properties (prop "type" "rest"))
+              (auth_properties))
+            (relations
+              (keys
+                (column "METADATA$KEY" UINT128))
+              (inserts
+                (relation :event_ins
+                  (column "kind" STRING)
+                  (column "count" INT)))
+              (deletes
+                (relation :event_del)))
+            (from_snapshot "snap-111")
+            (to_snapshot "snap-abc")
+            true))))))

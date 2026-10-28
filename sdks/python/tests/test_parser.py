@@ -201,6 +201,43 @@ def test_load_errors_must_follow_relations():
         parse_fragment(fragment)
 
 
+def _iceberg_fragment(body: str) -> str:
+    # Minimal iceberg_data fragment; `body` is the columns and/or relations clause.
+    return (
+        "(fragment :f (iceberg_data "
+        '(iceberg_locator (table_name "t") (namespace "n") (warehouse "w")) '
+        '(iceberg_catalog_config (catalog_uri "u") (properties) (auth_properties)) '
+        f"{body} false))"
+    )
+
+
+def _iceberg_data_of(fragment: str):
+    result, _provenance = parse_fragment(fragment)
+    return result.declarations[0].data.iceberg_data
+
+
+def test_iceberg_relations():
+    # The generalized `(relations ...)` form is accepted in place of `(columns ...)`.
+    iceberg = _iceberg_data_of(
+        _iceberg_fragment(
+            '(relations (keys (column "METADATA$KEY" UINT128)) '
+            '(relation :r (column "a" INT) (column "b" STRING)))'
+        )
+    )
+    assert iceberg.HasField("relations")
+    assert list(iceberg.columns) == []
+    assert [c.name for c in iceberg.relations.keys] == ["METADATA$KEY"]
+    assert [c.name for c in iceberg.relations.plain.targets[0].values] == ["a", "b"]
+
+
+def test_iceberg_columns_leave_relations_unset():
+    iceberg = _iceberg_data_of(
+        _iceberg_fragment('(columns (column "a" :a [UINT128 INT]))')
+    )
+    assert not iceberg.HasField("relations")
+    assert len(iceberg.columns) == 1
+
+
 class TestSymbolLexing:
     """Tests for SYMBOL token regex — hyphen must be literal, not a range."""
 

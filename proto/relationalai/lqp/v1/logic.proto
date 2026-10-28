@@ -380,6 +380,7 @@ message IcebergData {
   optional string from_snapshot = 4;
   optional string to_snapshot = 5;
   bool returns_delta = 6;
+  optional TargetRelations relations = 7; // If present, generalized loading; mutually exclusive with columns
 }
 
 message IcebergLocator {
