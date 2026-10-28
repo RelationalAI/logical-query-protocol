@@ -238,6 +238,19 @@ def test_iceberg_columns_leave_relations_unset():
     assert len(iceberg.columns) == 1
 
 
+def test_iceberg_rejects_columns_and_relations_together():
+    # The two forms are mutually exclusive. The printer omits `(columns ...)` once
+    # `relations` is set, so accepting both would drop the columns on a round trip.
+    with pytest.raises(ParseError, match="not both"):
+        parse_fragment(
+            _iceberg_fragment(
+                '(columns (column "a" :a [UINT128 INT])) '
+                '(relations (keys (column "METADATA$KEY" UINT128)) '
+                '(relation :r (column "b" INT)))'
+            )
+        )
+
+
 class TestSymbolLexing:
     """Tests for SYMBOL token regex — hyphen must be literal, not a range."""
 

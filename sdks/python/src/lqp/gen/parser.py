@@ -695,20 +695,24 @@ class Parser:
         return _t2310
 
     def construct_iceberg_data(self, locator: logic_pb2.IcebergLocator, config: logic_pb2.IcebergCatalogConfig, columns_opt: Sequence[logic_pb2.GNFColumn] | None, relations_opt: logic_pb2.TargetRelations | None, from_snapshot_opt: str | None, to_snapshot_opt: str | None, returns_delta: bool) -> logic_pb2.IcebergData:
-        _t2311 = logic_pb2.IcebergData(locator=locator, config=config, columns=(columns_opt if columns_opt is not None else []), from_snapshot=(from_snapshot_opt if from_snapshot_opt is not None else ""), to_snapshot=(to_snapshot_opt if to_snapshot_opt is not None else ""), returns_delta=returns_delta, relations=relations_opt)
-        return _t2311
+        if (columns_opt is not None and relations_opt is not None):
+            raise ParseError("iceberg_data takes either `(columns ...)` or `(relations ...)`, not both")
+        else:
+            _t2311 = None
+        _t2312 = logic_pb2.IcebergData(locator=locator, config=config, columns=(columns_opt if columns_opt is not None else []), from_snapshot=(from_snapshot_opt if from_snapshot_opt is not None else ""), to_snapshot=(to_snapshot_opt if to_snapshot_opt is not None else ""), returns_delta=returns_delta, relations=relations_opt)
+        return _t2312
 
     def construct_export_iceberg_config_full(self, locator: logic_pb2.IcebergLocator, config: logic_pb2.IcebergCatalogConfig, table_def: logic_pb2.RelationId, table_property_pairs: Sequence[tuple[str, str]], config_dict: Sequence[tuple[str, logic_pb2.Value]] | None) -> transactions_pb2.ExportIcebergConfig:
         cfg = dict((config_dict if config_dict is not None else []))
-        _t2312 = self._extract_value_string(cfg.get("prefix"), "")
-        prefix = _t2312
-        _t2313 = self._extract_value_int64(cfg.get("target_file_size_bytes"), 0)
-        target_file_size_bytes = _t2313
-        _t2314 = self._extract_value_string(cfg.get("compression"), "")
-        compression = _t2314
+        _t2313 = self._extract_value_string(cfg.get("prefix"), "")
+        prefix = _t2313
+        _t2314 = self._extract_value_int64(cfg.get("target_file_size_bytes"), 0)
+        target_file_size_bytes = _t2314
+        _t2315 = self._extract_value_string(cfg.get("compression"), "")
+        compression = _t2315
         table_props = dict(table_property_pairs)
-        _t2315 = transactions_pb2.ExportIcebergConfig(locator=locator, config=config, table_def=table_def, prefix=prefix, target_file_size_bytes=target_file_size_bytes, compression=compression, table_properties=table_props)
-        return _t2315
+        _t2316 = transactions_pb2.ExportIcebergConfig(locator=locator, config=config, table_def=table_def, prefix=prefix, target_file_size_bytes=target_file_size_bytes, compression=compression, table_properties=table_props)
+        return _t2316
 
     # --- Parse methods ---
 

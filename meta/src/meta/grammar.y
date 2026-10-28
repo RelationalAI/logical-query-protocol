@@ -1957,6 +1957,10 @@ def construct_iceberg_data(
     to_snapshot_opt: Optional[String],
     returns_delta: Boolean,
 ) -> logic.IcebergData:
+    # The printer omits `(columns ...)` whenever `relations` is set, so accepting both would
+    # silently drop the columns on a print/parse round trip.
+    if columns_opt is not None and relations_opt is not None:
+        builtin.error("iceberg_data takes either `(columns ...)` or `(relations ...)`, not both")
     return logic.IcebergData(
         locator=locator,
         config=config,

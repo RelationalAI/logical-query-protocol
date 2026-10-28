@@ -630,21 +630,26 @@ function construct_iceberg_catalog_config(parser::ParserState, catalog_uri::Stri
 end
 
 function construct_iceberg_data(parser::ParserState, locator::Proto.IcebergLocator, config::Proto.IcebergCatalogConfig, columns_opt::Union{Nothing, Vector{Proto.GNFColumn}}, relations_opt::Union{Nothing, Proto.TargetRelations}, from_snapshot_opt::Union{Nothing, String}, to_snapshot_opt::Union{Nothing, String}, returns_delta::Bool)::Proto.IcebergData
-    _t2303 = Proto.IcebergData(locator=locator, config=config, columns=(!isnothing(columns_opt) ? columns_opt : Proto.GNFColumn[]), from_snapshot=(!isnothing(from_snapshot_opt) ? from_snapshot_opt : ""), to_snapshot=(!isnothing(to_snapshot_opt) ? to_snapshot_opt : ""), returns_delta=returns_delta, relations=relations_opt)
-    return _t2303
+    if (!isnothing(columns_opt) && !isnothing(relations_opt))
+        throw(ParseError("iceberg_data takes either `(columns ...)` or `(relations ...)`, not both"))
+    else
+        _t2303 = nothing
+    end
+    _t2304 = Proto.IcebergData(locator=locator, config=config, columns=(!isnothing(columns_opt) ? columns_opt : Proto.GNFColumn[]), from_snapshot=(!isnothing(from_snapshot_opt) ? from_snapshot_opt : ""), to_snapshot=(!isnothing(to_snapshot_opt) ? to_snapshot_opt : ""), returns_delta=returns_delta, relations=relations_opt)
+    return _t2304
 end
 
 function construct_export_iceberg_config_full(parser::ParserState, locator::Proto.IcebergLocator, config::Proto.IcebergCatalogConfig, table_def::Proto.RelationId, table_property_pairs::Vector{Tuple{String, String}}, config_dict::Union{Nothing, Vector{Tuple{String, Proto.Value}}})::Proto.ExportIcebergConfig
     cfg = Dict((!isnothing(config_dict) ? config_dict : Tuple{String, Proto.Value}[]))
-    _t2304 = _extract_value_string(parser, get(cfg, "prefix", nothing), "")
-    prefix = _t2304
-    _t2305 = _extract_value_int64(parser, get(cfg, "target_file_size_bytes", nothing), 0)
-    target_file_size_bytes = _t2305
-    _t2306 = _extract_value_string(parser, get(cfg, "compression", nothing), "")
-    compression = _t2306
+    _t2305 = _extract_value_string(parser, get(cfg, "prefix", nothing), "")
+    prefix = _t2305
+    _t2306 = _extract_value_int64(parser, get(cfg, "target_file_size_bytes", nothing), 0)
+    target_file_size_bytes = _t2306
+    _t2307 = _extract_value_string(parser, get(cfg, "compression", nothing), "")
+    compression = _t2307
     table_props = Dict(table_property_pairs)
-    _t2307 = Proto.ExportIcebergConfig(locator=locator, config=config, table_def=table_def, prefix=prefix, target_file_size_bytes=target_file_size_bytes, compression=compression, table_properties=table_props)
-    return _t2307
+    _t2308 = Proto.ExportIcebergConfig(locator=locator, config=config, table_def=table_def, prefix=prefix, target_file_size_bytes=target_file_size_bytes, compression=compression, table_properties=table_props)
+    return _t2308
 end
 
 # --- Parse functions ---

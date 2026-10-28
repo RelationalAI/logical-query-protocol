@@ -942,29 +942,34 @@ func (p *Parser) construct_iceberg_catalog_config(catalog_uri string, scope_opt 
 }
 
 func (p *Parser) construct_iceberg_data(locator *pb.IcebergLocator, config *pb.IcebergCatalogConfig, columns_opt []*pb.GNFColumn, relations_opt *pb.TargetRelations, from_snapshot_opt *string, to_snapshot_opt *string, returns_delta bool) *pb.IcebergData {
-	_t2317 := columns_opt
-	if columns_opt == nil {
-		_t2317 = []*pb.GNFColumn{}
+	var _t2317 interface{}
+	if (columns_opt != nil && relations_opt != nil) {
+		panic(ParseError{msg: "iceberg_data takes either `(columns ...)` or `(relations ...)`, not both"})
 	}
-	_t2318 := &pb.IcebergData{Locator: locator, Config: config, Columns: _t2317, FromSnapshot: ptr(deref(from_snapshot_opt, "")), ToSnapshot: ptr(deref(to_snapshot_opt, "")), ReturnsDelta: returns_delta, Relations: relations_opt}
-	return _t2318
+	_ = _t2317
+	_t2318 := columns_opt
+	if columns_opt == nil {
+		_t2318 = []*pb.GNFColumn{}
+	}
+	_t2319 := &pb.IcebergData{Locator: locator, Config: config, Columns: _t2318, FromSnapshot: ptr(deref(from_snapshot_opt, "")), ToSnapshot: ptr(deref(to_snapshot_opt, "")), ReturnsDelta: returns_delta, Relations: relations_opt}
+	return _t2319
 }
 
 func (p *Parser) construct_export_iceberg_config_full(locator *pb.IcebergLocator, config *pb.IcebergCatalogConfig, table_def *pb.RelationId, table_property_pairs [][]interface{}, config_dict [][]interface{}) *pb.ExportIcebergConfig {
-	_t2319 := config_dict
+	_t2320 := config_dict
 	if config_dict == nil {
-		_t2319 = [][]interface{}{}
+		_t2320 = [][]interface{}{}
 	}
-	cfg := dictFromList(_t2319)
-	_t2320 := p._extract_value_string(dictGetValue(cfg, "prefix"), "")
-	prefix := _t2320
-	_t2321 := p._extract_value_int64(dictGetValue(cfg, "target_file_size_bytes"), 0)
-	target_file_size_bytes := _t2321
-	_t2322 := p._extract_value_string(dictGetValue(cfg, "compression"), "")
-	compression := _t2322
+	cfg := dictFromList(_t2320)
+	_t2321 := p._extract_value_string(dictGetValue(cfg, "prefix"), "")
+	prefix := _t2321
+	_t2322 := p._extract_value_int64(dictGetValue(cfg, "target_file_size_bytes"), 0)
+	target_file_size_bytes := _t2322
+	_t2323 := p._extract_value_string(dictGetValue(cfg, "compression"), "")
+	compression := _t2323
 	table_props := stringMapFromPairs(table_property_pairs)
-	_t2323 := &pb.ExportIcebergConfig{Locator: locator, Config: config, TableDef: table_def, Prefix: ptr(prefix), TargetFileSizeBytes: ptr(target_file_size_bytes), Compression: compression, TableProperties: table_props}
-	return _t2323
+	_t2324 := &pb.ExportIcebergConfig{Locator: locator, Config: config, TableDef: table_def, Prefix: ptr(prefix), TargetFileSizeBytes: ptr(target_file_size_bytes), Compression: compression, TableProperties: table_props}
+	return _t2324
 }
 
 // --- Parse functions ---
