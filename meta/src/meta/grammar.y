@@ -1616,6 +1616,10 @@ def construct_csv_data(
     relations_opt: Optional[logic.TargetRelations],
     asof: String,
 ) -> logic.CSVData:
+    # The printer omits `(columns ...)` whenever `relations` is set, so accepting both would
+    # silently drop the columns on a print/parse round trip.
+    if columns_opt is not None and relations_opt is not None:
+        builtin.error("csv_data takes either `(columns ...)` or `(relations ...)`, not both")
     return logic.CSVData(
         locator=locator,
         config=config,
