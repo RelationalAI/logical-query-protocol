@@ -148,6 +148,17 @@ def test_synthetic_key_rejects_unknown_marker():
         parse_fragment(_relations_fragment("(keys bogus)"))
 
 
+def test_csv_rejects_columns_and_relations_together():
+    fragment = (
+        '(fragment :f (csv_data (csv_locator (paths "x.csv")) (csv_config {}) '
+        '(columns (column "a" :a [UINT128 INT])) '
+        '(relations (keys (column "id" INT)) (relation :r (column "v" INT))) '
+        '(asof "2025-01-01T00:00:00Z")))'
+    )
+    with pytest.raises(ParseError, match="not both"):
+        parse_fragment(fragment)
+
+
 def _load_errors_fragment(load_errors_clause: str) -> str:
     # Minimal fragment exercising the optional `(load_errors ...)` clause that
     # trails the target relations.

@@ -1616,6 +1616,8 @@ def construct_csv_data(
     relations_opt: Optional[logic.TargetRelations],
     asof: String,
 ) -> logic.CSVData:
+    if columns_opt is not None and relations_opt is not None:
+        builtin.error("csv_data takes either `(columns ...)` or `(relations ...)`, not both")
     return logic.CSVData(
         locator=locator,
         config=config,
