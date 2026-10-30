@@ -149,8 +149,6 @@ def test_synthetic_key_rejects_unknown_marker():
 
 
 def test_csv_rejects_columns_and_relations_together():
-    # The two forms are mutually exclusive. The printer omits `(columns ...)` once
-    # `relations` is set, so accepting both would drop the columns on a round trip.
     fragment = (
         '(fragment :f (csv_data (csv_locator (paths "x.csv")) (csv_config {}) '
         '(columns (column "a" :a [UINT128 INT])) '
