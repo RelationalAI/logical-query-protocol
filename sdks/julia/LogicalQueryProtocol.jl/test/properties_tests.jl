@@ -242,6 +242,20 @@ end
     data_iceberg2 = Data(; data_type=OneOf(:iceberg_data, iceberg2))
     @test global_ids(data_iceberg2) == [persistent_id(rid1), persistent_id(rid3)]
 
+    # IcebergData in the generalized form: plain targets, and CDC targets whose `inserts` and
+    # `deletes` share a target, which must appear only once
+    iceberg_plain = IcebergData(;
+        locator=loc, config=cfg, columns=GNFColumn[], returns_delta=false, relations=plain,
+    )
+    data_iceberg_plain = Data(; data_type=OneOf(:iceberg_data, iceberg_plain))
+    @test global_ids(data_iceberg_plain) == [persistent_id(rid1), persistent_id(rid2)]
+
+    iceberg_cdc = IcebergData(;
+        locator=loc, config=cfg, columns=GNFColumn[], returns_delta=true, relations=cdc,
+    )
+    data_iceberg_cdc = Data(; data_type=OneOf(:iceberg_data, iceberg_cdc))
+    @test global_ids(data_iceberg_cdc) == [persistent_id(rid1), persistent_id(rid2)]
+
     # Data routed through Declaration
     decl_iceberg = Declaration(; declaration_type=OneOf(:data, data_iceberg))
     @test global_ids(decl_iceberg) == [

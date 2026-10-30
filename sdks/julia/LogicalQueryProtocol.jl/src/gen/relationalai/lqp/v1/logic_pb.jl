@@ -11,9 +11,9 @@ export OrMonoid, CSVLocator, Int128Type, DecimalType, UnspecifiedType, DateType
 export MissingType, MissingValue, IntType, StringType, Int128Value, UInt128Value
 export StorageIntegration, BooleanType, FixedType, UInt32Type, DecimalValue, BeTreeLocator
 export CSVConfig, var"#Type", Value, NamedColumn, GNFColumn, MinMonoid, SumMonoid
-export MaxMonoid, BeTreeInfo, Binding, EDB, Attribute, Term, TargetRelation, IcebergData
-export Monoid, BeTreeRelation, Cast, Pragma, Atom, RelTerm, CDCTargets, PlainTargets
-export Primitive, RelAtom, TargetRelations, CSVData, Data, Abstraction, Algorithm, Assign
+export MaxMonoid, BeTreeInfo, Binding, EDB, Attribute, Term, TargetRelation, Monoid
+export BeTreeRelation, Cast, Pragma, Atom, RelTerm, CDCTargets, PlainTargets, Primitive
+export RelAtom, TargetRelations, CSVData, IcebergData, Data, Abstraction, Algorithm, Assign
 export Break, Conjunction, Constraint, Def, Disjunction, Exists, FFI, FunctionalDependency
 export MonoidDef, MonusDef, Not, Reduce, Script, Upsert, Construct, Loop, Declaration
 export Instruction, Formula
@@ -1742,67 +1742,6 @@ function PB._encoded_size(x::TargetRelation)
     return encoded_size
 end
 
-struct IcebergData
-    locator::Union{Nothing,IcebergLocator}
-    config::Union{Nothing,IcebergCatalogConfig}
-    columns::Vector{GNFColumn}
-    from_snapshot::String
-    to_snapshot::String
-    returns_delta::Bool
-end
-IcebergData(;locator = nothing, config = nothing, columns = Vector{GNFColumn}(), from_snapshot = "", to_snapshot = "", returns_delta = false) = IcebergData(locator, config, columns, from_snapshot, to_snapshot, returns_delta)
-PB.default_values(::Type{IcebergData}) = (;locator = nothing, config = nothing, columns = Vector{GNFColumn}(), from_snapshot = "", to_snapshot = "", returns_delta = false)
-PB.field_numbers(::Type{IcebergData}) = (;locator = 1, config = 2, columns = 3, from_snapshot = 4, to_snapshot = 5, returns_delta = 6)
-
-function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:IcebergData}, _endpos::Int=0, _group::Bool=false)
-    locator = Ref{Union{Nothing,IcebergLocator}}(nothing)
-    config = Ref{Union{Nothing,IcebergCatalogConfig}}(nothing)
-    columns = PB.BufferedVector{GNFColumn}()
-    from_snapshot = ""
-    to_snapshot = ""
-    returns_delta = false
-    while !PB.message_done(d, _endpos, _group)
-        field_number, wire_type = PB.decode_tag(d)
-        if field_number == 1
-            PB.decode!(d, locator)
-        elseif field_number == 2
-            PB.decode!(d, config)
-        elseif field_number == 3
-            PB.decode!(d, columns)
-        elseif field_number == 4
-            from_snapshot = PB.decode(d, String)
-        elseif field_number == 5
-            to_snapshot = PB.decode(d, String)
-        elseif field_number == 6
-            returns_delta = PB.decode(d, Bool)
-        else
-            Base.skip(d, wire_type)
-        end
-    end
-    return IcebergData(locator[], config[], columns[], from_snapshot, to_snapshot, returns_delta)
-end
-
-function PB.encode(e::PB.AbstractProtoEncoder, x::IcebergData)
-    initpos = position(e.io)
-    !isnothing(x.locator) && PB.encode(e, 1, x.locator)
-    !isnothing(x.config) && PB.encode(e, 2, x.config)
-    !isempty(x.columns) && PB.encode(e, 3, x.columns)
-    !isempty(x.from_snapshot) && PB.encode(e, 4, x.from_snapshot)
-    !isempty(x.to_snapshot) && PB.encode(e, 5, x.to_snapshot)
-    x.returns_delta != false && PB.encode(e, 6, x.returns_delta)
-    return position(e.io) - initpos
-end
-function PB._encoded_size(x::IcebergData)
-    encoded_size = 0
-    !isnothing(x.locator) && (encoded_size += PB._encoded_size(x.locator, 1))
-    !isnothing(x.config) && (encoded_size += PB._encoded_size(x.config, 2))
-    !isempty(x.columns) && (encoded_size += PB._encoded_size(x.columns, 3))
-    !isempty(x.from_snapshot) && (encoded_size += PB._encoded_size(x.from_snapshot, 4))
-    !isempty(x.to_snapshot) && (encoded_size += PB._encoded_size(x.to_snapshot, 5))
-    x.returns_delta != false && (encoded_size += PB._encoded_size(x.returns_delta, 6))
-    return encoded_size
-end
-
 struct Monoid
     value::Union{Nothing,OneOf{<:Union{OrMonoid,MinMonoid,MaxMonoid,SumMonoid}}}
 end
@@ -2313,6 +2252,73 @@ function PB._encoded_size(x::CSVData)
     !isempty(x.columns) && (encoded_size += PB._encoded_size(x.columns, 3))
     !isempty(x.asof) && (encoded_size += PB._encoded_size(x.asof, 4))
     !isnothing(x.relations) && (encoded_size += PB._encoded_size(x.relations, 5))
+    return encoded_size
+end
+
+struct IcebergData
+    locator::Union{Nothing,IcebergLocator}
+    config::Union{Nothing,IcebergCatalogConfig}
+    columns::Vector{GNFColumn}
+    from_snapshot::String
+    to_snapshot::String
+    returns_delta::Bool
+    relations::Union{Nothing,TargetRelations}
+end
+IcebergData(;locator = nothing, config = nothing, columns = Vector{GNFColumn}(), from_snapshot = "", to_snapshot = "", returns_delta = false, relations = nothing) = IcebergData(locator, config, columns, from_snapshot, to_snapshot, returns_delta, relations)
+PB.default_values(::Type{IcebergData}) = (;locator = nothing, config = nothing, columns = Vector{GNFColumn}(), from_snapshot = "", to_snapshot = "", returns_delta = false, relations = nothing)
+PB.field_numbers(::Type{IcebergData}) = (;locator = 1, config = 2, columns = 3, from_snapshot = 4, to_snapshot = 5, returns_delta = 6, relations = 7)
+
+function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:IcebergData}, _endpos::Int=0, _group::Bool=false)
+    locator = Ref{Union{Nothing,IcebergLocator}}(nothing)
+    config = Ref{Union{Nothing,IcebergCatalogConfig}}(nothing)
+    columns = PB.BufferedVector{GNFColumn}()
+    from_snapshot = ""
+    to_snapshot = ""
+    returns_delta = false
+    relations = Ref{Union{Nothing,TargetRelations}}(nothing)
+    while !PB.message_done(d, _endpos, _group)
+        field_number, wire_type = PB.decode_tag(d)
+        if field_number == 1
+            PB.decode!(d, locator)
+        elseif field_number == 2
+            PB.decode!(d, config)
+        elseif field_number == 3
+            PB.decode!(d, columns)
+        elseif field_number == 4
+            from_snapshot = PB.decode(d, String)
+        elseif field_number == 5
+            to_snapshot = PB.decode(d, String)
+        elseif field_number == 6
+            returns_delta = PB.decode(d, Bool)
+        elseif field_number == 7
+            PB.decode!(d, relations)
+        else
+            Base.skip(d, wire_type)
+        end
+    end
+    return IcebergData(locator[], config[], columns[], from_snapshot, to_snapshot, returns_delta, relations[])
+end
+
+function PB.encode(e::PB.AbstractProtoEncoder, x::IcebergData)
+    initpos = position(e.io)
+    !isnothing(x.locator) && PB.encode(e, 1, x.locator)
+    !isnothing(x.config) && PB.encode(e, 2, x.config)
+    !isempty(x.columns) && PB.encode(e, 3, x.columns)
+    !isempty(x.from_snapshot) && PB.encode(e, 4, x.from_snapshot)
+    !isempty(x.to_snapshot) && PB.encode(e, 5, x.to_snapshot)
+    x.returns_delta != false && PB.encode(e, 6, x.returns_delta)
+    !isnothing(x.relations) && PB.encode(e, 7, x.relations)
+    return position(e.io) - initpos
+end
+function PB._encoded_size(x::IcebergData)
+    encoded_size = 0
+    !isnothing(x.locator) && (encoded_size += PB._encoded_size(x.locator, 1))
+    !isnothing(x.config) && (encoded_size += PB._encoded_size(x.config, 2))
+    !isempty(x.columns) && (encoded_size += PB._encoded_size(x.columns, 3))
+    !isempty(x.from_snapshot) && (encoded_size += PB._encoded_size(x.from_snapshot, 4))
+    !isempty(x.to_snapshot) && (encoded_size += PB._encoded_size(x.to_snapshot, 5))
+    x.returns_delta != false && (encoded_size += PB._encoded_size(x.returns_delta, 6))
+    !isnothing(x.relations) && (encoded_size += PB._encoded_size(x.relations, 7))
     return encoded_size
 end
 

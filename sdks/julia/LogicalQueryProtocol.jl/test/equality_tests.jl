@@ -2553,6 +2553,40 @@ end
     @test a == a
 end
 
+@testitem "Equality for IcebergData with relations" tags=[:ring1, :unit] begin
+    using LogicalQueryProtocol: IcebergData, IcebergLocator, IcebergCatalogConfig, GNFColumn,
+        TargetRelations, PlainTargets, TargetRelation, NamedColumn, RelationId, var"#Type",
+        IntType, UInt128Type
+    using ProtoBuf: OneOf
+
+    loc = IcebergLocator(table_name="t", namespace=["n"], warehouse="w")
+    cfg = IcebergCatalogConfig(catalog_uri="uri", scope="", properties=Dict(), auth_properties=Dict())
+    t_int = var"#Type"(var"#type"=OneOf(:int_type, IntType()))
+    t_key = var"#Type"(var"#type"=OneOf(:uint128_type, UInt128Type()))
+    key = NamedColumn(name="METADATA\$KEY", var"#type"=t_key)
+    rel(id, values) = TargetRelation(target_id=RelationId(id_low=id, id_high=0), values=values)
+    plain(rels) = TargetRelations(keys=[key], body=OneOf(:plain, PlainTargets(targets=rels)))
+    r1 = plain([rel(1, [NamedColumn(name="a", var"#type"=t_int)])])
+    r2 = plain([rel(2, [NamedColumn(name="a", var"#type"=t_int)])])
+    iceberg(relations) = IcebergData(
+        locator=loc, config=cfg, columns=GNFColumn[], from_snapshot="s1", to_snapshot="s2",
+        returns_delta=false, relations=relations,
+    )
+
+    a = iceberg(r1)
+    b = iceberg(plain([rel(1, [NamedColumn(name="a", var"#type"=t_int)])]))
+    c = iceberg(r2)        # different relations
+    d = iceberg(nothing)   # no relations at all
+
+    @test a == b
+    @test isequal(a, b)
+    @test hash(a) == hash(b)
+    @test a != c
+    @test !isequal(a, c)
+    @test a != d
+    @test !isequal(a, d)
+end
+
 @testitem "All LQP types have custom equality implementations" tags=[:ring1, :unit] begin
     using LogicalQueryProtocol: LQPSyntax
 

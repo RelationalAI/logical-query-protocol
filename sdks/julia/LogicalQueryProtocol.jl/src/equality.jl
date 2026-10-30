@@ -415,16 +415,18 @@ Base.:(==)(a::IcebergData, b::IcebergData) =
     a.columns == b.columns &&
     a.from_snapshot == b.from_snapshot &&
     a.to_snapshot == b.to_snapshot &&
-    a.returns_delta == b.returns_delta
+    a.returns_delta == b.returns_delta &&
+    a.relations == b.relations
 Base.hash(a::IcebergData, h::UInt) =
-    hash(a.returns_delta, hash(a.to_snapshot, hash(a.from_snapshot, hash(a.columns, hash(a.config, hash(a.locator, h))))))
+    hash(a.relations, hash(a.returns_delta, hash(a.to_snapshot, hash(a.from_snapshot, hash(a.columns, hash(a.config, hash(a.locator, h)))))))
 Base.isequal(a::IcebergData, b::IcebergData) =
     isequal(a.locator, b.locator) &&
     isequal(a.config, b.config) &&
     isequal(a.columns, b.columns) &&
     isequal(a.from_snapshot, b.from_snapshot) &&
     isequal(a.to_snapshot, b.to_snapshot) &&
-    isequal(a.returns_delta, b.returns_delta)
+    isequal(a.returns_delta, b.returns_delta) &&
+    isequal(a.relations, b.relations)
 
 # Demand
 Base.:(==)(a::Demand, b::Demand) = a.relation_id == b.relation_id

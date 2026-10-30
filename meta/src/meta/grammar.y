@@ -1311,15 +1311,16 @@ iceberg_to_snapshot
       deconstruct: $3: String = $$
 
 iceberg_data
-    : "(" "iceberg_data" iceberg_locator iceberg_catalog_config gnf_columns iceberg_from_snapshot? iceberg_to_snapshot? boolean_value ")"
-      construct: $$ = construct_iceberg_data($3, $4, $5, $6, $7, $8)
+    : "(" "iceberg_data" iceberg_locator iceberg_catalog_config gnf_columns? target_relations? iceberg_from_snapshot? iceberg_to_snapshot? boolean_value ")"
+      construct: $$ = construct_iceberg_data($3, $4, $5, $6, $7, $8, $9)
       deconstruct:
         $3: logic.IcebergLocator = $$.locator
         $4: logic.IcebergCatalogConfig = $$.config
-        $5: Sequence[logic.GNFColumn] = $$.columns
-        $6: Optional[String] = deconstruct_iceberg_data_from_snapshot_optional($$)
-        $7: Optional[String] = deconstruct_iceberg_data_to_snapshot_optional($$)
-        $8: Boolean = $$.returns_delta
+        $5: Optional[Sequence[logic.GNFColumn]] = deconstruct_iceberg_data_columns_optional($$)
+        $6: Optional[logic.TargetRelations] = deconstruct_iceberg_data_relations_optional($$)
+        $7: Optional[String] = deconstruct_iceberg_data_from_snapshot_optional($$)
+        $8: Optional[String] = deconstruct_iceberg_data_to_snapshot_optional($$)
+        $9: Boolean = $$.returns_delta
 
 undefine
     : "(" "undefine" fragment_id ")"
@@ -1950,19 +1951,37 @@ def deconstruct_iceberg_catalog_config_scope_optional(msg: logic.IcebergCatalogC
 def construct_iceberg_data(
     locator: logic.IcebergLocator,
     config: logic.IcebergCatalogConfig,
-    columns: Sequence[logic.GNFColumn],
+    columns_opt: Optional[Sequence[logic.GNFColumn]],
+    relations_opt: Optional[logic.TargetRelations],
     from_snapshot_opt: Optional[String],
     to_snapshot_opt: Optional[String],
     returns_delta: Boolean,
 ) -> logic.IcebergData:
+    # The printer omits `(columns ...)` whenever `relations` is set, so accepting both would
+    # silently drop the columns on a print/parse round trip.
+    if columns_opt is not None and relations_opt is not None:
+        builtin.error("iceberg_data takes either `(columns ...)` or `(relations ...)`, not both")
     return logic.IcebergData(
         locator=locator,
         config=config,
-        columns=columns,
+        columns=builtin.unwrap_option_or(columns_opt, list[logic.GNFColumn]()),
         from_snapshot=builtin.some(builtin.unwrap_option_or(from_snapshot_opt, "")),
         to_snapshot=builtin.some(builtin.unwrap_option_or(to_snapshot_opt, "")),
         returns_delta=returns_delta,
+        relations=relations_opt,
     )
+
+
+def deconstruct_iceberg_data_columns_optional(msg: logic.IcebergData) -> Optional[Sequence[logic.GNFColumn]]:
+    if builtin.has_proto_field(msg, "relations"):
+        return builtin.none()
+    return builtin.some(msg.columns)
+
+
+def deconstruct_iceberg_data_relations_optional(msg: logic.IcebergData) -> Optional[logic.TargetRelations]:
+    if builtin.has_proto_field(msg, "relations"):
+        return builtin.some(builtin.unwrap_option(msg.relations))
+    return builtin.none()
 
 
 def deconstruct_iceberg_data_from_snapshot_optional(msg: logic.IcebergData) -> Optional[String]:
